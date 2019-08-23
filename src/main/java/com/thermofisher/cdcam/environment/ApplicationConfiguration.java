@@ -16,4 +16,13 @@ public class ApplicationConfiguration {
     private Environment env;
 
     public String getEnvName() { return env.getProperty("env.name"); }
+
+    //CDC
+    public String getCDCApiKey(){return env.getProperty("cdc.apiKey");}
+    public String getCDCUserKey(){return env.getProperty("cdc.userKey");}
+    public String getCDCSecretKey(){return env.getProperty("cdc.secretKey");}
+
+    //aws
+    public String getDistStoreAWSClientRegion() { return env.getProperty("aws.sns.client.region"); }
+    public String getAWSSNSTopic() { return env.getProperty("aws.sns.topic"); }
 }
