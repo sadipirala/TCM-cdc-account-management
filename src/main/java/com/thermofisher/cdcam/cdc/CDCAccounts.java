@@ -4,41 +4,44 @@ import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
+import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
-import com.thermofisher.cdcam.environment.ApplicationConfiguration;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 public class CDCAccounts {
 
     final static Logger logger = LogManager.getLogger("CdcamApp");
-    ApplicationConfiguration conf;
 
+    @Value("${cdc.apiKey}")
+    private String apiKey;
+
+    @Value("${cdc.secretKey}")
+    private String secretKey;
+
+    @Value("${cdc.userKey}")
+    private String userKey;
+
+    AccountBuilder accountBuilder = new AccountBuilder();
     public AccountInfo getAccount(String UID) {
         try {
             String apiMethod = APIMethods.GET.getValue();
-            GSRequest request = new GSRequest(conf.getCDCApiKey(), conf.getCDCSecretKey(), apiMethod, null, true, conf.getCDCUserKey());
+            GSRequest request = new GSRequest(apiKey, secretKey , apiMethod, null, true, userKey);
             request.setParam("UID", UID);
             request.setParam("include","emails, profile, data, password,userInfo,regSource,identities");
-            request.setParam("extraProfileFields","username, locale,samlData");
+            request.setParam("extraProfileFields","username, locale");
 
             GSResponse response = request.send();
             if (response.getErrorCode() == 0) {
                 GSObject obj = response.getData();
                 GSObject userInfo = (GSObject) obj.get("userInfo");
                 logger.info("User Found: " + obj.get("UID"));
-                return AccountInfo.builder()
-                        .username( userInfo.containsKey("username") ? userInfo.getString("username") : userInfo.getString("email"))
-                        .emailAddress(userInfo.getString("email"))
-                        .firstName(userInfo.containsKey("firstName") ? userInfo.getString("firstName"):"")
-                        .lastName(userInfo.containsKey("lastName") ? userInfo.getString("lastName"):"")
-                        .country(userInfo.containsKey("country") ? userInfo.getString("country"):"")
-                        .localeName(userInfo.containsKey("locale") ? userInfo.getString("locale"):"")
-                        .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider"):"")
-                        .password(getAlphaNumericString(10))
-                        .regAttepmts(0)
-                        .build();
+                return accountBuilder.getAccountInfo(userInfo,obj);
             } else {
                 logger.error(response.getErrorDetails());
                 return null;
@@ -47,22 +50,5 @@ public class CDCAccounts {
             logger.error(keyNotFoundException.getMessage());
             return null;
         }
-    }
-
-    static String getAlphaNumericString(int n) {
-        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
-        StringBuilder sb = new StringBuilder(n);
-        for (int i = 0; i < n; i++) {
-            int index
-                    = (int) (AlphaNumericString.length()
-                    * Math.random());
-            sb.append(AlphaNumericString
-                    .charAt(index));
-        }
-        return sb.toString();
-    }
-
-    public CDCAccounts(ApplicationConfiguration applicationConfiguration){
-        this.conf = applicationConfiguration;
     }
 }

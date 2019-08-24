@@ -1,7 +1,5 @@
 package com.thermofisher;
-
-import com.thermofisher.cdcam.environment.ApplicationConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +16,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 public class CdcamApplication {
 
-	@Autowired
-	ApplicationConfiguration applicationConfiguration;
+	@Value("${env.name}")
+	private String envName;
 
 	public static void main(String[] args) {
 		SpringApplication.run(CdcamApplication.class, args);
@@ -38,7 +36,7 @@ public class CdcamApplication {
 
 	private ApiInfo apiInfo() {
 		return new ApiInfoBuilder()
-				.title(messageSource().getMessage("swagger.api.title", null,null) + " (" + applicationConfiguration.getEnvName() + ")")
+				.title(messageSource().getMessage("swagger.api.title", null,null) + " (" + envName + ")")
 				.description(messageSource().getMessage("swagger.api.description", null,null))
 				.version("1.2")
 				.build();

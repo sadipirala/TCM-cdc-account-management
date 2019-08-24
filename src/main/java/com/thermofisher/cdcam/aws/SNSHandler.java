@@ -3,18 +3,19 @@ package com.thermofisher.cdcam.aws;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClient;
-import com.thermofisher.cdcam.environment.ApplicationConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SNSHandler {
-    @Autowired
-    ApplicationConfiguration applicationConfiguration;
 
-    public boolean sendSNSNotification(String snsTopic, String message) {
+    @Value("${aws.sns.client.region}")
+    private String region;
+    @Value("${aws.sns.topic}")
+    private String snsTopic;
+    public boolean sendSNSNotification(String message) {
         AmazonSNS snsClient = AmazonSNSClient.builder()
-                .withRegion(applicationConfiguration.getDistStoreAWSClientRegion())
+                .withRegion(region)
                 .withCredentials(new InstanceProfileCredentialsProvider(false))
                 .build();
 
