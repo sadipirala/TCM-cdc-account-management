@@ -19,7 +19,6 @@ public class AccountBuilder {
                      .regAttepmts(0)
                      .build();
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
