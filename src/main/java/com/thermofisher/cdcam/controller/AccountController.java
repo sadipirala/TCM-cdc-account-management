@@ -14,7 +14,7 @@ public class AccountController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
     @PostMapping("/user")
-    public ResponseEntity<String> registerUser(){
+    public ResponseEntity<String> notifyRegistration(){
         return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 }
