@@ -34,20 +34,19 @@ public class CDCAccounts {
             GSRequest request = new GSRequest(apiKey, secretKey , apiMethod, null, true, userKey);
             request.setParam("UID", UID);
             request.setParam("include","emails, profile, data, password,userInfo,regSource,identities");
-            request.setParam("extraProfileFields","username, locale");
+            request.setParam("extraProfileFields","username, locale,work");
 
             GSResponse response = request.send();
             if (response.getErrorCode() == 0) {
                 GSObject obj = response.getData();
-                GSObject userInfo = (GSObject) obj.get("userInfo");
                 logger.info("User Found: " + obj.get("UID"));
-                return accountBuilder.getAccountInfo(userInfo,obj);
+                return accountBuilder.getAccountInfo(obj);
             } else {
                 logger.error(response.getErrorDetails());
                 return null;
             }
-        }catch (GSKeyNotFoundException keyNotFoundException) {
-            logger.error(keyNotFoundException.getMessage());
+        }catch (Exception e) {
+            logger.error(e.getMessage());
             return null;
         }
     }

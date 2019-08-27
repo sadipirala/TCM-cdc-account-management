@@ -25,5 +25,9 @@
         <AppenderRef ref="CdcamLogFile"/>
         <AppenderRef ref="Mail" level="FATAL"/>
     </logger>
+    <logger name="AWSSecretManager" level="TRACE" additivity="false">
+        <AppenderRef ref="CdcamLogFile"/>
+        <AppenderRef ref="Mail" level="FATAL"/>
+    </logger>
 </Loggers>
 </Configuration>

@@ -1,24 +1,37 @@
 package com.thermofisher.cdcam.builders;
+
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.Utils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AccountBuilder {
 
-    public AccountInfo getAccountInfo(GSObject userInfo, GSObject obj){
+    final static Logger logger = LogManager.getLogger("CdcamApp");
+
+    public AccountInfo getAccountInfo(GSObject obj) {
         try {
+            GSObject data = (GSObject) obj.get("data");
+            GSObject profile = (GSObject) obj.get("profile");
+            GSObject work = (GSObject)profile.get("work");
             return AccountInfo.builder()
-                     .username( userInfo.containsKey("username") ? userInfo.getString("username") : userInfo.getString("email"))
-                     .emailAddress(userInfo.getString("email"))
-                     .firstName(userInfo.containsKey("firstName") ? userInfo.getString("firstName"):"")
-                     .lastName(userInfo.containsKey("lastName") ? userInfo.getString("lastName"):"")
-                     .country(userInfo.containsKey("country") ? userInfo.getString("country"):"")
-                     .localeName(userInfo.containsKey("locale") ? userInfo.getString("locale"):"")
-                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider"):"")
-                     .password(Utils.getAlphaNumericString(10))
-                     .regAttepmts(0)
-                     .build();
+                    .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
+                    .emailAddress(profile.getString("email"))
+                    .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
+                    .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
+                    .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
+                    .company(work.containsKey("company") ? work.getString("company") : "")
+                    .country(profile.containsKey("country")?profile.getString("country"):"")
+                    .city(profile.containsKey("city")?profile.getString("city"):"")
+                    .department(work.containsKey("location") ? work.getString("location") : "")
+                    .member(data.containsKey("subscribe") ? data.getString("subscribe") : "N")
+                    .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
+                    .password(Utils.getAlphaNumericString(10))
+                    .regAttempts(0)
+                    .build();
         } catch (Exception e) {
+            logger.error("Error building account info object:  " + e.getMessage());
             return null;
         }
     }

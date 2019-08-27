@@ -7,6 +7,7 @@ import com.thermofisher.cdcam.controller.AccountController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -34,7 +35,7 @@ public class AccountControllerTests {
     @Mock
     CDCAccounts accounts;
 
-    AccountInfo federationAccount = AccountInfo.builder()
+    private AccountInfo federationAccount = AccountInfo.builder()
             .username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com")
             .firstName("first")
@@ -43,13 +44,13 @@ public class AccountControllerTests {
             .localeName("en_US")
             .loginProvider("oidc")
             .password("Password1")
-            .regAttepmts(0)
+            .regAttempts(0)
             .city("testCity")
             .department("dep")
             .company("myCompany")
             .build();
 
-    AccountInfo nonFederationAccount = AccountInfo.builder()
+    private AccountInfo nonFederationAccount = AccountInfo.builder()
             .username("User@test.com")
             .emailAddress("User@test.com")
             .firstName("first")
@@ -58,7 +59,7 @@ public class AccountControllerTests {
             .localeName("en_US")
             .loginProvider("site")
             .password("Password1")
-            .regAttepmts(0)
+            .regAttempts(0)
             .city("testCity")
             .department("dep")
             .company("myCompany")
@@ -88,7 +89,7 @@ public class AccountControllerTests {
         //execution
         ResponseEntity<String> res = notificationController.notifyRegistration();
         //validation
-        Assert.assertEquals(res.getBody(), "NON FEDERATION USER");
+        Assert.assertEquals(res.getBody(), "The user was not created through federation");
     }
 
     @Test

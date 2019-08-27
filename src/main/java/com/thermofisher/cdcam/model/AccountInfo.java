@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 public class AccountInfo {
     private String username;
@@ -20,5 +19,5 @@ public class AccountInfo {
     private String country;
     private String member;
     private String loginProvider;
-    private int regAttepmts;
+    private int regAttempts;
 }
