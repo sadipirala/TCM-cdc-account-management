@@ -5,9 +5,9 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.controller.AccountController;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.services.HashValidationService;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -17,9 +17,14 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import static org.mockito.ArgumentMatchers.anyString;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.internal.util.MockUtil.createMock;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -34,6 +39,9 @@ public class AccountControllerTests {
 
     @Mock
     CDCAccounts accounts;
+
+    @Mock
+    HashValidationService hashValidationService;
 
     private AccountInfo federationAccount = AccountInfo.builder()
             .username("federatedUser@OIDC.com")
@@ -73,10 +81,16 @@ public class AccountControllerTests {
     @Test
     public void notifyRegistration_ifFederationUserUIDisSent_returnFederationAccount(){
        //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        req.setContent(mockBody.getBytes());
         Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration();
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
         //validation
         Assert.assertTrue(res.getStatusCode().is2xxSuccessful());
     }
@@ -84,31 +98,88 @@ public class AccountControllerTests {
     @Test
     public void notifyRegistration_ifNonFederationUserUIDisSent_returnError(){
         //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        req.setContent(mockBody.getBytes());
         Mockito.when(accounts.getAccount(anyString())).thenReturn(nonFederationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration();
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
         //validation
         Assert.assertEquals(res.getBody(), "The user was not created through federation");
     }
 
     @Test
     public void notifyRegistration_ifConnectionIsLost_throwException(){
-        //setup
-        Mockito.when(notificationController.notifyRegistration()).thenThrow(Exception.class);
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration();
+        ResponseEntity<String> res = notificationController.notifyRegistration(null);
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     @Test
     public void notifyRegistration_ifSNSNotificationFails_returnServiceUnavailable(){
         //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        req.setContent(mockBody.getBytes());
         Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(false);
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration();
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    @Test
+    public void notifyRegistration_ifIncorrectRegistrationType_returnError(){
+        //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[{\"type\":\"accountCreated\",\"data\":{\"uid\":\"00000\"}}]}";
+        req.setContent(mockBody.getBytes());
+        Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
+        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
+        //execution
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
+        //validation
+        Assert.assertEquals(res.getBody(),"the event type was not recognized");
+    }
+    @Test
+    public void notifyRegistration_ifNoEventsAreFound_returnError(){
+        //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[]}";
+        req.setContent(mockBody.getBytes());
+        Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
+        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
+        //execution
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
+        //validation
+        Assert.assertTrue(res.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    public void notifyRegistration_ifInvalidSignature_returnError(){
+        //setup
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader("X-Gigya-Sig-Hmac-Sha1","Test");
+        String mockBody = "{\"events\":[]}";
+        req.setContent(mockBody.getBytes());
+        Mockito.when(hashValidationService.isValidHash(anyString(),anyString())).thenReturn(false);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
+        //execution
+        ResponseEntity<String> res = notificationController.notifyRegistration(req);
+        //validation
+        Assert.assertTrue(res.getStatusCode().is4xxClientError());
     }
 }
