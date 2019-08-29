@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -79,8 +81,12 @@ public class AccountController {
                 return new ResponseEntity<>("INVALID SIGNATURE", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            return new ResponseEntity<>("ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.error(stackTrace);
+            return new ResponseEntity<>("ERROR: " + stackTrace, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
