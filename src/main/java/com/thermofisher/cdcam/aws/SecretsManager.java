@@ -25,7 +25,7 @@ public class SecretsManager {
         try {
             getSecretValueResult = client.getSecretValue(getSecretValueRequest);
         }catch (Exception e){
-            logger.error(e.getMessage());
+            logger.fatal("region: "+clientRegion+ "secret Name:" +secretName);
             throw e;
         }
         if (getSecretValueResult.getSecretString() != null) {
