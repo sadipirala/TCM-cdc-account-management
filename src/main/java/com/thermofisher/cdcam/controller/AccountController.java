@@ -41,8 +41,9 @@ public class AccountController {
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(HttpServletRequest request) {
         try {
-            String headerValue = request.getHeader("X-Gigya-Sig-Hmac-Sha1");
+            String headerValue = request.getHeader("x-gigya-sig-hmac-sha1");
             String rawBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
+            logger.fatal(rawBody + " " + headerValue);
             if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
