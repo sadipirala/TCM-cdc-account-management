@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -54,7 +56,11 @@ public class HashValidationService {
             JSONObject secretProperties = (JSONObject) parser.parse(secretJson);
             return secretProperties.get("cdc-secret-key").toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.fatal(stackTrace);
             return null;
         }
     }
