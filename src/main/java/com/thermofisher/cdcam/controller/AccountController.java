@@ -45,8 +45,8 @@ public class AccountController {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
                 JSONArray events = (JSONArray)mainObject.get("events");
-                for (Object o : events) {
-                    JSONObject event = (JSONObject) o;
+                for (Object singleEvent : events) {
+                    JSONObject event = (JSONObject) singleEvent;
                     JSONObject data = (JSONObject) event.get("data");
                     if (event.get("type").equals(Events.REGISTRATION.getValue())) {
                         String uid = data.get("uid").toString();
@@ -55,7 +55,7 @@ public class AccountController {
                             ObjectMapper mapper = new ObjectMapper();
                             String jsonString = mapper.writeValueAsString(account);
                             if (snsHandler.sendSNSNotification(jsonString)) {
-                                logger.info("User sent");
+                                logger.info("User sent to SNS");
                                 return new ResponseEntity<>(jsonString, HttpStatus.OK);
                             } else {
                                 logger.error("The user was not created through federation");

@@ -1,8 +1,7 @@
 package com.thermofisher.cdcam.enums.cdc;
 
 public enum Events {
-    REGISTRATION("accountRegistered"),
-    CREATION("accountCreated");
+    REGISTRATION("accountRegistered");
 
     private String value;
 
