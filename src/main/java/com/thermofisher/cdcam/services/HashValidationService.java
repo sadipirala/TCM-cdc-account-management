@@ -51,7 +51,7 @@ public class HashValidationService {
 
     public String getSecretKeyFromSecretManager() {
         try {
-            String secretJson = secretsManager.getSecret(region, secretName);
+            String secretJson = secretsManager.getSecret(secretName, region);
             JSONParser parser = new JSONParser();
             JSONObject secretProperties = (JSONObject) parser.parse(secretJson);
             return secretProperties.get("cdc-secret-key").toString();
