@@ -17,6 +17,7 @@ public class SecretsManager {
     public String getSecret(String secretName,String clientRegion){
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
                 .withRegion(clientRegion)
+                .withCredentials(new InstanceProfileCredentialsProvider(false))
                 .build();
         GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
                 .withSecretId(secretName);
@@ -24,7 +25,6 @@ public class SecretsManager {
         try {
             getSecretValueResult = client.getSecretValue(getSecretValueRequest);
         }catch (Exception e){
-            logger.fatal("region: "+clientRegion+ "secret Name:" +secretName);
             throw e;
         }
         if (getSecretValueResult.getSecretString() != null) {
