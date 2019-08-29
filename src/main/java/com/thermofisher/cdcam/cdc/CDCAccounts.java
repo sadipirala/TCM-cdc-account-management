@@ -28,6 +28,7 @@ public class CDCAccounts {
     private String userKey;
 
     AccountBuilder accountBuilder = new AccountBuilder();
+
     public AccountInfo getAccount(String UID) {
         try {
             String apiMethod = APIMethods.GET.getValue();

@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,13 +22,13 @@ public class HashValidationService {
     @Value("${aws.sns.secret}")
     private String secretName;
 
-    String algorithm="HmacSHA1";
+    String algorithm = "HmacSHA1";
 
     SecretsManager secretsManager = new SecretsManager();
 
-    public  String getHashedString(String msg){
+    public String getHashedString(String msg) {
         try {
-            String secretKey =getSecretKeyFromSecretManager();
+            String secretKey = getSecretKeyFromSecretManager();
             byte[] decodedKey = java.util.Base64.getDecoder().decode(secretKey);
             SecretKeySpec key = new SecretKeySpec(decodedKey, algorithm);
             Mac mac = Mac.getInstance(algorithm);
@@ -37,22 +36,20 @@ public class HashValidationService {
 
             byte[] bytes = mac.doFinal(msg.getBytes());
 
-            return new String( java.util.Base64.getEncoder().encode(bytes));
-        }
-        catch (NoSuchAlgorithmException | InvalidKeyException e) {
-           logger.error(e.getMessage());
+            return new String(java.util.Base64.getEncoder().encode(bytes));
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            logger.error(e.getMessage());
         }
         return null;
     }
 
-    public  boolean isValidHash(String expected,String sent)
-    {
-        return  expected.equals(sent);
+    public boolean isValidHash(String expected, String sent) {
+        return expected.equals(sent);
     }
 
-    public String getSecretKeyFromSecretManager(){
+    public String getSecretKeyFromSecretManager() {
         try {
-            String secretJson = secretsManager.getSecret(region,secretName);
+            String secretJson = secretsManager.getSecret(region, secretName);
             JSONParser parser = new JSONParser();
             JSONObject secretProperties = (JSONObject) parser.parse(secretJson);
             return secretProperties.get("cdc-secret-key").toString();
