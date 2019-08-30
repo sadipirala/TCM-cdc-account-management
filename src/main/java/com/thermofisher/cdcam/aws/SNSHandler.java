@@ -8,6 +8,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 @Configuration
 public class SNSHandler {
     final static Logger logger = LogManager.getLogger("AWSSecretManager");
@@ -28,8 +31,12 @@ public class SNSHandler {
         }
         catch (Exception e)
         {
-            logger.error(e.getMessage());
-            return true;
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.error(stackTrace);
+            return false;
         }
     }
 }
