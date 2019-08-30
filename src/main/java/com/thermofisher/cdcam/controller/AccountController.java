@@ -16,11 +16,10 @@ import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -39,11 +38,8 @@ public class AccountController {
     HashValidationService hashValidationService;
 
     @PostMapping("/user")
-    public ResponseEntity<String> notifyRegistration(HttpServletRequest request) {
+    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
-            String headerValue = request.getHeader("x-gigya-sig-hmac-sha1");
-            String rawBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
-            logger.fatal(rawBody + " " + headerValue);
             if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
