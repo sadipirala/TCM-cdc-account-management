@@ -13,6 +13,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 @Configuration
 public class CDCAccounts {
 
@@ -47,7 +50,11 @@ public class CDCAccounts {
                 return null;
             }
         }catch (Exception e) {
-            logger.error(e.getMessage());
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.fatal(stackTrace);
             return null;
         }
     }
