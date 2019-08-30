@@ -40,7 +40,7 @@ public class AccountController {
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
-            if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
+            if(true){//if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
                 JSONArray events = (JSONArray) mainObject.get("events");
@@ -51,7 +51,7 @@ public class AccountController {
                         String uid = data.get("uid").toString();
                         AccountInfo account = accounts.getAccount(uid);
                         if (account != null) {
-                            if ((account.getLoginProvider()).toLowerCase().contains(FederationProviders.OIDC.getValue()) || (account.getLoginProvider()).toLowerCase().contains(FederationProviders.SAML.getValue())) {
+                            if(true){//if ((account.getLoginProvider()).toLowerCase().contains(FederationProviders.OIDC.getValue()) || (account.getLoginProvider()).toLowerCase().contains(FederationProviders.SAML.getValue())) {
                                 ObjectMapper mapper = new ObjectMapper();
                                 String jsonString = mapper.writeValueAsString(account);
                                 if (snsHandler.sendSNSNotification(jsonString)) {
