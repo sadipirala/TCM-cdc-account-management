@@ -87,7 +87,7 @@ public class AccountControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test",mockBody);
+        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
         //validation
         Assert.assertTrue(res.getStatusCode().is2xxSuccessful());
     }
@@ -101,17 +101,19 @@ public class AccountControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        //ResponseEntity<String> res = notificationController.notifyRegistration("Test",mockBody);
+        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
         //validation
-        //Assert.assertEquals(res.getBody(), "The user was not created through federation");
+        Assert.assertEquals(res.getBody(), "The user was not created through federation");
     }
 
     @Test
     public void notifyRegistration_ifConnectionIsLost_throwException() {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(null, null)).thenReturn(true);
         //execution
-        //ResponseEntity<String> res = notificationController.notifyRegistration(null);
+        ResponseEntity<String> res = notificationController.notifyRegistration(null, null);
         //validation
-        // Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -123,7 +125,7 @@ public class AccountControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test",mockBody);
+        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.SERVICE_UNAVAILABLE);
     }
@@ -161,6 +163,19 @@ public class AccountControllerTests {
         //setup
         String mockBody = "{\"events\":[]}";
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+        Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
+        //execution
+        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        //validation
+        Assert.assertTrue(res.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    public void notifyRegistration_ifNoUserIsFound_returnBadRequest() {
+        //setup
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        Mockito.when(accounts.getAccount(anyString())).thenReturn(null);
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString())).thenReturn("Test");
         //execution
         ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);

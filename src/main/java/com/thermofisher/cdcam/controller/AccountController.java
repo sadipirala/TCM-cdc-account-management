@@ -40,7 +40,7 @@ public class AccountController {
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
-            if(true){//if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
+            if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
                 JSONArray events = (JSONArray) mainObject.get("events");
