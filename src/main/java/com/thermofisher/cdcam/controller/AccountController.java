@@ -56,7 +56,7 @@ public class AccountController {
                                     return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
                                 }
                             } else {
-                                logger.fatal("The user was not created through federation");
+                                logger.error("The user was not created through federation");
                                 return new ResponseEntity<>("The user was not created through federation", HttpStatus.OK);
                             }
                         } else {
@@ -71,7 +71,7 @@ public class AccountController {
                 logger.error("NO EVENT FOUND");
                 return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
             } else {
-                logger.fatal("INVALID SIGNATURE");
+                logger.error("INVALID SIGNATURE");
                 return new ResponseEntity<>("INVALID SIGNATURE", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {

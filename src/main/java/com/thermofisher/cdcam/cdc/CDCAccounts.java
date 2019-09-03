@@ -51,7 +51,7 @@ public class CDCAccounts {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             String stackTrace = sw.toString();
-            logger.fatal(stackTrace);
+            logger.error(stackTrace);
             return null;
         }
     }
