@@ -45,7 +45,7 @@ public class AccountController {
                         String uid = data.get("uid").toString();
                         AccountInfo account = accounts.getAccount(uid);
                         if (account != null) {
-                            if ((account.getLoginProvider()).toLowerCase().contains(FederationProviders.OIDC.getValue()) || (account.getLoginProvider()).toLowerCase().contains("site")) {
+                            if ((account.getLoginProvider()).toLowerCase().contains(FederationProviders.OIDC.getValue()) || (account.getLoginProvider()).toLowerCase().contains(FederationProviders.SAML.getValue())) {
                                 ObjectMapper mapper = new ObjectMapper();
                                 String jsonString = mapper.writeValueAsString(account);
                                 if (snsHandler.sendSNSNotification(jsonString)) {
@@ -56,7 +56,7 @@ public class AccountController {
                                     return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
                                 }
                             } else {
-                                logger.error("The user was not created through federation");
+                                logger.fatal("The user was not created through federation");
                                 return new ResponseEntity<>("The user was not created through federation", HttpStatus.OK);
                             }
                         } else {
