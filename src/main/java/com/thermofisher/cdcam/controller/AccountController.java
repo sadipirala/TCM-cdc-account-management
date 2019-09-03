@@ -7,7 +7,6 @@ import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.HashValidationService;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -17,13 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/account")

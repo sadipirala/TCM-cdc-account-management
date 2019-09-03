@@ -1,18 +1,15 @@
 package com.thermofisher.cdcam.cdc;
 
-import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
