@@ -65,7 +65,7 @@ public class AccountControllerTests {
             .lastName("last")
             .country("country")
             .localeName("en_US")
-            .loginProvider("site")
+            .loginProvider("nonfederation")
             .password("Password1")
             .regAttempts(0)
             .city("testCity")
