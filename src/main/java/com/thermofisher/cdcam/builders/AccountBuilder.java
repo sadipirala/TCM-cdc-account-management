@@ -25,7 +25,7 @@ public class AccountBuilder {
                     .country(profile.containsKey("country")?profile.getString("country"):"")
                     .city(profile.containsKey("city")?profile.getString("city"):"")
                     .department(work != null ? (work.containsKey("location") ? work.getString("location") : ""): "")
-                    .member(data.containsKey("subscribe") ? data.getString("subscribe") : "N")
+                    .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .password(Utils.getAlphaNumericString(10))
                     .regAttempts(0)
