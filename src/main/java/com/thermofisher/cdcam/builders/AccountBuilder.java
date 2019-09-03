@@ -14,17 +14,17 @@ public class AccountBuilder {
         try {
             GSObject data = (GSObject) obj.get("data");
             GSObject profile = (GSObject) obj.get("profile");
-            GSObject work = (GSObject)profile.get("work");
+            GSObject work = profile.containsKey("work") ?  (GSObject)profile.get("work"):null;
             return AccountInfo.builder()
                     .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
                     .emailAddress(profile.getString("email"))
                     .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
                     .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
-                    .company(work.containsKey("company") ? work.getString("company") : "")
+                    .company(work != null ? (work.containsKey("company") ? work.getString("company") : ""):"")
                     .country(profile.containsKey("country")?profile.getString("country"):"")
                     .city(profile.containsKey("city")?profile.getString("city"):"")
-                    .department(work.containsKey("location") ? work.getString("location") : "")
+                    .department(work != null ? (work.containsKey("location") ? work.getString("location") : ""): "")
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "N")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .password(Utils.getAlphaNumericString(10))

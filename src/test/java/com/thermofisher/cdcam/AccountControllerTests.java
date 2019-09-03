@@ -79,7 +79,7 @@ public class AccountControllerTests {
     }
 
     @Test
-    public void notifyRegistration_ifFederationUserUIDisSent_returnFederationAccount() {
+    public void notifyRegistration_ifGivenAFederationUserUIDisSent_returnFederationAccount() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
@@ -93,7 +93,7 @@ public class AccountControllerTests {
     }
 
     @Test
-    public void notifyRegistration_ifNonFederationUserUIDisSent_returnError() {
+    public void notifyRegistration_ifGivenANonFederationUserUIDisSent_returnError() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(accounts.getAccount(anyString())).thenReturn(nonFederationAccount);
@@ -131,7 +131,7 @@ public class AccountControllerTests {
     }
 
     @Test
-    public void notifyRegistration_ifIncorrectRegistrationType_returnError() {
+    public void notifyRegistration_ifGivenAnIncorrectRegistrationType_returnError() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountCreated\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(accounts.getAccount(anyString())).thenReturn(federationAccount);
@@ -159,7 +159,7 @@ public class AccountControllerTests {
     }
 
     @Test
-    public void notifyRegistration_ifInvalidSignature_returnError() {
+    public void notifyRegistration_ifGivenAnInvalidSignature_returnError() {
         //setup
         String mockBody = "{\"events\":[]}";
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);

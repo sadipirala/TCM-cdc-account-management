@@ -27,7 +27,7 @@ public class SNSHandler {
 
             String resultPublish = snsClient.publish(snsTopic, message).getMessageId();
 
-            return (resultPublish.length() > 0) ? true : false;
+            return resultPublish.length() > 0;
         }
         catch (Exception e)
         {

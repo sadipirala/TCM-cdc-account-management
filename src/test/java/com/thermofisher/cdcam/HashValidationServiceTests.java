@@ -51,7 +51,7 @@ public class HashValidationServiceTests {
     }
 
     @Test
-    public void getHashedString_ifAnInValidAlgorithm_returnNull() {
+    public void getHashedString_ifGivenAnInValidAlgorithm_returnNull() {
         Mockito.when(hashValidationService.getSecretKeyFromSecretManager()).thenReturn("Test");
         Mockito.when(hashValidationService.getHashedString(anyString())).thenCallRealMethod();
         ReflectionTestUtils.setField(hashValidationService, "algorithm", "incorrect");
@@ -60,7 +60,7 @@ public class HashValidationServiceTests {
     }
 
     @Test
-    public void getSecretKeyFromSecretManager_IfValidSecretIsFound_returnValue() {
+    public void getSecretKeyFromSecretManager_IfGivenAValidSecretIsFound_returnValue() {
         String secretProperties = "{\"cdc-secret-key\": \"Test\"}";
         ReflectionTestUtils.setField(hashValidationService, "algorithm", "HmacSHA1");
         ReflectionTestUtils.setField(hashValidationService, "secretsManager", secretsManager);
@@ -75,7 +75,7 @@ public class HashValidationServiceTests {
 
     }
     @Test
-    public void getSecretKeyFromSecretManager_IfInValidSecretIsFound_returnValue() {
+    public void getSecretKeyFromSecretManager_IfAnInValidSecretIsFound_returnValue() {
 
         ReflectionTestUtils.setField(hashValidationService, "algorithm", "HmacSHA1");
         ReflectionTestUtils.setField(hashValidationService, "secretsManager", secretsManager);
