@@ -2,8 +2,7 @@ package com.thermofisher.cdcam.enums.cdc;
 
 public enum FederationProviders {
     OIDC("oidc"),
-    SAML("saml"),
-    SITE("site");
+    SAML("saml");
 
     private String value;
 
