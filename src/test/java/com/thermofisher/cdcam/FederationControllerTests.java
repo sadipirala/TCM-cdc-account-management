@@ -3,7 +3,7 @@ package com.thermofisher.cdcam;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.controller.AccountController;
+import com.thermofisher.cdcam.controller.FederationController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.HashValidationService;
 import org.junit.Assert;
@@ -17,22 +17,18 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.servlet.http.HttpServletRequest;
-
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.internal.util.MockUtil.createMock;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-public class AccountControllerTests {
+public class FederationControllerTests {
 
     @InjectMocks
-    private AccountController notificationController = new AccountController();
+    private FederationController notificationController = new FederationController();
 
     @Mock
     private SNSHandler snsHandler;

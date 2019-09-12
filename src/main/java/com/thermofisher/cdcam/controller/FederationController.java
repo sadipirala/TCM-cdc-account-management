@@ -24,7 +24,7 @@ import java.io.StringWriter;
 
 @RestController
 @RequestMapping("/account")
-public class AccountController {
+public class FederationController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
     @Autowired
