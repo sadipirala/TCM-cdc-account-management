@@ -23,7 +23,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping("/federation")
 public class FederationController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
