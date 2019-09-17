@@ -3,17 +3,12 @@ package com.thermofisher.cdcam;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.AccountInfo;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 

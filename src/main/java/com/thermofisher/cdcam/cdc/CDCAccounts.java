@@ -32,10 +32,10 @@ public class CDCAccounts {
     public AccountInfo getAccount(String UID) {
         try {
             String apiMethod = APIMethods.GET.getValue();
-            GSRequest request = new GSRequest(apiKey, secretKey , apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("UID", UID);
-            request.setParam("include","emails, profile, data, password,userInfo,regSource,identities");
-            request.setParam("extraProfileFields","username, locale,work");
+            request.setParam("include", "emails, profile, data, password,userInfo,regSource,identities");
+            request.setParam("extraProfileFields", "username, locale,work");
 
             GSResponse response = request.send();
             if (response.getErrorCode() == 0) {
@@ -46,7 +46,49 @@ public class CDCAccounts {
                 logger.error(response.getErrorDetails());
                 return null;
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.error(stackTrace);
+            return null;
+        }
+    }
+
+    public GSResponse setLiteReg(String email) {
+        try {
+            String apiMethod = APIMethods.SETINFO.getValue();
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("regToken", getRegToken(true));
+            request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
+            GSResponse response = request.send();
+
+            return response;
+        } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.error(stackTrace);
+            return null;
+        }
+    }
+
+    private String getRegToken(boolean isLite) {
+        try {
+            String apiMethod = APIMethods.INITREG.getValue();
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("isLite", isLite);
+
+            GSResponse response = request.send();
+            if (response.getErrorCode() == 0) {
+                GSObject obj = response.getData();
+                return obj.getString("regToken");
+            } else {
+                return ("Uh-oh, we got the following error: " + response.getLog());
+            }
+        } catch (Exception e) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);

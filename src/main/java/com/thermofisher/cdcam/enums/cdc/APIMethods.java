@@ -1,7 +1,9 @@
 package com.thermofisher.cdcam.enums.cdc;
 
 public enum APIMethods {
-    GET("accounts.getAccountInfo");
+    GET("accounts.getAccountInfo"),
+    INITREG("accounts.initRegistration"),
+    SETINFO("accounts.setAccountInfo");
 
     private String value;
 

@@ -1,6 +1,8 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gigya.socialize.GSObject;
+import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.Events;
@@ -16,12 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 @RestController
-@RequestMapping("/account")
-public class AccountController {
+@RequestMapping("/federation")
+public class FederationController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
     @Autowired
@@ -81,6 +84,21 @@ public class AccountController {
             String stackTrace = sw.toString();
             logger.error(stackTrace);
             return new ResponseEntity<>("ERROR: " + stackTrace, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/email")
+    public ResponseEntity<String> createEmailOnlyReg(String email) {
+        try {
+            GSResponse response = accounts.setLiteReg(email);
+            if (response.getErrorCode() == 0) {
+                GSObject obj = response.getData();
+                return new ResponseEntity<>(obj.getString("UID"), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(response.getErrorMessage(), HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }
