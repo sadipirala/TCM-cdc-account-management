@@ -76,6 +76,7 @@ public class CDCAccounts {
     }
 
     public GSResponse searchByEmail(String email) {
+        if(email == null) return null;
         final Boolean USE_HTTPS = true;
         final String QUERY_BY_USERNAME_OR_EMAIL = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
         String apiMethod = APIMethods.SEARCH.getValue();
