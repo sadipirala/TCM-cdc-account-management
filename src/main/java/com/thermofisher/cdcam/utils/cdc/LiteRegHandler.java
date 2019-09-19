@@ -1,16 +1,14 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.utils.Utils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,56 +18,95 @@ public class LiteRegHandler {
     @Autowired
     CDCAccounts cdcAccounts;
 
-    private List<EECUser> users;
+    public List<EECUser> process(EmailList emailList) throws IOException {
+        List<EECUser> users = new ArrayList<>();
+        List<String> emails = emailList.getEmails();
 
-    public List<EECUser> process(EmailList emailList) throws JSONException {
-        if (emailList.getEmails().size() == 0) return new ArrayList<>();
+        if (emails.size() == 0) return users;
 
-        users = new ArrayList<>();
-
-        for (String email: emailList.getEmails()) {
+        for (String email: emails) {
             GSResponse response = cdcAccounts.searchByEmail(email);
 
-            if(response != null) {
+            if (response == null) {
+                EECUser failedSearchUser = EECUser.builder()
+                        .uid(null)
+                        .username(null)
+                        .email(email)
+                        .cdcResponseCode(500)
+                        .cdcResponseMessage("An error occurred during CDC User Search...")
+                        .build();
 
-                JSONObject jsonResponse = new JSONObject(response.getResponseText());
+                users.add(failedSearchUser);
+                continue;
+            }
 
-                if (Integer.parseInt(jsonResponse.get("totalCount").toString()) > 0) {
-                    JSONArray array = jsonResponse.getJSONArray("results");
+            CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
-                    for(int i = 0; i < array.length(); i++) {
-                        users.add(getEECUser(array.getJSONObject(i), email));
+            if (cdcSearchResponse.getErrorCode() == 0) {
+                if (cdcSearchResponse.getTotalCount() > 0) {
+                    for (CDCResult result: cdcSearchResponse.getResults()) {
+                        EECUser user = EECUser.builder()
+                                .uid(result.getUID())
+                                .username(result.getProfile().getUsername())
+                                .email(email)
+                                .registered(result.isRegistered())
+                                .cdcResponseCode(cdcSearchResponse.getStatusCode())
+                                .cdcResponseMessage(cdcSearchResponse.getStatusReason())
+                                .build();
+
+                        users.add(user);
                     }
                 } else {
                     users.add(liteRegisterUser(email));
                 }
+            } else {
+                EECUser failedSearchUser = EECUser.builder()
+                        .uid(null)
+                        .username(null)
+                        .email(email)
+                        .cdcResponseCode(cdcSearchResponse.getErrorCode())
+                        .cdcResponseMessage(cdcSearchResponse.getStatusReason())
+                        .build();
+
+                users.add(failedSearchUser);
             }
         }
 
         return users;
     }
 
-    private EECUser liteRegisterUser(String email) {
-//        GSResponse response = cdcAccounts.setLiteReg(email);
-        return null;
-    }
+    private EECUser liteRegisterUser(String email) throws IOException {
+        GSResponse response = cdcAccounts.setLiteReg(email);
 
-    private EECUser getEECUser(JSONObject user, String email) {
-        String uid = Utils.getValueFromJSON(user, "UID").toString();
-        String isRegistered = Utils.getValueFromJSON(user, "isRegistered").toString();
-
-        boolean registered = false;
-
-        if (!isRegistered.equals("")) {
-            registered = Boolean.parseBoolean(isRegistered);
-        }
-
-        return EECUser.builder()
-                .uid(uid)
+        if (response == null) return EECUser.builder()
+                .uid(null)
                 .email(email)
-                .registered(registered)
-                .cdcResponseCode(200)
-                .cdcResponseMessage("OK")
+                .cdcResponseCode(500)
+                .cdcResponseMessage("An error occurred during CDC Lite Registration...")
                 .build();
+
+        CDCLiteRegResponse cdcLiteRegResponse = new ObjectMapper().readValue(response.getResponseText(), CDCLiteRegResponse.class);
+
+        if(cdcLiteRegResponse.getErrorCode() == 0) {
+            return EECUser.builder()
+                    .uid(cdcLiteRegResponse.getData().getUID())
+                    .username(null)
+                    .email(email)
+                    .registered(false)
+                    .cdcResponseCode(cdcLiteRegResponse.getData().getStatusCode())
+                    .cdcResponseMessage(cdcLiteRegResponse.getData().getStatusReason())
+                    .build();
+        } else {
+            String errorList = Utils.convertJavaToJsonString(cdcLiteRegResponse.getData().getValidationErrors());
+            String errorDetails = String.format("%s: %s -> %s",
+                    cdcLiteRegResponse.getErrorMessage(), cdcLiteRegResponse.getErrorDetails(), errorList);
+
+            return EECUser.builder()
+                    .uid(null)
+                    .email(email)
+                    .cdcResponseCode(cdcLiteRegResponse.getErrorCode())
+                    .cdcResponseMessage(errorDetails)
+                    .build();
+        }
     }
 }
