@@ -50,6 +50,8 @@ public class LiteRegHandlerTests {
 
     @Test
     public void process_givenEmailList_ReturnEECUserList() throws IOException {
+        String uid = "test123";
+
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         String searchResponse = "{\n" +
                 "  \"totalCount\": 1,\n" +
@@ -57,7 +59,7 @@ public class LiteRegHandlerTests {
                 "  \"statusReason\": \"OK\",\n" +
                 "  \"results\": [\n" +
                 "  \t{\n" +
-                "  \t\t\"UID\": \"abc123\",\n" +
+                "  \t\t\"UID\": \"" + uid + "\",\n" +
                 "  \t\t\"isRegistered\": true,\n" +
                 "  \t\t\"profile\": {\n" +
                 "  \t\t\t\"username\": \"armatest\"\n" +
@@ -76,7 +78,9 @@ public class LiteRegHandlerTests {
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         List<EECUser> output = liteRegHandler.process(emailList);
+        EECUser user = output.get(0);
 
+        Assert.assertEquals(user.getUid(), uid);
         Assert.assertEquals(output.size(), emails.size());
     }
 
@@ -89,10 +93,7 @@ public class LiteRegHandlerTests {
                 "  \"statusReason\": \"OK\",\n" +
                 "  \"results\": [\n" +
                 "  \t{\n" +
-                "  \t\t\"UID\": \"abc123\",\n" +
-                "  \t\t\"profile\": {\n" +
-                "  \t\t\t\"username\": \"armatest\"\n" +
-                "  \t\t}\n" +
+                "  \t\t\"UID\": \"abc123\"\n" +
                 "  \t}\n" +
                 "  ]\n" +
                 "}";
@@ -108,11 +109,14 @@ public class LiteRegHandlerTests {
         List<EECUser> output = liteRegHandler.process(emailList);
         EECUser user = output.get(0);
 
+        Assert.assertNotNull(user.getUid());
         Assert.assertFalse(user.isRegistered());
     }
 
     @Test
-    public void process_givenEmailsNotFound_LiteRegisterAndReturnEECUserList() throws IOException {
+    public void process_givenEmailsNotFound_LiteRegisterAndReturnEECUserListWithNoUsername() throws IOException {
+        String email = "test1";
+
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         String searchResponse = "{\n" +
                 "  \"totalCount\": 0,\n" +
@@ -144,14 +148,17 @@ public class LiteRegHandlerTests {
         when(cdcAccounts.searchByEmail(anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
-        emails.add("test1");
-        emails.add("test2");
+        emails.add(email);
 
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         List<EECUser> output = liteRegHandler.process(emailList);
+        EECUser user = output.get(0);
 
-        Assert.assertEquals(output.size(), emails.size());
+        Assert.assertNotNull(user.getUid());
+        Assert.assertNull(user.getUsername());
+        Assert.assertEquals(user.getEmail(), email);
+        Assert.assertFalse(user.isRegistered());
     }
 
     @Test
@@ -166,6 +173,7 @@ public class LiteRegHandlerTests {
         List<EECUser> output = liteRegHandler.process(emailList);
 
         EECUser user = output.get(0);
+        Assert.assertNull(user.getUid());
         Assert.assertEquals(user.getCdcResponseCode(), 500);
     }
 
@@ -194,6 +202,7 @@ public class LiteRegHandlerTests {
         List<EECUser> output = liteRegHandler.process(emailList);
 
         EECUser user = output.get(0);
+        Assert.assertNull(user.getUid());
         Assert.assertEquals(user.getCdcResponseCode(), errorCode);
         Assert.assertEquals(user.getCdcResponseMessage(), errorMessage);
     }
@@ -221,6 +230,7 @@ public class LiteRegHandlerTests {
         List<EECUser> output = liteRegHandler.process(emailList);
 
         EECUser user = output.get(0);
+        Assert.assertNull(user.getUid());
         Assert.assertEquals(user.getCdcResponseCode(), 500);
     }
 
@@ -274,6 +284,7 @@ public class LiteRegHandlerTests {
         List<EECUser> output = liteRegHandler.process(emailList);
 
         EECUser user = output.get(0);
+        Assert.assertNull(user.getUid());
         Assert.assertEquals(user.getCdcResponseCode(), errorCode);
     }
 }

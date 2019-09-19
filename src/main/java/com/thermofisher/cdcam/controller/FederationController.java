@@ -86,19 +86,4 @@ public class FederationController {
             return new ResponseEntity<>("ERROR: " + stackTrace, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @PostMapping("/email")
-    public ResponseEntity<String> createEmailOnlyReg(String email) {
-        try {
-            GSResponse response = accounts.setLiteReg(email);
-            if (response.getErrorCode() == 0) {
-                GSObject obj = response.getData();
-                return new ResponseEntity<>(obj.getString("UID"), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(response.getErrorMessage(), HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
 }
