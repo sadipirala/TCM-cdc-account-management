@@ -56,6 +56,10 @@ public class CDCAccounts {
         }
     }
 
+    public GSResponse searchByEmail(String email) {
+        return null;
+    }
+
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
