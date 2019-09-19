@@ -81,7 +81,7 @@ public class CDCAccounts {
         final String QUERY_BY_USERNAME_OR_EMAIL = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
         String apiMethod = APIMethods.SEARCH.getValue();
 
-        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, USE_HTTPS);
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setParam("query", QUERY_BY_USERNAME_OR_EMAIL);
 
         return request.send();

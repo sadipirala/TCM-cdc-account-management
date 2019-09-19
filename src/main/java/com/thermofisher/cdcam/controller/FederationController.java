@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gigya.socialize.GSArray;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
@@ -100,5 +101,13 @@ public class FederationController {
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    // TODO: remove this, used just for testing
+    @GetMapping("/searchby/email/{email}")
+    public ResponseEntity<String> searchUserByEmail(String email) {
+        GSResponse response = accounts.searchByEmail(email);
+        GSObject obj = response.getData();
+        return new ResponseEntity<>(obj.toString(), HttpStatus.OK);
     }
 }
