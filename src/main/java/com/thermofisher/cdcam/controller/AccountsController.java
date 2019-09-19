@@ -6,6 +6,7 @@ import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -20,16 +21,25 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping("/accounts")
 public class AccountsController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
+
+    @Value("${eec.request.limit}")
+    private int requestLimit;
 
     @Autowired
     LiteRegHandler handler;
 
     @PostMapping("/eec/emails")
     public ResponseEntity<List<EECUser>> emailOnlyRegistration(@Valid @NotNull @RequestBody EmailList emailList) {
-        if (emailList.getEmails() != null && emailList.getEmails().size() > 0) {
+        if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
+            logger.error("No users requested.");
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        } else if (emailList.getEmails().size() > requestLimit) {
+            logger.error(String.format("Requested users exceed request limit [%d].", requestLimit));
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        } else {
             try {
                 List<EECUser> response = handler.process(emailList);
                 return new ResponseEntity<>(response, HttpStatus.OK);
@@ -37,9 +47,6 @@ public class AccountsController {
                 logger.fatal(String.format("An error occurred during EEC email only registration process... [%s]", e.toString()));
                 return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        } else {
-            logger.error("No users requested.");
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
