@@ -56,10 +56,6 @@ public class CDCAccounts {
         }
     }
 
-    public GSResponse searchByEmail(String email) {
-        return null;
-    }
-
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
@@ -77,6 +73,20 @@ public class CDCAccounts {
             logger.error(stackTrace);
             return null;
         }
+    }
+
+    public GSResponse searchByEmail(String email) {
+        if(email == null) return null;
+        final boolean USE_HTTPS = true;
+        final String ACCOUNT_TYPES = "full,lite";
+        final String QUERY_BY_USERNAME_OR_EMAIL = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
+        String apiMethod = APIMethods.SEARCH.getValue();
+
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
+        request.setParam("accountTypes", ACCOUNT_TYPES);
+        request.setParam("query", QUERY_BY_USERNAME_OR_EMAIL);
+
+        return request.send();
     }
 
     private String getRegToken(boolean isLite) {
