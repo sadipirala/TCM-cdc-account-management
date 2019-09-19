@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gigya.socialize.GSArray;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
