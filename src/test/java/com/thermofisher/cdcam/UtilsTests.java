@@ -1,6 +1,10 @@
 package com.thermofisher.cdcam;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
+import com.thermofisher.cdcam.model.CDCData;
+import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.Utils;
 import org.json.JSONException;
@@ -12,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +68,16 @@ public class UtilsTests {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
         Assert.assertEquals(Utils.getValueFromJSON(object, "notValid"), "");
+    }
+
+    @Test
+    public void convertJavaToJsonString_ifValidString_returnObject() throws IOException {
+        List<String> list = new ArrayList<>();
+        EmailList data = EmailList.builder().emails(list).build();
+        String jsonString = Utils.convertJavaToJsonString(data);
+
+        EmailList testUser = new ObjectMapper().readValue(jsonString, EmailList.class);
+        Assert.assertNotNull(testUser);
     }
 
 }

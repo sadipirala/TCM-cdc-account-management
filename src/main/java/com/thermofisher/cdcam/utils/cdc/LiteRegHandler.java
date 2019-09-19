@@ -98,28 +98,28 @@ public class LiteRegHandler {
                     .build();
         }
 
-        CDCLiteRegResponse cdcLiteRegResponse = new ObjectMapper().readValue(response.getResponseText(), CDCLiteRegResponse.class);
+        CDCData cdcData = new ObjectMapper().readValue(response.getResponseText(), CDCData.class);
 
-        if(cdcLiteRegResponse.getErrorCode() == 0) {
+        if(response.getErrorCode() == 0) {
             logger.info(String.format("New email only registration for '%s'", email));
             return EECUser.builder()
-                    .uid(cdcLiteRegResponse.getData().getUID())
+                    .uid(cdcData.getUID())
                     .username(null)
                     .email(email)
                     .registered(false)
-                    .cdcResponseCode(cdcLiteRegResponse.getData().getStatusCode())
-                    .cdcResponseMessage(cdcLiteRegResponse.getData().getStatusReason())
+                    .cdcResponseCode(cdcData.getStatusCode())
+                    .cdcResponseMessage(cdcData.getStatusReason())
                     .build();
         } else {
             logger.error(String.format("Email only registration failed for '%s'", email));
-            String errorList = Utils.convertJavaToJsonString(cdcLiteRegResponse.getData().getValidationErrors());
+            String errorList = Utils.convertJavaToJsonString(cdcData.getValidationErrors());
             String errorDetails = String.format("%s: %s -> %s",
-                    cdcLiteRegResponse.getErrorMessage(), cdcLiteRegResponse.getErrorDetails(), errorList);
+                    response.getErrorMessage(), response.getErrorDetails(), errorList);
 
             return EECUser.builder()
                     .uid(null)
                     .email(email)
-                    .cdcResponseCode(cdcLiteRegResponse.getErrorCode())
+                    .cdcResponseCode(response.getErrorCode())
                     .cdcResponseMessage(errorDetails)
                     .build();
         }

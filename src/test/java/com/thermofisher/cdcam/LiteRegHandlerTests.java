@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -127,10 +128,6 @@ public class LiteRegHandlerTests {
 
         GSResponse mockLiteRegResponse = Mockito.mock(GSResponse.class);
         String liteRegResponse = "{\n" +
-                "  \"errorCode\": 0,\n" +
-                "  \"errorMessage\": null,\n" +
-                "  \"errorDetails\": null,\n" +
-                "  \"data\": {\n" +
                 "    \"callId\": \"5c62541d1ce341eba0faf1d14642c191\",\n" +
                 "    \"UID\": \"9f6f2133e57144d787574d49c0b9908e\",\n" +
                 "    \"apiVersion\": 2,\n" +
@@ -138,7 +135,6 @@ public class LiteRegHandlerTests {
                 "    \"errorCode\": 0,\n" +
                 "    \"time\": \"2019-09-19T16:14:24.983Z\",\n" +
                 "    \"statusCode\": 200\n" +
-                "  }\n" +
                 "}";
 
         when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
@@ -236,7 +232,7 @@ public class LiteRegHandlerTests {
 
     @Test
     public void process_givenLiteRegReturnsErrorCodeMoreThanZero_returnEECUserWithErrorDetails() throws IOException {
-        int errorCode = 400006;
+        int errorCode = 400;
 
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         String searchResponse = "{\n" +
@@ -248,10 +244,6 @@ public class LiteRegHandlerTests {
 
         GSResponse mockLiteRegResponse = Mockito.mock(GSResponse.class);
         String liteRegResponse = "{\n" +
-                "  \"errorCode\": " + errorCode + ",\n" +
-                "  \"errorMessage\": \"Invalid parameter value\",\n" +
-                "  \"errorDetails\": \"Schema validation failed\",\n" +
-                "  \"data\": {\n" +
                 "    \"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\n" +
                 "    \"apiVersion\": 2,\n" +
                 "    \"statusReason\": \"Bad Request\",\n" +
@@ -266,11 +258,11 @@ public class LiteRegHandlerTests {
                 "    ],\n" +
                 "    \"time\": \"2019-09-19T16:15:20.508Z\",\n" +
                 "    \"errorDetails\": \"Schema validation failed\",\n" +
-                "    \"statusCode\": 400\n" +
-                "  }\n" +
-                "}";
+                "    \"statusCode\": " + errorCode + "\n" +
+                "  }";
 
         when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
+        when(mockLiteRegResponse.getErrorCode()).thenReturn(errorCode);
         when(cdcAccounts.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
