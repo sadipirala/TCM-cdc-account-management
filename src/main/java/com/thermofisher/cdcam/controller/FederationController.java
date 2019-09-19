@@ -102,12 +102,4 @@ public class FederationController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
-    // TODO: remove this, used just for testing
-    @GetMapping("/searchby/email/{email}")
-    public ResponseEntity<String> searchUserByEmail(String email) {
-        GSResponse response = accounts.searchByEmail(email);
-        GSObject obj = response.getData();
-        return new ResponseEntity<>(obj.toString(), HttpStatus.OK);
-    }
 }
