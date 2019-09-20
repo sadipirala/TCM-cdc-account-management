@@ -66,7 +66,7 @@ public class AccountsControllerTests {
         List<EECUser> mockResult = new ArrayList<>();
         mockResult.add(Mockito.mock(EECUser.class));
         when(mockLiteRegHandler.process(any())).thenReturn(mockResult);
-        when(mockCDCAccounts.getLiteRegLimit()).thenReturn(1000);
+        mockLiteRegHandler.requestLimit = 1000;
 
         List<String> emails = new ArrayList<>();
         emails.add("email1");
@@ -79,7 +79,7 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
         when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
-        when(mockCDCAccounts.getLiteRegLimit()).thenReturn(1000);
+        mockLiteRegHandler.requestLimit = 1000;
 
         List<String> emails = new ArrayList<>();
         emails.add("email1");
@@ -92,7 +92,7 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
         when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
-        when(mockCDCAccounts.getLiteRegLimit()).thenReturn(1);
+        mockLiteRegHandler.requestLimit = 1;
 
         List<String> emails = new ArrayList<>();
         emails.add("email1");

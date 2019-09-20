@@ -47,16 +47,6 @@ public class UtilsTests {
     }
 
     @Test
-    public void emaiList_givenEmailListPopulated_returnElementsShouldBePossible() {
-        List<String> list = new ArrayList<>();
-        list.add("test1");
-        list.add("test2");
-
-        EmailList emailList = EmailList.builder().emails(list).build();
-        Assert.assertEquals(list.size(), emailList.getEmails().size());
-    }
-
-    @Test
     public void getValueFromJSON_ifValidData_returnObject() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);

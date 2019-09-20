@@ -8,7 +8,6 @@ import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -170,7 +169,7 @@ public class LiteRegHandlerTests {
 
         EECUser user = output.get(0);
         Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getCdcResponseCode(), 500);
+        Assert.assertEquals(user.getResponseCode(), 500);
     }
 
     @Test
@@ -199,8 +198,8 @@ public class LiteRegHandlerTests {
 
         EECUser user = output.get(0);
         Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getCdcResponseCode(), errorCode);
-        Assert.assertEquals(user.getCdcResponseMessage(), errorMessage);
+        Assert.assertEquals(user.getResponseCode(), errorCode);
+        Assert.assertEquals(user.getResponseMessage(), errorMessage);
     }
 
     @Test
@@ -227,7 +226,7 @@ public class LiteRegHandlerTests {
 
         EECUser user = output.get(0);
         Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getCdcResponseCode(), 500);
+        Assert.assertEquals(user.getResponseCode(), 500);
     }
 
     @Test
@@ -277,6 +276,6 @@ public class LiteRegHandlerTests {
 
         EECUser user = output.get(0);
         Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getCdcResponseCode(), errorCode);
+        Assert.assertEquals(user.getResponseCode(), errorCode);
     }
 }

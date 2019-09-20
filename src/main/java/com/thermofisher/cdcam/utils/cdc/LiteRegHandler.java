@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
@@ -18,6 +19,9 @@ import java.util.List;
 public class LiteRegHandler {
 
     static final Logger logger = LogManager.getLogger("CdcamApp");
+
+    @Value("${eec.request.limit}")
+    public int requestLimit;
 
     @Autowired
     CDCAccounts cdcAccounts;
@@ -38,8 +42,8 @@ public class LiteRegHandler {
                         .uid(null)
                         .username(null)
                         .email(email)
-                        .cdcResponseCode(500)
-                        .cdcResponseMessage("An error occurred during CDC User Search...")
+                        .responseCode(500)
+                        .responseMessage("An error occurred during CDC User Search...")
                         .build();
 
                 users.add(failedSearchUser);
@@ -59,8 +63,8 @@ public class LiteRegHandler {
                                 .username((profile != null) ? profile.getUsername() : null)
                                 .email(email)
                                 .registered(result.isRegistered())
-                                .cdcResponseCode(cdcSearchResponse.getStatusCode())
-                                .cdcResponseMessage(cdcSearchResponse.getStatusReason())
+                                .responseCode(cdcSearchResponse.getStatusCode())
+                                .responseMessage(cdcSearchResponse.getStatusReason())
                                 .build();
 
                         users.add(user);
@@ -73,8 +77,8 @@ public class LiteRegHandler {
                         .uid(null)
                         .username(null)
                         .email(email)
-                        .cdcResponseCode(cdcSearchResponse.getErrorCode())
-                        .cdcResponseMessage(cdcSearchResponse.getStatusReason())
+                        .responseCode(cdcSearchResponse.getErrorCode())
+                        .responseMessage(cdcSearchResponse.getStatusReason())
                         .build();
 
                 users.add(failedSearchUser);
@@ -93,8 +97,8 @@ public class LiteRegHandler {
             return EECUser.builder()
                     .uid(null)
                     .email(email)
-                    .cdcResponseCode(500)
-                    .cdcResponseMessage("An error occurred during CDC Lite Registration...")
+                    .responseCode(500)
+                    .responseMessage("An error occurred during CDC Lite Registration...")
                     .build();
         }
 
@@ -107,8 +111,8 @@ public class LiteRegHandler {
                     .username(null)
                     .email(email)
                     .registered(false)
-                    .cdcResponseCode(cdcData.getStatusCode())
-                    .cdcResponseMessage(cdcData.getStatusReason())
+                    .responseCode(cdcData.getStatusCode())
+                    .responseMessage(cdcData.getStatusReason())
                     .build();
         } else {
             logger.error(String.format("Email only registration failed for '%s'", email));
@@ -119,8 +123,8 @@ public class LiteRegHandler {
             return EECUser.builder()
                     .uid(null)
                     .email(email)
-                    .cdcResponseCode(response.getErrorCode())
-                    .cdcResponseMessage(errorDetails)
+                    .responseCode(response.getErrorCode())
+                    .responseMessage(errorDetails)
                     .build();
         }
     }

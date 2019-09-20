@@ -27,14 +27,7 @@ public class CDCAccounts {
     @Value("${cdc.userKey}")
     private String userKey;
 
-    @Value("${eec.request.limit}")
-    private int requestLimit;
-
     AccountBuilder accountBuilder = new AccountBuilder();
-
-    public int getLiteRegLimit() {
-        return requestLimit;
-    }
 
     public AccountInfo getAccount(String UID) {
         try {

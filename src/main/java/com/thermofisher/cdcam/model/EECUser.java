@@ -10,6 +10,6 @@ public class EECUser {
     private String username;
     private String email;
     private boolean registered;
-    private int cdcResponseCode;
-    private String cdcResponseMessage;
+    private int responseCode;
+    private String responseMessage;
 }
