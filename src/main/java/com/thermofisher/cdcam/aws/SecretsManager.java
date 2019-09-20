@@ -3,19 +3,23 @@ package com.thermofisher.cdcam.aws;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
-import com.amazonaws.services.secretsmanager.model.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
+import org.json.simple.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Base64;
 
+@Configuration
 public class SecretsManager {
 
-    final static Logger logger = LogManager.getLogger("AWSSecretManager");
+    @Value("${aws.sns.client.region}")
+    private String region;
 
-    public String getSecret(String secretName,String clientRegion){
+    public String getSecret(String secretName){
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
-                .withRegion(clientRegion)
+                .withRegion(region)
                 .withCredentials(new InstanceProfileCredentialsProvider(false))
                 .build();
         GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
@@ -33,5 +37,9 @@ public class SecretsManager {
         else {
             return new String(Base64.getDecoder().decode(getSecretValueResult.getSecretBinary()).array());
         }
+    }
+
+    public String getProperty(JSONObject secretProperties, String property) {
+        return secretProperties.get(property).toString();
     }
 }

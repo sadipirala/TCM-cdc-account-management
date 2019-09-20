@@ -1,9 +1,8 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gigya.socialize.GSObject;
-import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
+import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
@@ -15,6 +14,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,17 +27,27 @@ import java.io.StringWriter;
 public class FederationController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
+    @Value("${federation.aws.secret}")
+    private String federationSecret;
+
+    private SecretsManager secretsManager = new SecretsManager();
+
     @Autowired
     SNSHandler snsHandler;
+
     @Autowired
     CDCAccounts accounts;
+
     @Autowired
     HashValidationService hashValidationService;
 
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
-            if (hashValidationService.isValidHash(hashValidationService.getHashedString(rawBody), headerValue)) {
+            JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+            String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
+
+            if (hashValidationService.isValidHash(hashValidationService.getHashedString(key, rawBody), headerValue)) {
                 JSONParser parser = new JSONParser();
                 JSONObject mainObject = (JSONObject) parser.parse(rawBody);
                 JSONArray events = (JSONArray) mainObject.get("events");
