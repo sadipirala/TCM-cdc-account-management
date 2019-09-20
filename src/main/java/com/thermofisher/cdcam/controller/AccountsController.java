@@ -34,7 +34,8 @@ public class AccountsController {
     @Value("${eec.aws.secret}")
     private String eecSecret;
 
-    private SecretsManager secretsManager = new SecretsManager();
+    @Autowired
+    SecretsManager secretsManager;
 
     @Autowired
     LiteRegHandler handler;
