@@ -2,14 +2,15 @@ package com.thermofisher.cdcam;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -27,12 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-@Ignore
 public class AccountsControllerTests {
 
     private String header = "test";
@@ -43,6 +44,12 @@ public class AccountsControllerTests {
     @Mock
     LiteRegHandler mockLiteRegHandler;
 
+    @Mock
+    SecretsManager secretsManager;
+
+    @Mock
+    HashValidationService hashValidationService;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -50,6 +57,11 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() throws JsonProcessingException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
@@ -58,6 +70,11 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest() throws JsonProcessingException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
         EmailList emailList = EmailList.builder().emails(null).build();
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -65,6 +82,11 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
         List<EECUser> mockResult = new ArrayList<>();
         mockResult.add(Mockito.mock(EECUser.class));
         when(mockLiteRegHandler.process(any())).thenReturn(mockResult);
@@ -80,6 +102,11 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
         when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
         mockLiteRegHandler.requestLimit = 1000;
 
@@ -93,6 +120,11 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
         when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
         mockLiteRegHandler.requestLimit = 1;
 
@@ -101,6 +133,18 @@ public class AccountsControllerTests {
         emails.add("email1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() throws IOException, ParseException {
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
+        EmailList emailList = EmailList.builder().emails(null).build();
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }

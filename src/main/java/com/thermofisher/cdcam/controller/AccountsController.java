@@ -81,7 +81,7 @@ public class AccountsController {
             }
         }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "Invalid request header").body(null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header").body(null);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

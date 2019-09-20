@@ -30,7 +30,8 @@ public class FederationController {
     @Value("${federation.aws.secret}")
     private String federationSecret;
 
-    private SecretsManager secretsManager = new SecretsManager();
+    @Autowired
+    SecretsManager secretsManager;
 
     @Autowired
     SNSHandler snsHandler;
