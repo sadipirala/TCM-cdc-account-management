@@ -33,8 +33,6 @@ public class HashValidationService {
     }
 
     public boolean isValidHash(String expected, String sent) {
-        logger.fatal("Expected: " + expected);
-        logger.fatal("Sent: " + sent);
         return expected.equals(sent);
     }
 

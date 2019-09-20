@@ -55,12 +55,10 @@ public class AccountsController {
             })
     })
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
-    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @Valid @RequestBody EmailList emailList)
+    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-eec-sig-hmac-sha1") String headerValue, @Valid @RequestBody EmailList emailList)
             throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
         String key = secretsManager.getProperty(secretProperties, "eec-secret-key");
-
-        logger.fatal(key);
 
         if (hashValidationService.isValidHash(hashValidationService.getHashedString(key, Utils.convertJavaToJsonString(emailList)), headerValue)) {
             if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
