@@ -35,21 +35,21 @@ public class LiteRegHandler {
         logger.info(String.format("%d EEC users requested...", emails.size()));
 
         for (String email: emails) {
-            GSResponse response = cdcAccounts.searchByEmail(email);
-
-            if (response == null) {
+            if (email == null) {
                 EECUser failedSearchUser = EECUser.builder()
                         .uid(null)
                         .username(null)
-                        .email(email)
+                        .email(null)
                         .responseCode(500)
-                        .responseMessage("An error occurred during CDC User Search...")
+                        .responseMessage("User requested has null email value...")
                         .build();
 
                 users.add(failedSearchUser);
                 continue;
             }
 
+            String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
+            GSResponse response = cdcAccounts.search(query);
             CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
             if (cdcSearchResponse.getErrorCode() == 0) {
