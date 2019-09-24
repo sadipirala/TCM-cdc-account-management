@@ -3,8 +3,8 @@ package com.thermofisher.cdcam.model;
 import lombok.Builder;
 import lombok.Getter;
 
-@Getter
 @Builder
+@Getter
 public class AccountInfo {
     private String uid;
     private String username;

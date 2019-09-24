@@ -2,6 +2,9 @@ package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.aws.SecretsManager;
+import com.thermofisher.cdcam.cdc.CDCAccounts;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.CDCUserUpdate;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.services.HashValidationService;
@@ -34,6 +37,9 @@ public class AccountsController {
     @Value("${eec.aws.secret}")
     private String eecSecret;
 
+    @Autowired
+    CDCAccounts cdcAccounts;
+    
     @Autowired
     SecretsManager secretsManager;
 
@@ -83,6 +89,33 @@ public class AccountsController {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header").body(null);
     }
+
+    @PostMapping("/federation/user/update")
+    @ApiOperation(value = "Updates user's username and regStatus in CDC.",
+        notes = "Keep in mind that the user's username should match the one in CDC.")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Invalid request.")
+    })
+    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, CDCUserUpdate user) throws JsonProcessingException, ParseException {
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
+        String secretKey = secretsManager.getProperty(secretProperties, "cdcam-secret-key");
+        String requestBody = Utils.convertJavaToJsonString(user);
+        String hash = hashValidationService.getHashedString(secretKey, requestBody);
+
+        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        AccountInfo account = cdcAccounts.getAccount(user.getUid());
+        if (!account.getEmailAddress().equalsIgnoreCase(user.getUsername())) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        // call update method
+
+        return ResponseEntity.ok("OK");
+    } 
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)
