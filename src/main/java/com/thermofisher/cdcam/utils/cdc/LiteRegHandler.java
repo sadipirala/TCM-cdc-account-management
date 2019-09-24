@@ -50,6 +50,20 @@ public class LiteRegHandler {
 
             String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
             GSResponse response = cdcAccounts.search(query);
+
+            if (response == null) {
+                EECUser failedSearchUser = EECUser.builder()
+                        .uid(null)
+                        .username(null)
+                        .email(email)
+                        .responseCode(500)
+                        .responseMessage("An error occurred when retrieving user's info")
+                        .build();
+
+                users.add(failedSearchUser);
+                continue;
+            }
+
             CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
             if (cdcSearchResponse.getErrorCode() == 0) {
