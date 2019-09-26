@@ -69,7 +69,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add("test1");
@@ -99,7 +99,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add("test1");
@@ -140,7 +140,7 @@ public class LiteRegHandlerTests {
         when(cdcAccounts.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add(email);
@@ -158,7 +158,7 @@ public class LiteRegHandlerTests {
 
     @Test
     public void process_givenSearchReturnsNull_returnEECUserWith500Error() throws IOException {
-        when(cdcAccounts.search(anyString())).thenReturn(null);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(null);
 
         List<String> emails = new ArrayList();
         emails.add("test1");
@@ -187,7 +187,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add("test1");
@@ -215,7 +215,7 @@ public class LiteRegHandlerTests {
         when(cdcAccounts.setLiteReg(anyString())).thenReturn(null);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add("test1");
@@ -265,7 +265,7 @@ public class LiteRegHandlerTests {
         when(cdcAccounts.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList();
         emails.add("test1");

@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.utils.cdc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
+import com.thermofisher.cdcam.enums.cdc.AccountTypes;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +50,7 @@ public class LiteRegHandler {
             }
 
             String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
-            GSResponse response = cdcAccounts.search(query);
+            GSResponse response = cdcAccounts.search(query,AccountTypes.FULL_LITE.getValue());
 
             if (response == null) {
                 EECUser failedSearchUser = EECUser.builder()
