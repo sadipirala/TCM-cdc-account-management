@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -11,7 +11,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CDCUserUpdate {
+public class FedUserUpdateDTO {
     private String uid;
     private String username;
     private boolean regStatus;

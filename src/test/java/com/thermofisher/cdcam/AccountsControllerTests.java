@@ -1,16 +1,28 @@
 package com.thermofisher.cdcam;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CDCUserUpdate;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
+
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,14 +38,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
@@ -45,6 +49,9 @@ public class AccountsControllerTests {
 
     @InjectMocks
     AccountsController accountsController;
+
+    @Mock
+    CDCAccountsService cdcAccountsService;
 
     @Mock
     CDCAccounts cdcAccounts;
@@ -167,7 +174,7 @@ public class AccountsControllerTests {
         // given
         String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        CDCUserUpdate user = CDCUserUpdate.builder().uid(uid).username(username).regStatus(true).build();
+        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
         Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
 
         // when
@@ -181,7 +188,7 @@ public class AccountsControllerTests {
     public void userUpdate_WhenUsernameIsDifferentThanCDCEmail_returnBadRequest() throws JsonProcessingException, ParseException {
         // given
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        CDCUserUpdate user = CDCUserUpdate.builder().uid("randomuid").username(username).regStatus(true).build();
+        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username("bad@email.com").regStatus(true).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
 
@@ -190,5 +197,46 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+    }
+
+    @Test
+    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JsonProcessingException, ParseException {
+        // given
+        String message = "Internal server error.";
+        ObjectNode response = JsonNodeFactory.instance.objectNode();
+        response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        response.put("message", message);
+        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
+        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
+        Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
+
+        // when
+        ResponseEntity<String> res = accountsController.updateUser(header, user);
+    
+        // then
+        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
+        Assert.assertEquals(message, res.getBody());
+    }
+
+    @Test
+    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JsonProcessingException, ParseException {
+        // given
+        String message = "OK";
+        ObjectNode response = JsonNodeFactory.instance.objectNode();
+        response.put("code", HttpStatus.OK.value());
+        response.put("message", message);
+        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
+        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
+        Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
+
+        // when
+        ResponseEntity<String> res = accountsController.updateUser(header, user);
+    
+        // then
+        Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
     }
 }

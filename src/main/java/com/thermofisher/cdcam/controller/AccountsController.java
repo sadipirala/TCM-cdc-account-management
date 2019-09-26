@@ -1,12 +1,14 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CDCUserUpdate;
+import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
@@ -45,6 +47,9 @@ public class AccountsController {
 
     @Autowired
     LiteRegHandler handler;
+
+    @Autowired
+    CDCAccountsService cdcAccountsService;
 
     @Autowired
     HashValidationService hashValidationService;
@@ -95,9 +100,10 @@ public class AccountsController {
         notes = "Keep in mind that the user's username should match the one in CDC.")
     @ApiResponses({
         @ApiResponse(code = 200, message = "OK"),
-        @ApiResponse(code = 400, message = "Invalid request.")
+        @ApiResponse(code = 400, message = "Bad request."),
+        @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, CDCUserUpdate user) throws JsonProcessingException, ParseException {
+    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
         String secretKey = secretsManager.getProperty(secretProperties, "cdcam-secret-key");
         String requestBody = Utils.convertJavaToJsonString(user);
@@ -112,10 +118,13 @@ public class AccountsController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        // call update method
+        ObjectNode response = cdcAccountsService.updateFedUser(user);
+        if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response.get("message").asText());
+        }
 
-        return ResponseEntity.ok("OK");
-    } 
+        return ResponseEntity.ok().build();
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)

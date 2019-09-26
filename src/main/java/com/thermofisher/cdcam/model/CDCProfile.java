@@ -1,12 +1,24 @@
 package com.thermofisher.cdcam.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import lombok.Builder;
+import lombok.Getter;
+
+@Builder(builderClassName = "CDCProfileBuilder", toBuilder = true)
 @Getter
-@NoArgsConstructor
+@JsonDeserialize(builder = CDCProfile.CDCProfileBuilder.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CDCProfile {
     private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class CDCProfileBuilder {
+
+    }
 }
