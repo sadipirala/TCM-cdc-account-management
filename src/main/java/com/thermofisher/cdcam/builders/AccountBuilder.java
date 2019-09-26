@@ -12,19 +12,21 @@ public class AccountBuilder {
 
     public AccountInfo getAccountInfo(GSObject obj) {
         try {
+            String uid = (String) obj.get("UID");
             GSObject data = (GSObject) obj.get("data");
             GSObject profile = (GSObject) obj.get("profile");
-            GSObject work = profile.containsKey("work") ?  (GSObject)profile.get("work"):null;
+            GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
             return AccountInfo.builder()
+                    .uid(uid)
                     .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
                     .emailAddress(profile.getString("email"))
                     .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
                     .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
-                    .company(work != null ? (work.containsKey("company") ? work.getString("company") : ""):"")
-                    .country(profile.containsKey("country")?profile.getString("country"):"")
-                    .city(profile.containsKey("city")?profile.getString("city"):"")
-                    .department(work != null ? (work.containsKey("location") ? work.getString("location") : ""): "")
+                    .company(work != null ? (work.containsKey("company") ? work.getString("company") : "") : "")
+                    .country(profile.containsKey("country") ? profile.getString("country") : "")
+                    .city(profile.containsKey("city") ? profile.getString("city") : "")
+                    .department(work != null ? (work.containsKey("location") ? work.getString("location") : "") : "")
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .password(Utils.getAlphaNumericString(10))

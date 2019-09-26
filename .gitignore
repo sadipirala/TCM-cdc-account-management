@@ -29,3 +29,6 @@ build/
 
 *local.properties
 *.log
+
+### vscode ###
+.vscode/*

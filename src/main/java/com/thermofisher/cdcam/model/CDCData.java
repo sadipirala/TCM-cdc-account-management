@@ -1,23 +1,15 @@
 package com.thermofisher.cdcam.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.List;
-
+@Builder
 @Getter
-@NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Setter
 public class CDCData {
-
-    @JsonProperty("UID")
-    private String UID;
-
-    private String statusReason;
-
-    private int statusCode;
-
-    private List<CDCValidationError> validationErrors;
+    @JsonProperty("thermofisher")
+    private CDCThermofisher thermofisher;
 }

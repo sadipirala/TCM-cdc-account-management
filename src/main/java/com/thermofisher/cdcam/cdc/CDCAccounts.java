@@ -56,6 +56,15 @@ public class CDCAccounts {
         }
     }
 
+    public GSResponse setUserInfo(String uid, String data, String profile) {
+        String apiMethod = APIMethods.SETINFO.getValue();
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        if (uid != null) request.setParam("UID", uid);
+        if (data != null) request.setParam("data", data);
+        if (profile != null) request.setParam("profile", profile);
+        return request.send();
+    }
+    
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();

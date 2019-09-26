@@ -71,7 +71,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
         emails.add("test2");
 
@@ -101,7 +101,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -142,7 +142,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add(email);
 
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -160,7 +160,7 @@ public class LiteRegHandlerTests {
     public void process_givenSearchReturnsNull_returnEECUserWith500Error() throws IOException {
         when(cdcAccounts.search(anyString())).thenReturn(null);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -189,7 +189,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -217,7 +217,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -267,7 +267,7 @@ public class LiteRegHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(cdcAccounts.search(anyString())).thenReturn(mockSearchResponse);
 
-        List<String> emails = new ArrayList();
+        List<String> emails = new ArrayList<String>();
         emails.add("test1");
 
         EmailList emailList = EmailList.builder().emails(emails).build();

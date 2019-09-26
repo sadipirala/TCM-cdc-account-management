@@ -1,10 +1,7 @@
 package com.thermofisher.cdcam;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
-import com.thermofisher.cdcam.model.CDCData;
-import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.Utils;
 import org.json.JSONException;
