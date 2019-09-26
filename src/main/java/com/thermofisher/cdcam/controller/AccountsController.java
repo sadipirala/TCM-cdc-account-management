@@ -119,11 +119,6 @@ public class AccountsController {
         if (user.hasNullProperty()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        
-        AccountInfo account = cdcAccounts.getAccount(user.getUid());
-        if (!account.getEmailAddress().equalsIgnoreCase(user.getUsername())) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
 
         ObjectNode response = cdcAccountsService.updateFedUser(user);
         if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {

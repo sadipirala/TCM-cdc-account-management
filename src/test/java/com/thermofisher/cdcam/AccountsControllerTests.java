@@ -207,21 +207,6 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenUsernameIsDifferentThanCDCEmail_returnBadRequest() throws JsonProcessingException, ParseException {
-        // given
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username("bad@email.com").regStatus(true).build();
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(header, user);
-
-        // then
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
-    }
-
-    @Test
     public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JsonProcessingException, ParseException {
         // given
         String message = "Internal server error.";
