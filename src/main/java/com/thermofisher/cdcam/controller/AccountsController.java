@@ -39,6 +39,9 @@ public class AccountsController {
     @Value("${eec.aws.secret}")
     private String eecSecret;
 
+    @Value("${federation.aws.secret}")
+    private String federationSecret;
+
     @Autowired
     CDCAccounts cdcAccounts;
     
@@ -104,8 +107,8 @@ public class AccountsController {
         @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @RequestBody FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
-        String secretKey = secretsManager.getProperty(secretProperties, "cdcam-secret-key");
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
         String requestBody = Utils.convertJavaToJsonString(user);
         String hash = hashValidationService.getHashedString(secretKey, requestBody);
 
