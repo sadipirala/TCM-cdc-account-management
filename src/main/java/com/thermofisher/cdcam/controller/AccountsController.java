@@ -98,7 +98,7 @@ public class AccountsController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header").body(null);
     }
 
-    @PostMapping("/federation/user/update")
+    @PutMapping("/federation/user/")
     @ApiOperation(value = "Updates user's username and regStatus in CDC.",
         notes = "Keep in mind that the user's username should match the one in CDC.")
     @ApiResponses({
@@ -113,9 +113,13 @@ public class AccountsController {
         String hash = hashValidationService.getHashedString(secretKey, requestBody);
 
         if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
 
+        if (user.hasNullProperty()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
         AccountInfo account = cdcAccounts.getAccount(user.getUid());
         if (!account.getEmailAddress().equalsIgnoreCase(user.getUsername())) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

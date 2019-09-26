@@ -172,6 +172,8 @@ public class AccountsControllerTests {
     @Test
     public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JsonProcessingException, ParseException {
         // given
+        final String requestExceptionHeader = "Request-Exception";
+        String badRequestHeaderMessage = "Invalid request header.";
         String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
@@ -182,6 +184,26 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+        Assert.assertEquals(badRequestHeaderMessage, res.getHeaders().get(requestExceptionHeader).get(0));
+    }
+
+    @Test
+    public void userUpdate_WhenAnyPropertyOfTheFederatedUserUpdateDTOIsNull_ReturnBadRequest() throws JsonProcessingException, ParseException {
+        // given
+        FedUserUpdateDTO nullUid = FedUserUpdateDTO.builder().username("bad@email.com").regStatus(true).build();
+        FedUserUpdateDTO nullUsername = FedUserUpdateDTO.builder().uid(uid).regStatus(true).build();
+        FedUserUpdateDTO nullRegStatus = FedUserUpdateDTO.builder().uid(uid).username("bad@email.com").build();
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+
+        // when
+        ResponseEntity<String> nullUidRes = accountsController.updateUser(header, nullUid);
+        ResponseEntity<String> nullUsernameRes = accountsController.updateUser(header, nullUsername);
+        ResponseEntity<String> nullRegStatusRes = accountsController.updateUser(header, nullRegStatus);
+
+        // then
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullUidRes.getStatusCode());
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullUsernameRes.getStatusCode());
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullRegStatusRes.getStatusCode());
     }
 
     @Test

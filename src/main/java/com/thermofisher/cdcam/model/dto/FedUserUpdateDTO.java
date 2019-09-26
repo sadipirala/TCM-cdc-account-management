@@ -14,5 +14,9 @@ import lombok.Getter;
 public class FedUserUpdateDTO {
     private String uid;
     private String username;
-    private boolean regStatus;
+    private Boolean regStatus;
+
+    public boolean hasNullProperty() {
+        return (uid == null || username == null || regStatus == null);
+    }
 }

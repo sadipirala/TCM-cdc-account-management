@@ -56,10 +56,10 @@ public class CDCAccounts {
         }
     }
 
-    public GSResponse setUserInfo(String UID, String data, String profile) {
+    public GSResponse setUserInfo(String uid, String data, String profile) {
         String apiMethod = APIMethods.SETINFO.getValue();
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-        request.setParam("UID", UID);
+        if (uid != null) request.setParam("UID", uid);
         if (data != null) request.setParam("data", data);
         if (profile != null) request.setParam("profile", profile);
         return request.send();

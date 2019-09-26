@@ -28,7 +28,7 @@ public class CDCAccountsService {
     CDCAccounts cdcAccounts;
 
     public ObjectNode updateFedUser(FedUserUpdateDTO user) throws JsonProcessingException {
-        CDCThermofisher thermofisher = CDCThermofisher.builder().regStatus(user.isRegStatus()).build();
+        CDCThermofisher thermofisher = CDCThermofisher.builder().regStatus(user.getRegStatus()).build();
         CDCData data = CDCData.builder().thermofisher(thermofisher).build();
         CDCProfile profile = CDCProfile.builder().username(user.getUsername()).build();
         CDCAccount cdcaccount = CDCAccount.builder().data(data).profile(profile).build();
