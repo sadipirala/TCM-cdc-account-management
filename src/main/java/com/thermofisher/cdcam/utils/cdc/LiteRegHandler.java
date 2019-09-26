@@ -70,7 +70,7 @@ public class LiteRegHandler {
             if (cdcSearchResponse.getErrorCode() == 0) {
                 if (cdcSearchResponse.getTotalCount() > 0) {
                     for (CDCResult result: cdcSearchResponse.getResults()) {
-
+                        
                         CDCProfile profile = result.getProfile();
 
                         EECUser user = EECUser.builder()
@@ -117,7 +117,7 @@ public class LiteRegHandler {
                     .build();
         }
 
-        CDCData cdcData = new ObjectMapper().readValue(response.getResponseText(), CDCData.class);
+        CDCResponseData cdcData = new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
 
         if(response.getErrorCode() == 0) {
             logger.info(String.format("New email only registration for '%s'", email));
