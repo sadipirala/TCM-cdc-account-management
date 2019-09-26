@@ -103,7 +103,7 @@ public class AccountsController {
         @ApiResponse(code = 400, message = "Bad request."),
         @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
+    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @RequestBody FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
         String secretKey = secretsManager.getProperty(secretProperties, "cdcam-secret-key");
         String requestBody = Utils.convertJavaToJsonString(user);
