@@ -98,7 +98,7 @@ public class AccountsController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header").body(null);
     }
 
-    @PutMapping("/federation/user/")
+    @PutMapping("/federation/user")
     @ApiOperation(value = "Updates user's username and regStatus in CDC.",
         notes = "Keep in mind that the user's username should match the one in CDC.")
     @ApiResponses({
