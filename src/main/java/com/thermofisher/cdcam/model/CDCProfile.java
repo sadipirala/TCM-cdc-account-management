@@ -10,13 +10,13 @@ import lombok.Getter;
 @Builder(builderClassName = "CDCProfileBuilder", toBuilder = true)
 @Getter
 @JsonDeserialize(builder = CDCProfile.CDCProfileBuilder.class)
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CDCProfile {
     private String username;
     private String email;
     private String firstName;
     private String lastName;
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
     public static class CDCProfileBuilder {
 

@@ -62,7 +62,8 @@ public class LiteRegHandlerTests {
                 "  \t\t\"UID\": \"" + uid + "\",\n" +
                 "  \t\t\"isRegistered\": true,\n" +
                 "  \t\t\"profile\": {\n" +
-                "  \t\t\t\"username\": \"armatest\"\n" +
+                "  \t\t\t\"username\": \"armatest\",\n" +
+                "  \t\t\t\"country\": \"MX\"\n" +
                 "  \t\t}\n" +
                 "  \t}\n" +
                 "  ]\n" +
