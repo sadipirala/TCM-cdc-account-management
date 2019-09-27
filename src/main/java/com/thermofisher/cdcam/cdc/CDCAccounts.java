@@ -84,14 +84,13 @@ public class CDCAccounts {
         }
     }
 
-    public GSResponse search(String query) {
+    public GSResponse search(String query, String accountTypes) {
         if(query == null) return null;
         final boolean USE_HTTPS = true;
-        final String ACCOUNT_TYPES = "full,lite";
         String apiMethod = APIMethods.SEARCH.getValue();
 
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
-        request.setParam("accountTypes", ACCOUNT_TYPES);
+        request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
 
         return request.send();
