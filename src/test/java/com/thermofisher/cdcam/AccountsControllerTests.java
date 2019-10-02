@@ -18,9 +18,11 @@ import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 
 import org.json.simple.parser.ParseException;
@@ -45,6 +47,9 @@ public class AccountsControllerTests {
     private String header = "test";
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
     private final String username = "federatedUser@OIDC.com";
+    private final String firstName = "first";
+    private final String lastName = "last";
+    private final int assoiciatedAccounts = 1;
     private final String hashedString = "QJERFC2183DASJ=";
 
     @InjectMocks
@@ -58,6 +63,9 @@ public class AccountsControllerTests {
 
     @Mock
     LiteRegHandler mockLiteRegHandler;
+
+    @Mock
+    GetUserHandler getUserHandler;
 
     @Mock
     SecretsManager secretsManager;
@@ -221,7 +229,7 @@ public class AccountsControllerTests {
 
         // when
         ResponseEntity<String> res = accountsController.updateUser(header, user);
-    
+
         // then
         Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
         Assert.assertEquals(message, res.getBody());
@@ -242,8 +250,64 @@ public class AccountsControllerTests {
 
         // when
         ResponseEntity<String> res = accountsController.updateUser(header, user);
-    
+
         // then
         Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
+    }
+
+    @Test
+    public void getUser_GivenAValidUID_ShouldReturnUserDetails() throws IOException, ParseException {
+        //setup
+        UserDetails userDetails = UserDetails.builder().uid(uid).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build();
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(userDetails);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+
+    }
+
+    @Test
+    public void getUser_GivenAInValidUID_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(null);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUser_GivenAnIOError_ShouldThrowException() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenThrow(Exception.class);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+    @Test
+    public void getUser_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
     }
 }
