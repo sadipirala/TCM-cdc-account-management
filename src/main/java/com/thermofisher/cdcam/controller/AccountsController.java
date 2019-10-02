@@ -139,7 +139,7 @@ public class AccountsController {
     })
     public ResponseEntity<UserDetails> getUser(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable String uid) throws ParseException, JsonProcessingException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
-        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret_key");
+        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
         String hash = hashValidationService.getHashedString(secretKey, uid);
 
         if (!hashValidationService.isValidHash(hash, headerHashSignature)) {

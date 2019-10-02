@@ -4,9 +4,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.beans.PropertyEditor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -34,11 +36,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.lang.Nullable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -310,4 +321,29 @@ public class AccountsControllerTests {
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
 
     }
+
+    @Test
+    public void handleHttpMessageNotReadableExceptions_givenHttpMessageNotReadableException_ReturnErrorMessage(){
+        //setup
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("");
+
+        //execution
+        String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
+
+        //validation
+        Assert.assertEquals(resp,"Invalid input format. Message not readable.");
+    }
+
+    @Test
+    public void handleHttpMessageNotReadableExceptions_givenParseException_ReturnErrorMessage(){
+        //setup
+        ParseException ex = new ParseException(1);
+
+        //execution
+        String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
+
+        //validation
+        Assert.assertEquals(resp,"Invalid input format. Message not readable.");
+    }
+
 }
