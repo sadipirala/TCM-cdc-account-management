@@ -4,9 +4,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.beans.PropertyEditor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -18,9 +20,11 @@ import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 
 import org.json.simple.parser.ParseException;
@@ -32,11 +36,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.lang.Nullable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -45,6 +58,9 @@ public class AccountsControllerTests {
     private String header = "test";
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
     private final String username = "federatedUser@OIDC.com";
+    private final String firstName = "first";
+    private final String lastName = "last";
+    private final int assoiciatedAccounts = 1;
     private final String hashedString = "QJERFC2183DASJ=";
 
     @InjectMocks
@@ -58,6 +74,9 @@ public class AccountsControllerTests {
 
     @Mock
     LiteRegHandler mockLiteRegHandler;
+
+    @Mock
+    GetUserHandler getUserHandler;
 
     @Mock
     SecretsManager secretsManager;
@@ -221,7 +240,7 @@ public class AccountsControllerTests {
 
         // when
         ResponseEntity<String> res = accountsController.updateUser(header, user);
-    
+
         // then
         Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
         Assert.assertEquals(message, res.getBody());
@@ -242,8 +261,89 @@ public class AccountsControllerTests {
 
         // when
         ResponseEntity<String> res = accountsController.updateUser(header, user);
-    
+
         // then
         Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
     }
+
+    @Test
+    public void getUser_GivenAValidUID_ShouldReturnUserDetails() throws IOException, ParseException {
+        //setup
+        UserDetails userDetails = UserDetails.builder().uid(uid).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build();
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(userDetails);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+
+    }
+
+    @Test
+    public void getUser_GivenAInValidUID_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(null);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUser_GivenAnIOError_ShouldThrowException() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenThrow(Exception.class);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+    @Test
+    public void getUser_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+
+        //execution
+        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void handleHttpMessageNotReadableExceptions_givenHttpMessageNotReadableException_ReturnErrorMessage(){
+        //setup
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("");
+
+        //execution
+        String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
+
+        //validation
+        Assert.assertEquals(resp,"Invalid input format. Message not readable.");
+    }
+
+    @Test
+    public void handleHttpMessageNotReadableExceptions_givenParseException_ReturnErrorMessage(){
+        //setup
+        ParseException ex = new ParseException(1);
+
+        //execution
+        String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
+
+        //validation
+        Assert.assertEquals(resp,"Invalid input format. Message not readable.");
+    }
+
 }

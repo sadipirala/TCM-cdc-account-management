@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
@@ -44,12 +43,15 @@ public class AccountsController {
 
     @Autowired
     CDCAccounts cdcAccounts;
-    
+
     @Autowired
     SecretsManager secretsManager;
 
     @Autowired
     LiteRegHandler handler;
+
+    @Autowired
+    GetUserHandler getUserHandler;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -100,11 +102,11 @@ public class AccountsController {
 
     @PutMapping("/federation/user")
     @ApiOperation(value = "Updates user's username and regStatus in CDC.",
-        notes = "Keep in mind that the user's username should match the one in CDC.")
+            notes = "Keep in mind that the user's username should match the one in CDC.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "OK"),
-        @ApiResponse(code = 400, message = "Bad request."),
-        @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @RequestBody FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
@@ -126,6 +128,34 @@ public class AccountsController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user/{uid}")
+    @ApiOperation(value = "Gets a user")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<UserDetails> getUser(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable String uid) throws ParseException, JsonProcessingException {
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
+        String hash = hashValidationService.getHashedString(secretKey, uid);
+
+        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
+        }
+        try {
+            UserDetails userDetails = getUserHandler.getUser(uid);
+            if (userDetails != null)
+                return new ResponseEntity<UserDetails>(userDetails, HttpStatus.OK);
+            else
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
