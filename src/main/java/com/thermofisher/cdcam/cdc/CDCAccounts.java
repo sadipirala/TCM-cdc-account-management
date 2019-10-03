@@ -15,6 +15,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -55,11 +56,7 @@ public class CDCAccounts {
                 return null;
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -68,17 +65,18 @@ public class CDCAccounts {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
             credentials = getCredentials();
+
+            logger.fatal(apiKey);
+            logger.fatal(credentials[0]);
+            logger.fatal(credentials[1]);
+
             GSRequest request = new GSRequest(apiKey, credentials[0], apiMethod, null, true, credentials[1]);
             if (uid != null) request.setParam("UID", uid);
             if (data != null) request.setParam("data", data);
             if (profile != null) request.setParam("profile", profile);
             return request.send();
         }catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -92,11 +90,7 @@ public class CDCAccounts {
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -114,11 +108,7 @@ public class CDCAccounts {
 
             return request.send();
         } catch (ParseException e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -138,11 +128,7 @@ public class CDCAccounts {
                 return ("Uh-oh, we got the following error: " + response.getLog());
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -152,5 +138,13 @@ public class CDCAccounts {
         String secretKey = secretsManager.getProperty(secretProperties, "secretKey");
         String userKey = secretsManager.getProperty(secretProperties, "userKey");
         return new String[] { secretKey, userKey };
+    }
+
+    private void logStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        logger.error(stackTrace);
     }
 }
