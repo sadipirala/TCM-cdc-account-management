@@ -16,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
+import javax.annotation.PostConstruct;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -32,6 +32,9 @@ public class CDCAccounts {
     @Value("${cdc.credentials}")
     private String cdcKey;
 
+    @Value("${env.name}")
+    private String env;
+
     private String userKey;
     private String secretKey;
 
@@ -40,9 +43,9 @@ public class CDCAccounts {
 
     AccountBuilder accountBuilder = new AccountBuilder();
 
-    @Bean
-    @Profile(value = {"dev3, qa1, qa3, qa4, qa5"})
+    @PostConstruct
     public void setCredentials() throws ParseException {
+        if (env.equals("local") || env.equals("test")) return;
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(cdcKey));
         secretKey = secretsManager.getProperty(secretProperties, "secretKey");
         userKey = secretsManager.getProperty(secretProperties, "userKey");
