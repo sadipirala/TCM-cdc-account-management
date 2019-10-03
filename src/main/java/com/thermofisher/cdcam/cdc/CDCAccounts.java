@@ -65,11 +65,6 @@ public class CDCAccounts {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
             credentials = getCredentials();
-
-            logger.fatal(apiKey);
-            logger.fatal(credentials[0]);
-            logger.fatal(credentials[1]);
-
             GSRequest request = new GSRequest(apiKey, credentials[0], apiMethod, null, true, credentials[1]);
             if (uid != null) request.setParam("UID", uid);
             if (data != null) request.setParam("data", data);
