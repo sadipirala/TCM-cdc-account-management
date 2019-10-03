@@ -3,13 +3,21 @@ package com.thermofisher.cdcam.cdc;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
+import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.model.AccountInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -21,13 +29,27 @@ public class CDCAccounts {
     @Value("${cdc.apiKey}")
     private String apiKey;
 
-    @Value("${cdc.secretKey}")
+    @Value("${cdc.credentials}")
+    private String cdcKey;
+
+    @Value("${env.name}")
+    private String env;
+
+    private String userKey;
     private String secretKey;
 
-    @Value("${cdc.userKey}")
-    private String userKey;
+    @Autowired
+    SecretsManager secretsManager;
 
     AccountBuilder accountBuilder = new AccountBuilder();
+
+    @PostConstruct
+    public void setCredentials() throws ParseException {
+        if (env.equals("local") || env.equals("test")) return;
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(cdcKey));
+        secretKey = secretsManager.getProperty(secretProperties, "secretKey");
+        userKey = secretsManager.getProperty(secretProperties, "userKey");
+    }
 
     public AccountInfo getAccount(String UID) {
         try {
@@ -47,22 +69,23 @@ public class CDCAccounts {
                 return null;
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
 
     public GSResponse setUserInfo(String uid, String data, String profile) {
-        String apiMethod = APIMethods.SETINFO.getValue();
-        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-        if (uid != null) request.setParam("UID", uid);
-        if (data != null) request.setParam("data", data);
-        if (profile != null) request.setParam("profile", profile);
-        return request.send();
+        try {
+            String apiMethod = APIMethods.SETINFO.getValue();
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            if (uid != null) request.setParam("UID", uid);
+            if (data != null) request.setParam("data", data);
+            if (profile != null) request.setParam("profile", profile);
+            return request.send();
+        }catch (Exception e) {
+            logStackTrace(e);
+            return null;
+        }
     }
     
     public GSResponse setLiteReg(String email) {
@@ -71,15 +94,9 @@ public class CDCAccounts {
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("regToken", getRegToken(true));
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
-            GSResponse response = request.send();
-
-            return response;
+            return request.send();
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -88,7 +105,6 @@ public class CDCAccounts {
         if(query == null) return null;
         final boolean USE_HTTPS = true;
         String apiMethod = APIMethods.SEARCH.getValue();
-
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
@@ -110,12 +126,16 @@ public class CDCAccounts {
                 return ("Uh-oh, we got the following error: " + response.getLog());
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
+    }
+
+    private void logStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        logger.error(stackTrace);
     }
 }
