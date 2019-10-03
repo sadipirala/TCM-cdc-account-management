@@ -66,11 +66,7 @@ public class CDCAccounts {
                 return null;
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -84,11 +80,7 @@ public class CDCAccounts {
             if (profile != null) request.setParam("profile", profile);
             return request.send();
         }catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -101,11 +93,7 @@ public class CDCAccounts {
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
     }
@@ -135,12 +123,16 @@ public class CDCAccounts {
                 return ("Uh-oh, we got the following error: " + response.getLog());
             }
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            logStackTrace(e);
             return null;
         }
+    }
+
+    private void logStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        logger.error(stackTrace);
     }
 }
