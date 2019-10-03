@@ -111,6 +111,9 @@ public class AccountsController {
         String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
         String requestBody = Utils.convertJavaToJsonString(user);
         String hash = hashValidationService.getHashedString(secretKey, requestBody);
+        logger.fatal("hash " + hash);
+        logger.fatal(requestBody);
+        logger.fatal(secretKey);
 
         if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
