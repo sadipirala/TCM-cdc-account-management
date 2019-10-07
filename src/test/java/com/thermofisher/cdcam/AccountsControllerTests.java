@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +58,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 public class AccountsControllerTests {
     private String header = "test";
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
+    private final List<String> uids = new ArrayList<>();
+    private final List<String> emptyUIDs = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";
     private final String firstName = "first";
     private final String lastName = "last";
@@ -87,6 +90,9 @@ public class AccountsControllerTests {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
+        uids.add("001");
+        uids.add("002");
+        uids.add("003");
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn(hashedString);
@@ -316,6 +322,66 @@ public class AccountsControllerTests {
 
         //execution
         ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException, ParseException {
+        //setup
+        List<UserDetails> userDetailsList = new ArrayList<>();
+        userDetailsList.add(UserDetails.builder().uid(uids.get(0)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        userDetailsList.add(UserDetails.builder().uid(uids.get(1)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        userDetailsList.add(UserDetails.builder().uid(uids.get(2)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUsers(uids)).thenReturn(userDetailsList);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+
+    }
+
+    @Test
+    public void getUsers_GivenAnEmptyListOfUID_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(null);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, emptyUIDs);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUsers_GivenAnIOError_ShouldThrowException() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(getUserHandler.getUsers(uids)).thenThrow(Exception.class);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+
+    @Test
+    public void getUsers_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);

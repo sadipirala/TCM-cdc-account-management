@@ -157,6 +157,34 @@ public class AccountsController {
 
 
     }
+    @GetMapping("/users/{uids}")
+    @ApiOperation(value = "Gets a list of users")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws ParseException, JsonProcessingException {
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
+        String joinedUIDs = String.join(",",uids);
+        String hash = hashValidationService.getHashedString(secretKey, joinedUIDs);
+
+        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
+        }
+        try {
+            List<UserDetails> userDetails = getUserHandler.getUsers(uids);
+            if (userDetails.size() > 0)
+                return new ResponseEntity<List<UserDetails>>(userDetails, HttpStatus.OK);
+            else
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)
