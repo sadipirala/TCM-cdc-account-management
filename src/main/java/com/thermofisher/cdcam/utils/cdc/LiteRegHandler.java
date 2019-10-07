@@ -72,12 +72,12 @@ public class LiteRegHandler {
                     for (CDCResult result: cdcSearchResponse.getResults()) {
                         
                         CDCProfile profile = result.getProfile();
-
+                        Object isReg = result.getIsRegistered();
                         EECUser user = EECUser.builder()
                                 .uid(result.getUID())
                                 .username((profile != null) ? profile.getUsername() : null)
                                 .email(email)
-                                .registered(result.isRegistered())
+                                .registered(isReg == null?false:(boolean)isReg)
                                 .responseCode(cdcSearchResponse.getStatusCode())
                                 .responseMessage(cdcSearchResponse.getStatusReason())
                                 .build();

@@ -14,7 +14,7 @@ public class CDCResult {
     private String UID;
 
     @JsonProperty("isRegistered")
-    private boolean isRegistered;
+    private Object isRegistered;
 
     private CDCProfile profile;
 }

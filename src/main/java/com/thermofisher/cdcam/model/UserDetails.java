@@ -13,4 +13,5 @@ public class UserDetails {
     private String firstName;
     private String lastName;
     private int associatedAccounts;
+    private boolean isEmailOnly;
 }

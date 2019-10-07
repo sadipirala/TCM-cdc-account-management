@@ -13,9 +13,10 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
-public class GetUserHandler {
+public class UsersHandler {
 
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
@@ -34,12 +35,13 @@ public class GetUserHandler {
                 for (CDCResult result : cdcSearchResponse.getResults()) {
 
                     CDCProfile profile = result.getProfile();
-
+                    Object isReg = result.getIsRegistered();
                     UserDetails user = UserDetails.builder()
                             .uid(result.getUID())
                             .email(profile.getEmail())
                             .firstName(profile.getFirstName())
                             .lastName(profile.getLastName())
+                            .isEmailOnly(isReg == null)
                             .build();
 
                     UserDetails existingUser = userDetails.stream().filter(usr -> result.getUID().equals(usr.getUid())).findAny().orElse(null);
@@ -57,5 +59,46 @@ public class GetUserHandler {
             }
         }
         return userDetails.size() > 0 ? userDetails.get(0) : null;
+    }
+
+    public List<UserDetails> getUsers(List<String> uids) throws IOException {
+        List<UserDetails> userDetails = new ArrayList<>();
+        logger.info(String.format("%s users requested...", uids.size()));
+        String joinedUids = uids.stream()
+                .map(s -> "'" + s + "'")
+                .collect(Collectors.joining(", "));
+        String query = String.format("SELECT UID, profile.email, profile.firstName,profile.lastName,isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
+        GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
+
+        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+        if (cdcSearchResponse.getErrorCode() == 0) {
+            if (cdcSearchResponse.getTotalCount() > 0) {
+                for (CDCResult result : cdcSearchResponse.getResults()) {
+
+                    CDCProfile profile = result.getProfile();
+                    Object isReg = result.getIsRegistered();
+                    UserDetails user = UserDetails.builder()
+                            .uid(result.getUID())
+                            .email(profile.getEmail())
+                            .firstName(profile.getFirstName())
+                            .lastName(profile.getLastName())
+                            .isEmailOnly(isReg == null)
+                            .build();
+
+                    UserDetails existingUser = userDetails.stream().filter(usr -> result.getUID().equals(usr.getUid())).findAny().orElse(null);
+                    if (existingUser != null) {
+                        if (user.getFirstName() != null) {
+                            int indexOfUser = userDetails.indexOf(existingUser);
+                            user.setAssociatedAccounts(2);
+                            userDetails.set(indexOfUser, user);
+                        }
+                    } else {
+                        user.setAssociatedAccounts(1);
+                        userDetails.add(user);
+                    }
+                }
+            }
+        }
+        return userDetails;
     }
 }

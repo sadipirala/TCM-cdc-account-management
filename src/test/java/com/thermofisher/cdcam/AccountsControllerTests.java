@@ -4,11 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import java.beans.PropertyEditor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -24,7 +22,7 @@ import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
-import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 
 import org.json.simple.parser.ParseException;
@@ -36,20 +34,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.lang.Nullable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -57,6 +47,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 public class AccountsControllerTests {
     private String header = "test";
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
+    private final List<String> uids = new ArrayList<>();
+    private final List<String> emptyUIDs = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";
     private final String firstName = "first";
     private final String lastName = "last";
@@ -76,7 +68,7 @@ public class AccountsControllerTests {
     LiteRegHandler mockLiteRegHandler;
 
     @Mock
-    GetUserHandler getUserHandler;
+    UsersHandler usersHandler;
 
     @Mock
     SecretsManager secretsManager;
@@ -87,6 +79,9 @@ public class AccountsControllerTests {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
+        uids.add("001");
+        uids.add("002");
+        uids.add("003");
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn(hashedString);
@@ -271,7 +266,7 @@ public class AccountsControllerTests {
         //setup
         UserDetails userDetails = UserDetails.builder().uid(uid).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(userDetails);
+        Mockito.when(usersHandler.getUser(anyString())).thenReturn(userDetails);
 
         //execution
         ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
@@ -285,7 +280,7 @@ public class AccountsControllerTests {
     public void getUser_GivenAInValidUID_ShouldReturnBadRequest() throws IOException, ParseException {
         //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(getUserHandler.getUser(anyString())).thenReturn(null);
+        Mockito.when(usersHandler.getUser(anyString())).thenReturn(null);
 
         //execution
         ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
@@ -299,7 +294,7 @@ public class AccountsControllerTests {
     public void getUser_GivenAnIOError_ShouldThrowException() throws IOException, ParseException {
         //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(getUserHandler.getUser(anyString())).thenThrow(Exception.class);
+        Mockito.when(usersHandler.getUser(anyString())).thenThrow(Exception.class);
 
         //execution
         ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
@@ -316,6 +311,66 @@ public class AccountsControllerTests {
 
         //execution
         ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException, ParseException {
+        //setup
+        List<UserDetails> userDetailsList = new ArrayList<>();
+        userDetailsList.add(UserDetails.builder().uid(uids.get(0)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        userDetailsList.add(UserDetails.builder().uid(uids.get(1)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        userDetailsList.add(UserDetails.builder().uid(uids.get(2)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(usersHandler.getUsers(uids)).thenReturn(userDetailsList);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+
+    }
+
+    @Test
+    public void getUsers_GivenAnEmptyListOfUID_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(usersHandler.getUser(anyString())).thenReturn(null);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, emptyUIDs);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+    }
+
+    @Test
+    public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(usersHandler.getUsers(uids)).thenThrow(Exception.class);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+
+        //validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+
+    @Test
+    public void getUsers_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws IOException, ParseException {
+        //setup
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
+
+        //execution
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);

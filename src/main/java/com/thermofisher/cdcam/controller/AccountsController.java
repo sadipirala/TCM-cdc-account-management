@@ -9,7 +9,7 @@ import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +51,7 @@ public class AccountsController {
     LiteRegHandler handler;
 
     @Autowired
-    GetUserHandler getUserHandler;
+    UsersHandler usersHandler;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -146,9 +146,37 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
         try {
-            UserDetails userDetails = getUserHandler.getUser(uid);
+            UserDetails userDetails = usersHandler.getUser(uid);
             if (userDetails != null)
                 return new ResponseEntity<UserDetails>(userDetails, HttpStatus.OK);
+            else
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
+    }
+    @GetMapping("/users/{uids}")
+    @ApiOperation(value = "Gets a list of users")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws ParseException, JsonProcessingException {
+        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
+        String joinedUIDs = String.join(",",uids);
+        String hash = hashValidationService.getHashedString(secretKey, joinedUIDs);
+
+        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
+        }
+        try {
+            List<UserDetails> userDetails = usersHandler.getUsers(uids);
+            if (userDetails.size() > 0)
+                return new ResponseEntity<List<UserDetails>>(userDetails, HttpStatus.OK);
             else
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {

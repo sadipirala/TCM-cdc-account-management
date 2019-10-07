@@ -5,7 +5,7 @@ import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,6 +19,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -26,10 +28,10 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-public class GetUserHandlerTests {
+public class UsersHandlerTests {
 
     @InjectMocks
-    GetUserHandler getUserHandler;
+    UsersHandler usersHandler;
 
     @Mock
     CDCAccounts cdcAccounts;
@@ -67,7 +69,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNotNull(userDetails);
@@ -109,7 +111,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNotNull(userDetails);
@@ -135,9 +137,120 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNull(userDetails);
+    }
+
+
+    @Test
+    public void getUsers_GivenAValidUID_returnUserDetails() throws IOException {
+
+        //setup
+        List<String> uids = new ArrayList<>();
+        uids.add("001");
+        uids.add("002");
+        uids.add("003");
+
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        String searchResponse = "{\n" +
+                "  \"totalCount\": 1,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "  \t{\n" +
+                "  \t\t\"UID\": \"" + uids.get(0) + "\",\n" +
+                "  \t\t\"isRegistered\": true,\n" +
+                "  \t\t\"profile\": {\n" +
+                "  \t\t\t\"lastName\": \"last\",\n" +
+                "  \t\t\t\"firstName\": \"first\",\n" +
+                "  \t\t\t\"email\": \"email@test.com\"\n" +
+                "  \t\t}\n" +
+                "  \t}\n" +
+                "  ]\n" +
+                "}";
+
+        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+
+        //execution
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
+
+        //validation
+        Assert.assertEquals(userDetails.size(),1);
+    }
+    @Test
+    public void getUsers_GivenAValidUIDWithMoreThanOneAccount_returnOneUserDetails() throws IOException {
+
+        //setup
+        List<String> uids = new ArrayList<>();
+        uids.add("001");
+        uids.add("002");
+        uids.add("003");
+
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        String searchResponse = "{\n" +
+                "  \"totalCount\": 1,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "  \t{\n" +
+                "  \t\t\"UID\": \"" + uids.get(0) + "\",\n" +
+                "  \t\t\"isRegistered\": true,\n" +
+                "  \t\t\"profile\": {\n" +
+                "  \t\t\t\"lastName\": \"last\",\n" +
+                "  \t\t\t\"firstName\": \"first\",\n" +
+                "  \t\t\t\"email\": \"email@test.com\"\n" +
+                "  \t\t}\n" +
+                "  \t},\n" +
+                "  \t{\n" +
+                "  \t\t\"UID\": \"" + uids.get(0) + "\",\n" +
+                "  \t\t\"isRegistered\": true,\n" +
+                "  \t\t\"profile\": {\n" +
+                "  \t\t\t\"lastName\": \"last\",\n" +
+                "  \t\t\t\"firstName\": \"first\",\n" +
+                "  \t\t\t\"email\": \"email@test.com\"\n" +
+                "  \t\t}\n" +
+                "  \t}\n" +
+                "  ]\n" +
+                "}";
+
+        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+
+        //execution
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
+
+        //validation
+        Assert.assertEquals(userDetails.size(),1);
+    }
+
+    @Test
+    public void getUsers_GivenAnInValidListOfUIDs_returnEmptyList() throws IOException {
+
+        //setup
+        List<String> uids = new ArrayList<>();
+        uids.add("001");
+        uids.add("002");
+        uids.add("003");
+
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        String searchResponse = "{\n" +
+                "  \"totalCount\": 1,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "  ]\n" +
+                "}";
+
+        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
+        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+
+        //execution
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
+
+        //validation
+        Assert.assertEquals(userDetails.size(),0);
     }
 }
