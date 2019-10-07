@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
-public class GetUserHandler {
+public class UsersHandler {
 
     static final Logger logger = LogManager.getLogger("CdcamApp");
 

@@ -5,7 +5,7 @@ import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,10 +28,10 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-public class GetUserHandlerTests {
+public class UsersHandlerTests {
 
     @InjectMocks
-    GetUserHandler getUserHandler;
+    UsersHandler usersHandler;
 
     @Mock
     CDCAccounts cdcAccounts;
@@ -69,7 +69,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNotNull(userDetails);
@@ -111,7 +111,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNotNull(userDetails);
@@ -137,7 +137,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        UserDetails userDetails = getUserHandler.getUser(uid);
+        UserDetails userDetails = usersHandler.getUser(uid);
 
         //validation
         Assert.assertNull(userDetails);
@@ -175,7 +175,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        List<UserDetails> userDetails = getUserHandler.getUsers(uids);
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
         Assert.assertEquals(userDetails.size(),1);
@@ -220,14 +220,14 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        List<UserDetails> userDetails = getUserHandler.getUsers(uids);
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
         Assert.assertEquals(userDetails.size(),1);
     }
 
     @Test
-    public void getUsers_GivenAnInValidUID_returnNull() throws IOException {
+    public void getUsers_GivenAnInValidListOfUIDs_returnEmptyList() throws IOException {
 
         //setup
         List<String> uids = new ArrayList<>();
@@ -248,7 +248,7 @@ public class GetUserHandlerTests {
         when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
-        List<UserDetails> userDetails = getUserHandler.getUsers(uids);
+        List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
         Assert.assertEquals(userDetails.size(),0);

@@ -9,7 +9,7 @@ import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.GetUserHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +51,7 @@ public class AccountsController {
     LiteRegHandler handler;
 
     @Autowired
-    GetUserHandler getUserHandler;
+    UsersHandler usersHandler;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -146,7 +146,7 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
         try {
-            UserDetails userDetails = getUserHandler.getUser(uid);
+            UserDetails userDetails = usersHandler.getUser(uid);
             if (userDetails != null)
                 return new ResponseEntity<UserDetails>(userDetails, HttpStatus.OK);
             else
@@ -174,7 +174,7 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
         try {
-            List<UserDetails> userDetails = getUserHandler.getUsers(uids);
+            List<UserDetails> userDetails = usersHandler.getUsers(uids);
             if (userDetails.size() > 0)
                 return new ResponseEntity<List<UserDetails>>(userDetails, HttpStatus.OK);
             else
