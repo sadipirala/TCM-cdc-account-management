@@ -26,7 +26,7 @@ public class UsersHandler {
     public UserDetails getUser(String uid) throws IOException {
         List<UserDetails> userDetails = new ArrayList<>();
         logger.info(String.format("%s user requested...", uid));
-        String query = String.format("SELECT UID, profile.email, profile.firstName,profile.lastName FROM accounts WHERE UID = '%s' ", uid);
+        String query = String.format("SELECT UID, profile.email, profile.firstName,profile.lastName,isRegistered FROM accounts WHERE UID = '%s' ", uid);
         GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
