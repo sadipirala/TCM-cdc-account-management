@@ -131,7 +131,7 @@ public class AccountsController {
     }
 
     @GetMapping("/user/{uid}")
-    @ApiOperation(value = "Gets a user")
+    @ApiOperation(value = "Gets a user.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
@@ -154,11 +154,10 @@ public class AccountsController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-
     }
+    
     @GetMapping("/users/{uids}")
-    @ApiOperation(value = "Gets a list of users")
+    @ApiOperation(value = "Gets a list of users.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),

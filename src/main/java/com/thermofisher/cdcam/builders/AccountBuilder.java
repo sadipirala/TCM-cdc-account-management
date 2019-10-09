@@ -37,4 +37,34 @@ public class AccountBuilder {
             return null;
         }
     }
+
+    public AccountInfo getAccountToNotifyRegistration(GSObject obj) {
+        try {
+            String uid = (String) obj.get("UID");
+            GSObject profile = (GSObject) obj.get("profile");
+            GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
+            String company = "";
+            String department = "";
+
+            if (work != null) {
+                company = work.containsKey("company") ? work.getString("company") : "";
+                department = work.containsKey("location") ? work.getString("location") : "";
+            } 
+
+            return AccountInfo.builder()
+                    .uid(uid)
+                    .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
+                    .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
+                    .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
+                    .emailAddress(profile.getString("email"))
+                    .company(company)
+                    .country(profile.containsKey("country") ? profile.getString("country") : "")
+                    .city(profile.containsKey("city") ? profile.getString("city") : "")
+                    .department(department)
+                    .build();
+        } catch (Exception e) {
+            logger.error("Error building account info object:  " + e.getMessage());
+            return null;
+        }
+    }
 }
