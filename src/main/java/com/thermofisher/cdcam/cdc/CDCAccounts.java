@@ -9,9 +9,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
-import com.thermofisher.cdcam.model.AccountInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,8 +40,6 @@ public class CDCAccounts {
     @Autowired
     SecretsManager secretsManager;
 
-    AccountBuilder accountBuilder = new AccountBuilder();
-
     @PostConstruct
     public void setCredentials() throws ParseException {
         if (env.equals("local") || env.equals("test")) return;
@@ -52,23 +48,14 @@ public class CDCAccounts {
         userKey = secretsManager.getProperty(secretProperties, "userKey");
     }
 
-    public AccountInfo getAccount(String UID) {
+    public GSResponse getAccount(String UID) {
         try {
             String apiMethod = APIMethods.GET.getValue();
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("UID", UID);
             request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
             request.setParam("extraProfileFields", "username, locale, work");
-
-            GSResponse response = request.send();
-            if (response.getErrorCode() == 0) {
-                GSObject obj = response.getData();
-                logger.info("User Found: " + obj.get("UID"));
-                return accountBuilder.getAccountInfo(obj);
-            } else {
-                logger.error(response.getErrorDetails());
-                return null;
-            }
+            return request.send();
         } catch (Exception e) {
             logStackTrace(e);
             return null;

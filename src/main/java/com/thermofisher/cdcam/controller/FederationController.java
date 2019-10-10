@@ -1,13 +1,17 @@
 package com.thermofisher.cdcam.controller;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -17,10 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/federation")
@@ -37,7 +42,7 @@ public class FederationController {
     SNSHandler snsHandler;
 
     @Autowired
-    CDCAccounts accounts;
+    CDCAccountsService accountsService;
 
     @Autowired
     HashValidationService hashValidationService;
@@ -67,8 +72,8 @@ public class FederationController {
                 }
 
                 String uid = data.get("uid").toString();
-                AccountInfo account = accounts.getAccount(uid);
-
+                AccountInfo account = accountsService.getFederationAccountInfo(uid);
+                
                 if (account == null) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("NO USER FOUND", HttpStatus.BAD_REQUEST);

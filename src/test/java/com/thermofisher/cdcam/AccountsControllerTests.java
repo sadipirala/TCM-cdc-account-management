@@ -15,15 +15,14 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.controller.AccountsController;
-import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
@@ -184,14 +183,12 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JsonProcessingException, ParseException {
+    public void updateUser_WhenHashSignatureIsDifferent_returnBadRequest() throws JsonProcessingException, ParseException {
         // given
         final String requestExceptionHeader = "Request-Exception";
         String badRequestHeaderMessage = "Invalid request header.";
         String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
 
         // when
         ResponseEntity<String> res = accountsController.updateUser(invalidHash, user);
@@ -202,7 +199,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenAnyPropertyOfTheFederatedUserUpdateDTOIsNull_ReturnBadRequest() throws JsonProcessingException, ParseException {
+    public void updateUser_WhenAnyPropertyOfTheFederatedUserUpdateDTOIsNull_ReturnBadRequest() throws JsonProcessingException, ParseException {
         // given
         FedUserUpdateDTO nullUid = FedUserUpdateDTO.builder().username("bad@email.com").regStatus(true).build();
         FedUserUpdateDTO nullUsername = FedUserUpdateDTO.builder().uid(uid).regStatus(true).build();
@@ -221,16 +218,14 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JsonProcessingException, ParseException {
+    public void updateUser_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JsonProcessingException, ParseException {
         // given
         String message = "Internal server error.";
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("message", message);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
         Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
 
         // when
@@ -242,16 +237,14 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JsonProcessingException, ParseException {
+    public void updateUser_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JsonProcessingException, ParseException {
         // given
         String message = "OK";
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("message", message);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
         Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
 
         // when
