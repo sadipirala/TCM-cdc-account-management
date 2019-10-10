@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +35,9 @@ public class FederationController {
 
     @Value("${federation.aws.secret}")
     private String federationSecret;
+
+    @Autowired
+    AccountInfoHandler accountHandler;
 
     @Autowired
     SecretsManager secretsManager;
@@ -73,6 +77,8 @@ public class FederationController {
 
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
+                String accountToNofity = accountHandler.parseToNotify(account);
+                // send notification
                 
                 if (account == null) {
                     logger.error("The user was not created through federation.");
