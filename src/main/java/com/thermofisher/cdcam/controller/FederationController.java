@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
 import org.apache.logging.log4j.LogManager;
@@ -51,6 +52,9 @@ public class FederationController {
     @Autowired
     HashValidationService hashValidationService;
 
+    @Autowired
+    NotificationService notificationService;
+
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
@@ -77,8 +81,8 @@ public class FederationController {
 
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
-                String accountToNofity = accountHandler.parseToNotify(account);
-                // send notification
+                String accountToNotify = accountHandler.parseToNotify(account);
+                notificationService.postRequest(accountToNotify);
                 
                 if (account == null) {
                     logger.error("The user was not created through federation.");
