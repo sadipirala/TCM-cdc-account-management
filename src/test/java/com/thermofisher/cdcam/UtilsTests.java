@@ -47,14 +47,14 @@ public class UtilsTests {
     public void getValueFromJSON_ifValidData_returnObject() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
-        Assert.assertEquals(Utils.getValueFromJSON(object, "message"), "test");
+        Assert.assertEquals(Utils.getStringFromJSON(object, "message"), "test");
     }
 
     @Test
     public void getValueFromJSON_ifInvalidData_returnEmptyString() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
-        Assert.assertEquals(Utils.getValueFromJSON(object, "notValid"), "");
+        Assert.assertEquals(Utils.getStringFromJSON(object, "notValid"), "");
     }
 
     @Test

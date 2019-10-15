@@ -190,34 +190,14 @@ public class AccountsControllerTests {
         String badRequestHeaderMessage = "Invalid request header.";
         String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
+        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
 
         // when
-        ResponseEntity<String> res = accountsController.updateUser(invalidHash, user);
+        ResponseEntity<String> res = accountsController.updateUser(invalidHash, "{\"test\":\"test\"}");
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
         Assert.assertEquals(badRequestHeaderMessage, res.getHeaders().get(requestExceptionHeader).get(0));
-    }
-
-    @Test
-    public void userUpdate_WhenAnyPropertyOfTheFederatedUserUpdateDTOIsNull_ReturnBadRequest() throws JsonProcessingException, ParseException {
-        // given
-        FedUserUpdateDTO nullUid = FedUserUpdateDTO.builder().username("bad@email.com").regStatus(true).build();
-        FedUserUpdateDTO nullUsername = FedUserUpdateDTO.builder().uid(uid).regStatus(true).build();
-        FedUserUpdateDTO nullRegStatus = FedUserUpdateDTO.builder().uid(uid).username("bad@email.com").build();
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-
-        // when
-        ResponseEntity<String> nullUidRes = accountsController.updateUser(header, nullUid);
-        ResponseEntity<String> nullUsernameRes = accountsController.updateUser(header, nullUsername);
-        ResponseEntity<String> nullRegStatusRes = accountsController.updateUser(header, nullRegStatus);
-
-        // then
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullUidRes.getStatusCode());
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullUsernameRes.getStatusCode());
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, nullRegStatusRes.getStatusCode());
     }
 
     @Test
@@ -228,13 +208,12 @@ public class AccountsControllerTests {
         response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("message", message);
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
-        Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
+        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
+        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
 
         // when
-        ResponseEntity<String> res = accountsController.updateUser(header, user);
+        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
 
         // then
         Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
@@ -249,13 +228,12 @@ public class AccountsControllerTests {
         response.put("code", HttpStatus.OK.value());
         response.put("message", message);
         AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        FedUserUpdateDTO user = FedUserUpdateDTO.builder().uid(uid).username(username).regStatus(true).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(user.getUid())).thenReturn(account);
-        Mockito.when(cdcAccountsService.updateFedUser(any())).thenReturn(response);
+        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
+        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
 
         // when
-        ResponseEntity<String> res = accountsController.updateUser(header, user);
+        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
 
         // then
         Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());

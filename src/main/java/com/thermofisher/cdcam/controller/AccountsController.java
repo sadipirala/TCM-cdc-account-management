@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.model.*;
-import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
 
@@ -101,14 +104,14 @@ public class AccountsController {
     }
 
     @PutMapping("/federation/user")
-    @ApiOperation(value = "Updates user's username and regStatus in CDC.",
+    @ApiOperation(value = "Updates user's data in CDC.",
             notes = "Keep in mind that the user's username should match the one in CDC.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @RequestBody FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
+    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String user) throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
         String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
         String requestBody = Utils.convertJavaToJsonString(user);
@@ -118,11 +121,12 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
 
-        if (user.hasNullProperty()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        if (user == null || user.isEmpty()) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
 
-        ObjectNode response = cdcAccountsService.updateFedUser(user);
+        ObjectNode response = cdcAccountsService.update(Utils.convertStringToJson(user));
+
+        if (response == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
+
         if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response.get("message").asText());
         }
