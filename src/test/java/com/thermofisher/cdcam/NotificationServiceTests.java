@@ -51,7 +51,7 @@ public class NotificationServiceTests {
         when(mockStatusLine.getStatusCode()).thenReturn(200);
         when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
         when(mockHttpClient.execute(any())).thenReturn(mockResponse);
-        int requestStatus = notificationService.postRequest(mockRequestBody,mockRequestUrl);
+        int requestStatus = notificationService.postRequest(mockRequestBody , mockRequestUrl);
 
         //Then
         Assert.assertNotEquals(-1,requestStatus);
@@ -61,7 +61,7 @@ public class NotificationServiceTests {
     public void postRequest_givenExecute_HttpClient_Fails_ShouldCatchIOException() throws IOException {
         //When
         when(mockHttpClient.execute(any())).thenThrow(IOException.class);
-        int requestStatus = notificationService.postRequest(mockRequestBody,mockRequestUrl);
+        int requestStatus = notificationService.postRequest(mockRequestBody , mockRequestUrl);
 
         //Then
         Assert.assertEquals(requestStatus,-1);
