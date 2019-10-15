@@ -117,6 +117,10 @@ public class AccountsController {
         String requestBody = Utils.convertJavaToJsonString(user);
         String hash = hashValidationService.getHashedString(secretKey, requestBody);
 
+        logger.fatal("Secret " + secretKey);
+        logger.fatal("Body " + requestBody);
+        logger.fatal("Hash " + hash);
+
         if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
