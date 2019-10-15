@@ -82,7 +82,7 @@ public class FederationController {
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
                 String accountToNotify = accountHandler.parseToNotify(account);
-                notificationService.postRequest(accountToNotify);
+                //notificationService.postRequest(accountToNotify,regNotificationUrl);
                 
                 if (account == null) {
                     logger.error("The user was not created through federation.");

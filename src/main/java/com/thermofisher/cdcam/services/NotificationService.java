@@ -11,15 +11,18 @@ import java.io.IOException;
 
 @Service
 public class NotificationService {
-    public int postRequest(String requestBody) throws IOException {
-        String regNotificationUrl = "cdcam.reg.notification.url";
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost postMethod = new HttpPost(regNotificationUrl);
-        StringEntity body = new StringEntity(requestBody);
-        postMethod.setEntity(body);
-        postMethod.setHeader("Content-type", "application/json");
-        try (CloseableHttpResponse response = httpClient.execute(postMethod)) {
+    private CloseableHttpClient httpClient = HttpClients.createDefault();
+
+    public int postRequest(String requestBody, String regNotificationUrl) {
+        try {
+            HttpPost postMethod = new HttpPost(regNotificationUrl);
+            StringEntity body = new StringEntity(requestBody);
+            postMethod.setEntity(body);
+            postMethod.setHeader("Content-type", "application/json");
+            CloseableHttpResponse response = httpClient.execute(postMethod);
             return response.getStatusLine().getStatusCode();
+        } catch(IOException e){
+            return -1;
         }
     }
 }
