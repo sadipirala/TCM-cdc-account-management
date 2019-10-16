@@ -7,7 +7,7 @@
     <File name="CdcamLogFile" fileName="./logs/cdcam.log">
         <PatternLayout pattern="%d{HH:mm:ss.SSS}{PST} %-5p %c{1}:%L - %m%n"/>
     </File>
-    <SMTP name="Mail" subject="Error Log" to="" from="account-security-noreply@thermofisher.com"
+    <SMTP name="Mail" subject="Error Log" to="mariaguadalupe.chacon@thermofisher.com" from="account-security-noreply@thermofisher.com"
           smtpHost="smtp.cloud.thermofisher.net" smtpPort="25" bufferSize="465">
     </SMTP>
 </Appenders>

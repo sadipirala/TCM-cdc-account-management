@@ -88,10 +88,10 @@ public class FederationController {
                 String accountToNotify = accountHandler.parseToNotify(account);
                 try{
                     CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
-                    logger.info("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                    logger.fatal("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
                 }
                 catch (Exception e){
-                    logger.error("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.fatal("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 if (account == null) {
