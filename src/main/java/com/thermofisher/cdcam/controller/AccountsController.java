@@ -30,8 +30,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -118,8 +116,6 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
 
         ObjectNode response = cdcAccountsService.update(jsonBody);
-
-        logger.fatal("CDC Update completion: " + new Timestamp(new Date().getTime()));
 
         if (response == null) ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
 
