@@ -113,8 +113,11 @@ public class AccountsController {
     })
     public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String user) throws JsonProcessingException, ParseException {
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+
+        org.json.JSONObject jsonBody = Utils.convertStringToJson(user);
+
         String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-        String requestBody = Utils.convertJavaToJsonString(user);
+        String requestBody = Utils.convertJavaToJsonString(jsonBody);
         String hash = hashValidationService.getHashedString(secretKey, requestBody);
 
         logger.fatal("Secret " + secretKey);
@@ -125,9 +128,9 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
         }
 
-        if (user == null || user.isEmpty()) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
+        if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
 
-        ObjectNode response = cdcAccountsService.update(Utils.convertStringToJson(user));
+        ObjectNode response = cdcAccountsService.update(jsonBody);
 
         if (response == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
 
