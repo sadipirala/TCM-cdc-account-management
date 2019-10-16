@@ -106,6 +106,8 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
+    @ApiImplicitParam(name = "body", value = "Request body with user data. Only UID is required, any profile/data property is optional.\nex: {\"uid\": \" \", \"profile\": { }, \"data\": { }}",
+            required = true, type = "body", dataType = "string")
     public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String body) throws JSONException {
         JSONObject jsonBody = Utils.convertStringToJson(body);
         if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
