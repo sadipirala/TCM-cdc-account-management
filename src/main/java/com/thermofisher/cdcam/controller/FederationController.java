@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/federation")
@@ -45,6 +47,8 @@ public class FederationController {
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
+            logger.fatal("CDC Federation flow started: " + new Timestamp(new Date().getTime()));
+
             JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
 
