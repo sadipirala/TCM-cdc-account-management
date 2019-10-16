@@ -37,6 +37,8 @@ import java.util.List;
 public class AccountsController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
     static final String requestExceptionHeader = "Request-Exception";
+    static final String eecKey = "eec-secret-key";
+    static final String fedKey = "cdc-secret-key";
 
     @Value("${eec.aws.secret}")
     private String eecSecret;
@@ -76,7 +78,10 @@ public class AccountsController {
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
     public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-eec-sig-hmac-sha1") String headerHashSignature, @Valid @RequestBody EmailList emailList)
             throws JsonProcessingException, JSONException {
-        if(!isValidHeader(secretsManager.getSecret(eecSecret), "eec-secret-key", Utils.convertJavaToJsonString(emailList), headerHashSignature))
+        String body = Utils.convertJavaToJsonString(emailList);
+        String secretKey = secretsManager.getSecret(eecSecret);
+
+        if(!isValidHeader(secretKey, eecKey, body, headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
 
         if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
@@ -112,7 +117,9 @@ public class AccountsController {
         JSONObject jsonBody = Utils.convertStringToJson(body);
         if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
 
-        if(!isValidHeader(secretsManager.getSecret(federationSecret), "cdc-secret-key", jsonBody.toString(), headerHashSignature))
+        String secretKey = secretsManager.getSecret(federationSecret);
+
+        if(!isValidHeader(secretKey, fedKey, jsonBody.toString(), headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
 
         ObjectNode response = cdcAccountsService.update(jsonBody);
@@ -134,7 +141,10 @@ public class AccountsController {
     })
     @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true, type = "query", dataType = "array")
     public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
-        if(!isValidHeader(secretsManager.getSecret(federationSecret), "cdc-secret-key", String.join(",",uids), headerHashSignature))
+        String body = String.join(",",uids);
+        String secretKey = secretsManager.getSecret(federationSecret);
+
+        if(!isValidHeader(secretKey, fedKey, body, headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
 
         try {
@@ -145,12 +155,12 @@ public class AccountsController {
         }
     }
 
-    private boolean isValidHeader(String secret, String property, String data, String header) throws JSONException {
+    private boolean isValidHeader(String secret, String property, String data, String receivedHashString) throws JSONException {
         JSONObject secretProperties = new JSONObject(secret);
         String secretKey = Utils.getStringFromJSON(secretProperties, property);
-        String hash = hashValidationService.getHashedString(secretKey, data);
+        String generatedHashString = hashValidationService.getHashedString(secretKey, data);
 
-        return hashValidationService.isValidHash(hash, header);
+        return hashValidationService.isValidHash(generatedHashString, receivedHashString);
     }
 
 
