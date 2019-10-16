@@ -3,6 +3,7 @@ package com.thermofisher.cdcam;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -11,6 +12,8 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,13 +28,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
+
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class FederationControllerTests {
 
     @InjectMocks
-    private FederationController notificationController = new FederationController();
+    private FederationController federationController = new FederationController();
 
     @Mock
     private SNSHandler snsHandler;
@@ -44,6 +49,12 @@ public class FederationControllerTests {
 
     @Mock
     HashValidationService hashValidationService;
+
+    @Mock
+    NotificationService notificationService;
+
+    @Mock
+    AccountInfoHandler accountInfoHandler;
 
     private AccountInfo federationAccount = AccountInfo.builder()
             .username("federatedUser@OIDC.com")
@@ -92,7 +103,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertTrue(res.getStatusCode().is2xxSuccessful());
@@ -110,7 +121,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertEquals(res.getBody(), "The user was not created through federation.");
@@ -122,7 +133,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.isValidHash(null, null)).thenReturn(true);
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration(null, null);
+        ResponseEntity<String> res = federationController.notifyRegistration(null, null);
         
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -140,7 +151,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.SERVICE_UNAVAILABLE);
@@ -158,7 +169,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertEquals(res.getBody(), "the event type was not recognized");
@@ -176,7 +187,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
@@ -192,7 +203,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
@@ -209,9 +220,28 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         
         //execution
-        ResponseEntity<String> res = notificationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
         
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
+    }
+
+    @Test
+    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws IOException {
+        //setup
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        String mockAccountToNotify = "Test Account";
+        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(null);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+
+        //execution
+        federationController.notifyRegistration("Test", mockBody);
+
+        //validation
+        Mockito.verify(notificationService).postRequest(any(), any());
     }
 }

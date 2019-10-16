@@ -8,10 +8,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
+import org.springframework.stereotype.Component;
+
 
 /**
  * AccountInfoHandler
  */
+@Component
 public class AccountInfoHandler {
 
     public String parseToNotify(AccountInfo account) throws JsonProcessingException {

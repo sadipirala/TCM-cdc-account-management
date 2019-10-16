@@ -11,8 +11,10 @@ import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -36,6 +38,9 @@ public class FederationController {
     @Value("${federation.aws.secret}")
     private String federationSecret;
 
+    @Value("${cdcam.reg.notification.url}")
+    private String regNotificationUrl;
+
     @Autowired
     AccountInfoHandler accountHandler;
 
@@ -50,6 +55,9 @@ public class FederationController {
 
     @Autowired
     HashValidationService hashValidationService;
+
+    @Autowired
+    NotificationService notificationService;
 
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
@@ -77,9 +85,15 @@ public class FederationController {
 
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
-                String accountToNofity = accountHandler.parseToNotify(account);
-                // send notification
-                
+                String accountToNotify = accountHandler.parseToNotify(account);
+                try{
+                    CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
+                    logger.info("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                }
+                catch (Exception e){
+                    logger.error("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                }
+
                 if (account == null) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("NO USER FOUND", HttpStatus.BAD_REQUEST);
