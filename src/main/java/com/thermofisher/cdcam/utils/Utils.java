@@ -25,11 +25,27 @@ public class Utils {
         return mapper.writeValueAsString(t);
     }
 
-    public static Object getValueFromJSON(JSONObject object, String value) {
+    public static JSONObject convertStringToJson(String object) {
         try {
-            return object.get(value);
+            return new JSONObject(object);
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    public static String getStringFromJSON(JSONObject object, String value) {
+        try {
+            return (String) object.get(value);
         } catch (JSONException e) {
             return "";
+        }
+    }
+
+    public static JSONObject getObjectFromJSON(JSONObject object, String value) {
+        try {
+            return (JSONObject) object.get(value);
+        } catch (JSONException e) {
+            return null;
         }
     }
 }
