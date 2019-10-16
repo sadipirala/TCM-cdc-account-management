@@ -28,6 +28,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
+
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
@@ -225,7 +227,7 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws JsonProcessingException {
+    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws IOException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";

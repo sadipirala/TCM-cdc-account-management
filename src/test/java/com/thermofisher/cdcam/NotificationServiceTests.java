@@ -1,7 +1,9 @@
 package com.thermofisher.cdcam;
 
+import com.google.common.base.Verify;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.services.NotificationService;
+import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -42,28 +44,24 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void postRequest_givenRequestBody_IsReceived_Return_RequestResponse() throws IOException {
+    public void postRequest_givenRequestBody_IsReceived_ReturnCloseableHttpResponse() throws IOException {
         //Given
         CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class);
         StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
 
         //When
-        when(mockStatusLine.getStatusCode()).thenReturn(200);
         when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
         when(mockHttpClient.execute(any())).thenReturn(mockResponse);
-        int requestStatus = notificationService.postRequest(mockRequestBody , mockRequestUrl);
+        CloseableHttpResponse httpResponse = notificationService.postRequest(mockRequestBody, mockRequestUrl);
 
         //Then
-        Assert.assertNotEquals(-1,requestStatus);
+        Assert.assertNotNull(httpResponse);
     }
 
-    @Test
+    @Test(expected = IOException.class)
     public void postRequest_givenExecute_HttpClient_Fails_ShouldCatchIOException() throws IOException {
         //When
         when(mockHttpClient.execute(any())).thenThrow(IOException.class);
-        int requestStatus = notificationService.postRequest(mockRequestBody , mockRequestUrl);
-
-        //Then
-        Assert.assertEquals(requestStatus,-1);
+        CloseableHttpResponse httpResponse = notificationService.postRequest(mockRequestBody , mockRequestUrl);
     }
 }

@@ -14,6 +14,7 @@ import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -85,8 +86,14 @@ public class FederationController {
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
                 String accountToNotify = accountHandler.parseToNotify(account);
-                notificationService.postRequest(accountToNotify,regNotificationUrl);
-                
+                try{
+                    CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
+                    logger.info("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                }
+                catch (Exception e){
+                    logger.error("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                }
+
                 if (account == null) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("NO USER FOUND", HttpStatus.BAD_REQUEST);
