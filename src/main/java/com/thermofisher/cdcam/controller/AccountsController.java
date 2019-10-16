@@ -154,11 +154,6 @@ public class AccountsController {
         String secretKey = Utils.getStringFromJSON(secretProperties, property);
         String hash = hashValidationService.getHashedString(secretKey, data);
 
-        logger.fatal("Data " + data);
-        logger.fatal("Secret Key " + secretKey);
-        logger.fatal("Hash " + hash);
-        logger.fatal("Header " + header);
-
         return hashValidationService.isValidHash(hash, header);
     }
 
