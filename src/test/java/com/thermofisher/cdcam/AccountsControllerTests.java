@@ -193,7 +193,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JsonProcessingException, JSONException {
+    public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JSONException {
         // given
         final String requestExceptionHeader = "Request-Exception";
         String badRequestHeaderMessage = "Invalid request header.";
@@ -211,7 +211,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JsonProcessingException, JSONException {
+    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JSONException {
         // given
         String message = "Internal server error.";
         ObjectNode response = JsonNodeFactory.instance.objectNode();
@@ -232,7 +232,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JsonProcessingException, JSONException {
+    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JSONException {
         // given
         String message = "OK";
         ObjectNode response = JsonNodeFactory.instance.objectNode();
@@ -249,66 +249,6 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
-    }
-
-    @Test
-    public void getUser_GivenAValidUID_ShouldReturnUserDetails() throws IOException, JSONException {
-        //setup
-        UserDetails userDetails = UserDetails.builder().uid(uid).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build();
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(usersHandler.getUser(anyString())).thenReturn(userDetails);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        //execution
-        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
-
-        //validation
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
-
-    }
-
-    @Test
-    public void getUser_GivenAInValidUID_ShouldReturnBadRequest() throws IOException, JSONException {
-        //setup
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(usersHandler.getUser(anyString())).thenReturn(null);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        //execution
-        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
-
-        //validation
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
-
-    }
-
-    @Test
-    public void getUser_GivenAnIOError_ShouldThrowException() throws IOException, JSONException {
-        //setup
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(usersHandler.getUser(anyString())).thenThrow(Exception.class);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        //execution
-        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
-
-        //validation
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
-
-    }
-
-    @Test
-    public void getUser_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws JSONException {
-        //setup
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        //execution
-        ResponseEntity<UserDetails> resp = accountsController.getUser(header, uid);
-
-        //validation
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
-
     }
 
     @Test

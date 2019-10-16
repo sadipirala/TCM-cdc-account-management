@@ -62,7 +62,7 @@ public class AccountsController {
     @Autowired
     HashValidationService hashValidationService;
 
-    @PostMapping("/eec/emails")
+    @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
@@ -99,9 +99,8 @@ public class AccountsController {
         }
     }
 
-    @PutMapping("/federation/user")
-    @ApiOperation(value = "Updates user's data in CDC.",
-            notes = "Keep in mind that the user's username should match the one in CDC.")
+    @PutMapping("/user")
+    @ApiOperation(value = "Update user's data in CDC.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
@@ -124,25 +123,6 @@ public class AccountsController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/user/{uid}")
-    @ApiOperation(value = "Gets a user")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
-    })
-    public ResponseEntity<UserDetails> getUser(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable String uid) throws JSONException {
-        if(!isValidHeader(secretsManager.getSecret(federationSecret), "cdc-secret-key", uid, headerHashSignature))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-
-        try {
-            UserDetails userDetails = usersHandler.getUser(uid);
-            return (userDetails != null) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     @GetMapping("/users/{uids}")
     @ApiOperation(value = "Gets a list of users")
     @ApiResponses({
@@ -150,6 +130,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
+    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true, type = "query", dataType = "array")
     public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
         if(!isValidHeader(secretsManager.getSecret(federationSecret), "cdc-secret-key", String.join(",",uids), headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
@@ -166,10 +147,6 @@ public class AccountsController {
         JSONObject secretProperties = new JSONObject(secret);
         String secretKey = Utils.getStringFromJSON(secretProperties, property);
         String hash = hashValidationService.getHashedString(secretKey, data);
-
-        logger.fatal("Data: " + data);
-        logger.fatal("Key: " + secretKey);
-        logger.fatal("Hash: " + hash);
 
         return hashValidationService.isValidHash(hash, header);
     }
