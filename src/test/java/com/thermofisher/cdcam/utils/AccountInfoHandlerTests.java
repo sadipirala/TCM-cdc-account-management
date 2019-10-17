@@ -39,6 +39,8 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("regAttempts");
+        propertiesToRemove.add("uid");
+        json.put("uuid", json.get("uid").asText());
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
