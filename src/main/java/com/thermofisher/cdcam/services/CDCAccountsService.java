@@ -51,7 +51,7 @@ public class CDCAccountsService {
             GSObject obj = response.getData();
             return accountBuilder.getFederationAccountInfo(obj);
         } else {
-            logger.error(response.getErrorDetails());
+            logger.fatal(response.getErrorDetails());
             return null;
         }
     }

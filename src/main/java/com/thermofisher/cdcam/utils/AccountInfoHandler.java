@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AccountInfoHandler {
     static final Logger logger = LogManager.getLogger("CdcamApp");
-    
+
     public String parseToNotify(AccountInfo account) throws JsonProcessingException {
 
         ObjectMapper mapper = new ObjectMapper();

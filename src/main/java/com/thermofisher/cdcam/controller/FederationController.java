@@ -86,15 +86,17 @@ public class FederationController {
 
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
-                logger.fatal("Get account " + Utils.convertJavaToJsonString(account));
+                if (account == null){
+                    logger.fatal("Account is null");
+                }
                 String accountToNotify = accountHandler.parseToNotify(account);
-                logger.fatal("Call parse to notify, parse account: " + accountToNotify );
+                logger.error("Call parse to notify, parse account: " + accountToNotify );
                 try{
                     CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
-                    logger.fatal("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                    logger.error("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
                 }
                 catch (Exception e){
-                    logger.fatal("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.error("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 if (account == null) {
