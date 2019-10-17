@@ -62,6 +62,7 @@ public class FederationController {
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         try {
+            logger.fatal("Notify registration start " + regNotificationUrl + " " + headerValue + " " + rawBody);
             JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
 
@@ -84,8 +85,10 @@ public class FederationController {
                 }
 
                 String uid = data.get("uid").toString();
+                logger.fatal("Get uid " + uid );
                 AccountInfo account = accountsService.getFederationAccountInfo(uid);
                 String accountToNotify = accountHandler.parseToNotify(account);
+                logger.fatal("Call parse to notify, parse account: " + accountToNotify );
                 try{
                     CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
                     logger.fatal("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
