@@ -17,6 +17,7 @@ public class AccountBuilder {
             GSObject data = (GSObject) obj.get("data");
             GSObject profile = (GSObject) obj.get("profile");
             GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
+            String email = profile.containsKey("email") ? profile.getString("email") : "";
             String company = "";
             String department = "";
 
@@ -27,8 +28,8 @@ public class AccountBuilder {
 
             return AccountInfo.builder()
                     .uid(uid)
-                    .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
-                    .emailAddress(profile.containsKey("email") ? profile.getString("email") : "")
+                    .username(profile.containsKey("username") ? profile.getString("username") : email)
+                    .emailAddress(email)
                     .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
                     .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
                     .company(company)
@@ -44,25 +45,5 @@ public class AccountBuilder {
             logger.fatal("Error building account info object:  " + e.getMessage());
             return null;
         }
-    }
-
-    public AccountInfo getFederationAccountInfo(GSObject obj) {
-        final int FED_PASSWORD_LENGTH = 10;
-        AccountInfo account = getAccountInfo(obj);
-        if (account == null) 
-            return account;
-        account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
-        return account;
-    }
-
-    public AccountInfo getAccountToNotifyRegistration(GSObject obj) {
-        AccountInfo account = getAccountInfo(obj);
-        if (account == null) 
-            return account;
-        account.setMember(null);
-        account.setLocaleName(null);
-        account.setLoginProvider(null);
-        account.setRegAttempts(0);
-        return account;
     }
 }

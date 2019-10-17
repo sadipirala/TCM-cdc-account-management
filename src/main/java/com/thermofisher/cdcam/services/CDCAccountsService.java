@@ -45,17 +45,6 @@ public class CDCAccountsService {
         }
     }
 
-    public AccountInfo getFederationAccountInfo(String uid) {
-        GSResponse response = cdcAccounts.getAccount(uid);
-        if (response.getErrorCode() == 0) {
-            GSObject obj = response.getData();
-            return accountBuilder.getFederationAccountInfo(obj);
-        } else {
-            logger.fatal(response.getErrorDetails());
-            return null;
-        }
-    }
-
     public ObjectNode updateFedUser(FedUserUpdateDTO user) throws JsonProcessingException {
         CDCThermofisher thermofisher = CDCThermofisher.builder().regStatus(user.getRegStatus()).build();
         CDCData data = CDCData.builder().thermofisher(thermofisher).build();

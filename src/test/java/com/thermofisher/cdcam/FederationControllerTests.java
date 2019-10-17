@@ -1,9 +1,5 @@
 package com.thermofisher.cdcam;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -11,7 +7,6 @@ import com.thermofisher.cdcam.controller.FederationController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
-
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import org.junit.Assert;
@@ -29,6 +24,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -95,7 +93,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifGivenAFederationUserUIDisSent_returnFederationAccount() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
@@ -113,7 +111,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifGivenANonFederationUserUIDisSent_returnError() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(nonFederationAccount);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
@@ -143,7 +141,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifSNSNotificationFails_returnServiceUnavailable() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(false);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
@@ -161,7 +159,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifGivenAnIncorrectRegistrationType_returnError() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountCreated\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
@@ -179,7 +177,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifNoEventsAreFound_returnError() {
         //setup
         String mockBody = "{\"events\":[]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
@@ -213,7 +211,7 @@ public class FederationControllerTests {
     public void notifyRegistration_ifNoUserIsFound_returnBadRequest() {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(null);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(null);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -232,7 +230,7 @@ public class FederationControllerTests {
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
         Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(accountsService.getFederationAccountInfo(anyString())).thenReturn(null);
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(null);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);

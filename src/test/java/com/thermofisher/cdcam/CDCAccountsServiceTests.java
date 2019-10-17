@@ -94,47 +94,6 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void getAccount_WhenAGetFederationAccountRequestInfoIsMade_ShouldReturnAnAccountInfoObjectWithResponseData() throws Exception {
-        // given
-        GSResponse gsResponse = Mockito.mock(GSResponse.class);
-        GSObject mockedGSObject = new GSObject(obj);
-        when(cdcAccounts.getAccount(anyString())).thenReturn(gsResponse);
-        when(gsResponse.getData()).thenReturn(mockedGSObject);
-        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
-        when(accountBuilder.getFederationAccountInfo(any(GSObject.class))).thenCallRealMethod();
-        AccountInfo expectedAccount = accountBuilder.getFederationAccountInfo(new GSObject(obj));
-
-        // when
-        AccountInfo account = cdcAccountsService.getFederationAccountInfo(uid);
-
-        // then
-        ObjectNode expectedJsonAccount = mapper.valueToTree(expectedAccount);
-        ObjectNode jsonAccount = mapper.valueToTree(account);
-        String password = jsonAccount.get("password").asText();
-        expectedJsonAccount.remove("password");
-        jsonAccount.remove("password");
-        String _expectedAccount = mapper.writeValueAsString(expectedJsonAccount);
-        String _account = mapper.writeValueAsString(jsonAccount);
-        assertTrue(password != null);
-        assertTrue(_expectedAccount.equals(_account));
-    }
-
-    @Test
-    public void getAccount_WhenAGetFederationAccountRequestInfoRequestIsResolvedWithError_ShouldReturnNull() throws Exception {
-        // given
-        final int ERROR_CODE = new Random().nextInt(10) + 1;
-        GSResponse gsResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccounts.getAccount(anyString())).thenReturn(gsResponse);
-        when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
-
-        // when
-        AccountInfo account = cdcAccountsService.getFederationAccountInfo(uid);
-
-        // then
-        assertNull(account);
-    }
-
-    @Test
     public void updateFedUser_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
             throws JsonProcessingException {
         // given

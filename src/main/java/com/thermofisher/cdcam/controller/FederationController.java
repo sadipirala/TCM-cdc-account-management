@@ -62,6 +62,8 @@ public class FederationController {
 
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
+        final int FED_PASSWORD_LENGTH = 10;
+
         try {
             JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
@@ -85,7 +87,7 @@ public class FederationController {
                 }
 
                 String uid = data.get("uid").toString();
-                AccountInfo account = accountsService.getFederationAccountInfo(uid);
+                AccountInfo account = accountsService.getAccountInfo(uid);
                 if (account == null){
                     logger.fatal("Account is null");
                 }
@@ -108,6 +110,7 @@ public class FederationController {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
+                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
 
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonString = mapper.writeValueAsString(account);
