@@ -30,10 +30,12 @@ public class AccountInfoHandler {
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("regAttempts");
+        propertiesToRemove.add("uid");
         
         ObjectNode json = mapper.valueToTree(account);
         logger.fatal("Get json " + mapper.writeValueAsString(json));
         json.remove(propertiesToRemove);
+        json.put("uuid", account.getUid());
         
         return mapper.writeValueAsString(json);
     }
