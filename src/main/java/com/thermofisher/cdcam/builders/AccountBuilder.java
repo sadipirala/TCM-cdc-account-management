@@ -41,7 +41,7 @@ public class AccountBuilder {
                     .regAttempts(0)
                     .build();
         } catch (Exception e) {
-            logger.error("Error building account info object:  " + e.getMessage());
+            logger.fatal("Error building account info object:  " + e.getMessage());
             return null;
         }
     }

@@ -21,7 +21,7 @@ public class NotificationService {
 
             HttpPost postMethod = new HttpPost(regNotificationUrl);
             StringEntity body = new StringEntity(requestBody);
-            logger.fatal("Payload body: " + body);
+            logger.fatal("Payload body: " + requestBody);
             postMethod.setEntity(body);
             postMethod.setHeader("Content-type", "application/json");
             return httpClient.execute(postMethod);
