@@ -4,18 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.model.*;
-import com.thermofisher.cdcam.model.dto.FedUserUpdateDTO;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
 
@@ -34,6 +37,8 @@ import java.util.List;
 public class AccountsController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
     static final String requestExceptionHeader = "Request-Exception";
+    static final String eecKey = "eec-secret-key";
+    static final String fedKey = "cdc-secret-key";
 
     @Value("${eec.aws.secret}")
     private String eecSecret;
@@ -59,7 +64,7 @@ public class AccountsController {
     @Autowired
     HashValidationService hashValidationService;
 
-    @PostMapping("/eec/emails")
+    @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
@@ -71,90 +76,59 @@ public class AccountsController {
             })
     })
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
-    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-eec-sig-hmac-sha1") String headerValue, @Valid @RequestBody EmailList emailList)
-            throws JsonProcessingException, ParseException {
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(eecSecret));
-        String key = secretsManager.getProperty(secretProperties, "eec-secret-key");
+    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-eec-sig-hmac-sha1") String headerHashSignature, @Valid @RequestBody EmailList emailList)
+            throws JsonProcessingException, JSONException {
+        String body = Utils.convertJavaToJsonString(emailList);
+        String secretKey = secretsManager.getSecret(eecSecret);
 
-        if (hashValidationService.isValidHash(hashValidationService.getHashedString(key, Utils.convertJavaToJsonString(emailList)), headerValue)) {
-            if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
-                String errorMessage = "No users requested.";
-                logger.error(errorMessage);
-                return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
-            } else if (emailList.getEmails().size() > handler.requestLimit) {
-                String errorMessage = String.format("Requested users exceed request limit [%s].", handler.requestLimit);
-                logger.error(errorMessage);
-                return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
-            } else {
-                try {
-                    List<EECUser> response = handler.process(emailList);
-                    return ResponseEntity.ok().body(response);
-                } catch (IOException e) {
-                    String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
-                    logger.fatal(errorMessage);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "An error occurred during EEC email only registration process...").body(null);
-                }
+        if(!isValidHeader(secretKey, eecKey, body, headerHashSignature))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
+
+        if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
+            String errorMessage = "No users requested.";
+            logger.error(errorMessage);
+            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+        } else if (emailList.getEmails().size() > handler.requestLimit) {
+            String errorMessage = String.format("Requested users exceed request limit [%s].", handler.requestLimit);
+            logger.error(errorMessage);
+            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+        } else {
+            try {
+                List<EECUser> response = handler.process(emailList);
+                return ResponseEntity.ok().body(response);
+            } catch (IOException e) {
+                String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
+                logger.fatal(errorMessage);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "An error occurred during EEC email only registration process...").body(null);
             }
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header").body(null);
     }
 
     @PutMapping("/user")
-    @ApiOperation(value = "Updates user's username and regStatus in CDC.",
-            notes = "Keep in mind that the user's username should match the one in CDC.")
+    @ApiOperation(value = "Update user's data in CDC.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @RequestBody FedUserUpdateDTO user) throws JsonProcessingException, ParseException {
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
-        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-        String requestBody = Utils.convertJavaToJsonString(user);
-        String hash = hashValidationService.getHashedString(secretKey, requestBody);
+    @ApiImplicitParam(name = "body", value = "Request body with user data. Only UID is required, any profile/data property is optional.\nex: {\"uid\": \" \", \"profile\": { }, \"data\": { }}", required = true, type = "body", dataType = "string")
+    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String body) throws JSONException {
+        JSONObject jsonBody = Utils.convertStringToJson(body);
+        if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
 
-        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+        String secretKey = secretsManager.getSecret(federationSecret);
+        if(!isValidHeader(secretKey, fedKey, jsonBody.toString(), headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-        }
 
-        if (user.hasNullProperty()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        ObjectNode response = cdcAccountsService.update(jsonBody);
+        if (response == null) ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
 
-        ObjectNode response = cdcAccountsService.updateFedUser(user);
-        if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+        if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response.get("message").asText());
-        }
 
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/user/{uid}")
-    @ApiOperation(value = "Gets a user.")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
-    })
-    public ResponseEntity<UserDetails> getUser(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable String uid) throws ParseException, JsonProcessingException {
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
-        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-        String hash = hashValidationService.getHashedString(secretKey, uid);
-
-        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-        }
-        try {
-            UserDetails userDetails = usersHandler.getUser(uid);
-            if (userDetails != null)
-                return new ResponseEntity<UserDetails>(userDetails, HttpStatus.OK);
-            else
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
     @GetMapping("/users/{uids}")
     @ApiOperation(value = "Gets a list of users.")
     @ApiResponses({
@@ -162,27 +136,30 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws ParseException, JsonProcessingException {
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
-        String secretKey = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-        String joinedUIDs = String.join(",",uids);
-        String hash = hashValidationService.getHashedString(secretKey, joinedUIDs);
+    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true, type = "query", dataType = "array")
+    public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
+        String body = String.join(",",uids);
+        String secretKey = secretsManager.getSecret(federationSecret);
 
-        if (!hashValidationService.isValidHash(hash, headerHashSignature)) {
+        if(!isValidHeader(secretKey, fedKey, body, headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-        }
+
         try {
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
-            if (userDetails.size() > 0)
-                return new ResponseEntity<List<UserDetails>>(userDetails, HttpStatus.OK);
-            else
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-
     }
+
+    private boolean isValidHeader(String secret, String property, String data, String receivedHashString) throws JSONException {
+        JSONObject secretProperties = new JSONObject(secret);
+        String secretKey = Utils.getStringFromJSON(secretProperties, property);
+        String generatedHashString = hashValidationService.getHashedString(secretKey, data);
+
+        return hashValidationService.isValidHash(generatedHashString, receivedHashString);
+    }
+
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)

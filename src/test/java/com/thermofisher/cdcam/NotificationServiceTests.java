@@ -1,9 +1,13 @@
 package com.thermofisher.cdcam;
 
-import com.google.common.base.Verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.services.NotificationService;
-import org.apache.http.HttpStatus;
+
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -18,11 +22,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.io.IOException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -62,6 +61,6 @@ public class NotificationServiceTests {
     public void postRequest_givenExecute_HttpClient_Fails_ShouldCatchIOException() throws IOException {
         //When
         when(mockHttpClient.execute(any())).thenThrow(IOException.class);
-        CloseableHttpResponse httpResponse = notificationService.postRequest(mockRequestBody , mockRequestUrl);
+        notificationService.postRequest(mockRequestBody , mockRequestUrl);
     }
 }

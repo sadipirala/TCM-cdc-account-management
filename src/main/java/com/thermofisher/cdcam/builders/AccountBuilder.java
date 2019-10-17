@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.builders;
 
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
