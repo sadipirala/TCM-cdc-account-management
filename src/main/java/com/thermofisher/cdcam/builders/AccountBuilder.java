@@ -28,7 +28,7 @@ public class AccountBuilder {
             return AccountInfo.builder()
                     .uid(uid)
                     .username(profile.containsKey("username") ? profile.getString("username") : profile.getString("email"))
-                    .emailAddress(profile.getString("email"))
+                    .emailAddress(profile.containsKey("email") ? profile.getString("email") : "")
                     .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
                     .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
                     .company(company)

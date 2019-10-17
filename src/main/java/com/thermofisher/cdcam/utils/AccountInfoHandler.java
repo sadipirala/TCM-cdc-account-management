@@ -26,9 +26,9 @@ public class AccountInfoHandler {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("member");
-        propertiesToRemove.add("localeName");
-        propertiesToRemove.add("loginProvider");
+        if(account.getMember() != null) propertiesToRemove.add("member");
+        if(account.getLocaleName() != null) propertiesToRemove.add("localeName");
+        if(account.getLoginProvider() != null) propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
         
