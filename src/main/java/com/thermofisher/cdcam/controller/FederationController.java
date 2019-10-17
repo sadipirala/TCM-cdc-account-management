@@ -93,10 +93,10 @@ public class FederationController {
                 logger.error("Call parse to notify, parse account: " + accountToNotify );
                 try{
                     CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
-                    logger.error("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                    logger.fatal("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
                 }
                 catch (Exception e){
-                    logger.error("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.fatal("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 if (account == null) {
