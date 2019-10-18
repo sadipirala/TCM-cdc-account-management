@@ -13,8 +13,8 @@ import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
-
 import com.thermofisher.cdcam.utils.Utils;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,16 +89,17 @@ public class FederationController {
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getAccountInfo(uid);
                 if (account == null){
-                    logger.fatal("Account is null");
+                    logger.fatal("0. Account is null");
                 }
                 String accountToNotify = accountHandler.parseToNotify(account);
                 logger.error("Call parse to notify, parse account: " + accountToNotify );
-                try{
-                    CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify,regNotificationUrl);
-                    logger.fatal("The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode());
+                try {
+                    CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify, regNotificationUrl);
+                    notificationPostResponse.close();
+                    logger.fatal("2. The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode() + ". Reason phrase: " + notificationPostResponse.getStatusLine().getReasonPhrase());
                 }
                 catch (Exception e){
-                    logger.fatal("The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.fatal("3. EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 if (account == null) {
@@ -123,7 +124,7 @@ public class FederationController {
                 logger.info("User sent to SNS.");
                 return new ResponseEntity<>(jsonString, HttpStatus.OK);
             }
-
+            
             logger.error("NO EVENT FOUND");
             return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
