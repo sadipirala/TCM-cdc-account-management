@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class NotificationService {
     static final Logger logger = LogManager.getLogger("CdcamApp");
+    private CloseableHttpClient httpClient = HttpClients.createDefault();
 
     public CloseableHttpResponse postRequest(String requestBody, String regNotificationUrl) throws IOException {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(regNotificationUrl);
         StringEntity body = new StringEntity(requestBody);
         logger.fatal("1. Payload body: " + requestBody);
