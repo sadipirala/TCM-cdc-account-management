@@ -61,6 +61,6 @@ public class NotificationServiceTests {
     public void postRequest_givenExecute_HttpClient_Fails_ShouldCatchIOException() throws IOException {
         //When
         when(mockHttpClient.execute(any())).thenThrow(IOException.class);
-        CloseableHttpResponse httpResponse = notificationService.postRequest(mockRequestBody , mockRequestUrl);
+        notificationService.postRequest(mockRequestBody , mockRequestUrl);
     }
 }

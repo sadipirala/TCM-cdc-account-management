@@ -87,6 +87,7 @@ public class FederationController {
                 }
 
                 String uid = data.get("uid").toString();
+                logger.fatal("UID: " + uid);
                 AccountInfo account = accountsService.getAccountInfo(uid);
                 if (account == null){
                     logger.fatal("0. Account is null");
@@ -98,7 +99,7 @@ public class FederationController {
                     notificationPostResponse.close();
                     logger.fatal("2. The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode() + ". Reason phrase: " + notificationPostResponse.getStatusLine().getReasonPhrase());
                 }
-                catch (Exception e){
+                catch (Exception e) {
                     logger.fatal("3. EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
