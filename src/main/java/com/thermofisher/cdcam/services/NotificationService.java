@@ -21,7 +21,6 @@ public class NotificationService {
         StringEntity body = new StringEntity(requestBody);
         logger.fatal("1. Payload body: " + requestBody);
         httpPost.setEntity(body);
-        httpPost.setHeader("Accept", "application/json");
         httpPost.setHeader("Content-Type", "application/json");
         return httpClient.execute(httpPost);
     }
