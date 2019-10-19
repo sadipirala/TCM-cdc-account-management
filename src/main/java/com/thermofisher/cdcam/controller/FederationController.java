@@ -15,7 +15,9 @@ import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -95,9 +97,9 @@ public class FederationController {
                 String accountToNotify = accountHandler.parseToNotify(account);
                 logger.error("Call parse to notify, parse account: " + accountToNotify );
                 try {
-                    CloseableHttpResponse notificationPostResponse = notificationService.postRequest(accountToNotify, regNotificationUrl);
-                    notificationPostResponse.close();
-                    logger.fatal("2. The call to " + regNotificationUrl + " has finished with response code " + notificationPostResponse.getStatusLine().getStatusCode() + ". Reason phrase: " + notificationPostResponse.getStatusLine().getReasonPhrase());
+                    CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
+                    logger.fatal("2. The call to " + regNotificationUrl + " has finished with response code " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
+                    response.close();
                 }
                 catch (Exception e) {
                     logger.fatal("3. EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
