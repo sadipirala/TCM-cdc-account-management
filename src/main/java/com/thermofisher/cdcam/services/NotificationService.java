@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.services;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -18,7 +19,7 @@ public class NotificationService {
 
     public CloseableHttpResponse postRequest(String requestBody, String regNotificationUrl) throws IOException {
         HttpPost httpPost = new HttpPost(regNotificationUrl);
-        StringEntity body = new StringEntity(requestBody);
+        StringEntity body = new StringEntity(requestBody, StandardCharsets.UTF_8);
         logger.fatal("1. Payload body: " + requestBody);
         httpPost.setEntity(body);
         httpPost.setHeader("Content-Type", "application/json");
