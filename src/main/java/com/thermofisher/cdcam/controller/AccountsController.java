@@ -98,7 +98,7 @@ public class AccountsController {
                 return ResponseEntity.ok().body(response);
             } catch (IOException e) {
                 String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
-                logger.fatal(errorMessage);
+                logger.error(errorMessage);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "An error occurred during EEC email only registration process...").body(null);
             }
         }
