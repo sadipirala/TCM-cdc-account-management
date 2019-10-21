@@ -26,7 +26,7 @@ public class UsersHandler {
     public UserDetails getUser(String uid) throws IOException {
         List<UserDetails> userDetails = new ArrayList<>();
         logger.info(String.format("%s user requested...", uid));
-        String query = String.format("SELECT UID, profile.email, profile.firstName,profile.lastName,isRegistered FROM accounts WHERE UID = '%s' ", uid);
+        String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID = '%s' ", uid);
         GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
@@ -62,12 +62,14 @@ public class UsersHandler {
     }
 
     public List<UserDetails> getUsers(List<String> uids) throws IOException {
+        final int ONE_ACCOUNT = 1;
+        final int TWO_ACCOUNTS = 2;
         List<UserDetails> userDetails = new ArrayList<>();
         logger.info(String.format("%s users requested...", uids.size()));
         String joinedUids = uids.stream()
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
-        String query = String.format("SELECT UID, profile.email, profile.firstName,profile.lastName,isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
+        String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
         GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
@@ -89,11 +91,11 @@ public class UsersHandler {
                     if (existingUser != null) {
                         if (user.getFirstName() != null) {
                             int indexOfUser = userDetails.indexOf(existingUser);
-                            user.setAssociatedAccounts(2);
+                            user.setAssociatedAccounts(TWO_ACCOUNTS);
                             userDetails.set(indexOfUser, user);
                         }
                     } else {
-                        user.setAssociatedAccounts(1);
+                        user.setAssociatedAccounts(ONE_ACCOUNT);
                         userDetails.add(user);
                     }
                 }

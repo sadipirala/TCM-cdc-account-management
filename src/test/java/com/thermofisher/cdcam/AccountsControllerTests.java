@@ -1,5 +1,13 @@
 package com.thermofisher.cdcam;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -7,7 +15,6 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.controller.AccountsController;
-import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
@@ -15,6 +22,7 @@ import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+
 import org.json.JSONException;
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
@@ -32,20 +40,11 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class AccountsControllerTests {
     private String header = "test";
-    private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
     private final List<String> uids = new ArrayList<>();
     private final List<String> emptyUIDs = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";
@@ -198,8 +197,6 @@ public class AccountsControllerTests {
         final String requestExceptionHeader = "Request-Exception";
         String badRequestHeaderMessage = "Invalid request header.";
         String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
-        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
         // when
@@ -217,9 +214,7 @@ public class AccountsControllerTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("message", message);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
         Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
@@ -238,9 +233,7 @@ public class AccountsControllerTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("message", message);
-        AccountInfo account = AccountInfo.builder().uid(uid).username(username).emailAddress(username).build();
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccounts.getAccount(any())).thenReturn(account);
         Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
