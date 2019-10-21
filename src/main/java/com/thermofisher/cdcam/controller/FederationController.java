@@ -128,7 +128,7 @@ public class FederationController {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             String stackTrace = sw.toString();
-            logger.fatal(stackTrace);
+            logger.error(stackTrace);
             return new ResponseEntity<>("ERROR: " + stackTrace, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

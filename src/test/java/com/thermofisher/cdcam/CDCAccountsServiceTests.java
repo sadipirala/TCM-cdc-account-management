@@ -78,7 +78,7 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void getAccount_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldReturnNull() throws Exception {
+    public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldReturnNull() throws Exception {
         // given
         final int ERROR_CODE = new Random().nextInt(10) + 1;
         GSResponse gsResponse = Mockito.mock(GSResponse.class);

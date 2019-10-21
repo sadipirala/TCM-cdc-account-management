@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.builders;
 
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.AccountInfo;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +40,7 @@ public class AccountBuilder {
                     .regAttempts(0)
                     .build();
         } catch (Exception e) {
-            logger.fatal("Error building account info object:  " + e.getMessage());
+            logger.error("Error building account info object:  " + e.getMessage());
             return null;
         }
     }

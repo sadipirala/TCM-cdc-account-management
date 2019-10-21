@@ -56,11 +56,4 @@ public class NotificationServiceTests {
         //Then
         Assert.assertNotNull(httpResponse);
     }
-
-    @Test(expected = IOException.class)
-    public void postRequest_givenExecute_HttpClient_Fails_ShouldCatchIOException() throws IOException {
-        //When
-        when(mockHttpClient.execute(any())).thenThrow(IOException.class);
-        notificationService.postRequest(mockRequestBody , mockRequestUrl);
-    }
 }
