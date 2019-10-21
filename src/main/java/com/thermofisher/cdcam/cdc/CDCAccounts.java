@@ -96,7 +96,6 @@ public class CDCAccounts {
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
-
         return request.send();
     }
 
@@ -124,6 +123,6 @@ public class CDCAccounts {
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         String stackTrace = sw.toString();
-        logger.error(stackTrace);
+        logger.fatal(stackTrace);
     }
 }

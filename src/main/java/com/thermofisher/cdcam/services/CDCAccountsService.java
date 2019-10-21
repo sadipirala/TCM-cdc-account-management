@@ -34,7 +34,7 @@ public class CDCAccountsService {
             GSObject obj = response.getData();
             return accountBuilder.getAccountInfo(obj);
         } else {
-            logger.fatal("GET_ACCOUNT: " + response.getErrorDetails());
+            logger.error("Get account error: " + response.getErrorDetails());
             return null;
         }
     }
