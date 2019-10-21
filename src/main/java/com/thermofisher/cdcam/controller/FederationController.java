@@ -89,9 +89,11 @@ public class FederationController {
 
                 String uid = data.get("uid").toString();
                 AccountInfo account = accountsService.getAccountInfo(uid);
-                if (account == null){
-                    logger.error("Account is null");
+                if (account == null) {
+                    logger.error("Account not found. UID: " + uid);
+                    return new ResponseEntity<>("Account not found.", HttpStatus.BAD_REQUEST);
                 }
+
                 String accountToNotify = accountHandler.parseToNotify(account);
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
@@ -100,11 +102,6 @@ public class FederationController {
                 }
                 catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
-                }
-
-                if (account == null) {
-                    logger.error("The user was not created through federation.");
-                    return new ResponseEntity<>("NO USER FOUND", HttpStatus.BAD_REQUEST);
                 }
 
                 if (!hasFederationProvider(account)) {
