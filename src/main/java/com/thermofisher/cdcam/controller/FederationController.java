@@ -88,20 +88,18 @@ public class FederationController {
                 }
 
                 String uid = data.get("uid").toString();
-                logger.fatal("UID: " + uid);
                 AccountInfo account = accountsService.getAccountInfo(uid);
                 if (account == null){
-                    logger.fatal("0. Account is null");
+                    logger.error("Account is null");
                 }
                 String accountToNotify = accountHandler.parseToNotify(account);
-                logger.error("Call parse to notify, parse account: " + accountToNotify );
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
-                    logger.fatal("2. The call to " + regNotificationUrl + " has finished with response code " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
+                    logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
                     response.close();
                 }
                 catch (Exception e) {
-                    logger.fatal("3. EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 if (account == null) {
@@ -117,7 +115,6 @@ public class FederationController {
 
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonString = mapper.writeValueAsString(account);
-                System.out.println("JSON: " + jsonString);
                 if (!snsHandler.sendSNSNotification(jsonString)) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
