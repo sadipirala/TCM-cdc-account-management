@@ -10,7 +10,8 @@ import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
-
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.entity.BasicHttpEntity;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,11 +25,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -36,7 +40,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 public class FederationControllerTests {
 
     @InjectMocks
-    private FederationController federationController = new FederationController();
+    FederationController federationController;
 
     @Mock
     private SNSHandler snsHandler;
@@ -243,5 +247,34 @@ public class FederationControllerTests {
 
         //validation
         Mockito.verify(notificationService).postRequest(any(), any());
+    }
+
+    @Test
+    public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException {
+        //set up
+        ReflectionTestUtils.setField(federationController,"regNotificationUrl", "http://google.com");
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        String mockAccountToNotify = "Test Account";
+        CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
+        BasicHttpEntity entity = new BasicHttpEntity();
+        entity.setContent(new ByteArrayInputStream("".getBytes()));
+
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(mockResponse.getEntity()).thenReturn(entity);
+        Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
+        Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);
+        doNothing().when(mockResponse).close();
+        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+
+        //execution
+        ResponseEntity response = federationController.notifyRegistration("Test", mockBody);
+
+        //validation
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 }
