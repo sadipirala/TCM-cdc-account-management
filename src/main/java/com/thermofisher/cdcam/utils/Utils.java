@@ -7,15 +7,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Utils {
-    public static String getAlphaNumericString(int n) {
-        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
-        StringBuilder sb = new StringBuilder(n);
-        for (int i = 0; i < n; i++) {
-            int index
-                    = (int) (AlphaNumericString.length()
-                    * Math.random());
-            sb.append(AlphaNumericString
-                    .charAt(index));
+    public static String getAlphaNumericString(int lenght) {
+        final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
+        StringBuilder sb = new StringBuilder(lenght);
+        for (int i = 0; i < lenght; i++) {
+            int index = (int) (ALPHANUMERIC_STRING.length() * Math.random());
+            sb.append(ALPHANUMERIC_STRING.charAt(index));
         }
         return sb.toString();
     }

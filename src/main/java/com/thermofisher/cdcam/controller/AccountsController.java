@@ -98,7 +98,7 @@ public class AccountsController {
                 return ResponseEntity.ok().body(response);
             } catch (IOException e) {
                 String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
-                logger.fatal(errorMessage);
+                logger.error(errorMessage);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "An error occurred during EEC email only registration process...").body(null);
             }
         }
@@ -111,19 +111,16 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    @ApiImplicitParam(name = "body", value = "Request body with user data. Only UID is required, any profile/data property is optional.\nex: {\"uid\": \" \", \"profile\": { }, \"data\": { }}",
-            required = true, type = "body", dataType = "string")
+    @ApiImplicitParam(name = "body", value = "Request body with user data. Only UID is required, any profile/data property is optional.\nex: {\"uid\": \" \", \"profile\": { }, \"data\": { }}", required = true, type = "body", dataType = "string")
     public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String body) throws JSONException {
         JSONObject jsonBody = Utils.convertStringToJson(body);
         if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
 
         String secretKey = secretsManager.getSecret(federationSecret);
-
         if(!isValidHeader(secretKey, fedKey, jsonBody.toString(), headerHashSignature))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
 
         ObjectNode response = cdcAccountsService.update(jsonBody);
-
         if (response == null) ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
 
         if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -133,7 +130,7 @@ public class AccountsController {
     }
 
     @GetMapping("/users/{uids}")
-    @ApiOperation(value = "Gets a list of users")
+    @ApiOperation(value = "Gets a list of users.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
