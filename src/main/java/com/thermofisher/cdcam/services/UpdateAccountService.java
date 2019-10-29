@@ -1,13 +1,11 @@
 package com.thermofisher.cdcam.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpStatus;
 
 public class UpdateAccountService implements Runnable {
 
@@ -41,15 +39,14 @@ public class UpdateAccountService implements Runnable {
             String dataJsonString = mapper.writeValueAsString(data);
             String profileJsonString = mapper.writeValueAsString(profile);
 
-            GSResponse response = cdcAccounts.setUserInfo(uid,dataJsonString,profileJsonString);
+            GSResponse response = cdcAccounts.setUserInfo(uid, dataJsonString, profileJsonString);
             if (response.getErrorCode() == SUCCESS_CODE) {
                 logger.info("uid: " + uid + " updated.");
             } else {
-                logger.error("uid: " + uid + " failed. error Code: "+response.getErrorCode() );
+                logger.fatal("uid: " + uid + " failed. error Code: " + response.getLog());
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
-
     }
 }
