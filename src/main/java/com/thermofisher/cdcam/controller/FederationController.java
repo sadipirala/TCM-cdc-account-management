@@ -12,6 +12,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -99,8 +100,7 @@ public class FederationController {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
                     logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
                     response.close();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
@@ -108,6 +108,13 @@ public class FederationController {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
+
+                //Start thread to update user info.
+                UpdateAccountService updateAccountService = new UpdateAccountService(uid, account.getEmailAddress());
+                Thread thread = new Thread(updateAccountService);
+                logger.fatal("thread.start");
+                thread.start();
+
                 account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
 
                 ObjectMapper mapper = new ObjectMapper();
@@ -120,10 +127,11 @@ public class FederationController {
                 logger.info("User sent to SNS.");
                 return new ResponseEntity<>(jsonString, HttpStatus.OK);
             }
-            
+
             logger.error("NO EVENT FOUND");
             return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
+            logger.fatal("federation controller error: " + e.getMessage());
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
