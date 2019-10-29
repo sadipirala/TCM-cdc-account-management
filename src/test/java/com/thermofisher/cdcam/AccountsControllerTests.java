@@ -192,59 +192,6 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JSONException {
-        // given
-        final String requestExceptionHeader = "Request-Exception";
-        String badRequestHeaderMessage = "Invalid request header.";
-        String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(invalidHash, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
-        Assert.assertEquals(badRequestHeaderMessage, res.getHeaders().get(requestExceptionHeader).get(0));
-    }
-
-    @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JSONException {
-        // given
-        String message = "Internal server error.";
-        ObjectNode response = JsonNodeFactory.instance.objectNode();
-        response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("message", message);
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
-        Assert.assertEquals(message, res.getBody());
-    }
-
-    @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JSONException {
-        // given
-        String message = "OK";
-        ObjectNode response = JsonNodeFactory.instance.objectNode();
-        response.put("code", HttpStatus.OK.value());
-        response.put("message", message);
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
-    }
-
-    @Test
     public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException, JSONException {
         //setup
         List<UserDetails> userDetailsList = new ArrayList<>();
