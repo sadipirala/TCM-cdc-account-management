@@ -61,9 +61,6 @@ public class AccountsControllerTests {
     @InjectMocks
     AccountsController accountsController;
 
-    @InjectMocks
-    FederationController federationController;
-
     @Mock
     AccountInfoHandler accountInfoHandler;
 
@@ -337,7 +334,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertTrue(res.getStatusCode().is2xxSuccessful());
@@ -355,7 +352,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertEquals(res.getBody(), "The user was not created through federation.");
@@ -367,7 +364,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.isValidHash(null, null)).thenReturn(true);
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration(null, null);
+        ResponseEntity<String> res = accountsController.notifyRegistration(null, null);
 
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -385,7 +382,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.SERVICE_UNAVAILABLE);
@@ -403,7 +400,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
@@ -419,7 +416,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
@@ -436,7 +433,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertTrue(res.getStatusCode().is4xxClientError());
@@ -455,7 +452,7 @@ public class AccountsControllerTests {
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
 
         //execution
-        federationController.notifyRegistration("Test", mockBody);
+        accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Mockito.verify(notificationService).postRequest(any(), any());
@@ -464,7 +461,7 @@ public class AccountsControllerTests {
     @Test
     public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException {
         //set up
-        ReflectionTestUtils.setField(federationController,"regNotificationUrl", "http://google.com");
+        ReflectionTestUtils.setField(accountsController,"regNotificationUrl", "http://google.com");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
         CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
@@ -484,7 +481,7 @@ public class AccountsControllerTests {
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
 
         //execution
-        ResponseEntity response = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity response = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertEquals(response.getStatusCode(), HttpStatus.OK);
@@ -502,7 +499,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
 
         //execution
-        ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
+        ResponseEntity<String> res = accountsController.notifyRegistration("Test", mockBody);
 
         //validation
         Assert.assertEquals(res.getBody(), "the event type was not recognized");
