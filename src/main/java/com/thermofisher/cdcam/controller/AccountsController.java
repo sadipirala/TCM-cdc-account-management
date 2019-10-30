@@ -188,9 +188,11 @@ public class AccountsController {
         try {
             org.json.simple.JSONObject secretProperties = (org.json.simple.JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
+            String hash = hashValidationService.getHashedString(key, rawBody);
 
-            if (!hashValidationService.isValidHash(hashValidationService.getHashedString(key, rawBody), headerValue)) {
+            if (!hashValidationService.isValidHash(hash, headerValue)) {
                 logger.error("INVALID SIGNATURE");
+                notificationService.postRequest(String.format("{\"text\":\"%s\"}", hash), "https://outlook.office.com/webhook/191a74d9-69a1-43fd-93fb-a7ced56e466c@b67d722d-aa8a-4777-a169-ebeb7a6a3b67/IncomingWebhook/db4b1158a06143e8b2287287b0f52f57/23face9e-97c4-4597-b2b2-2a6a8b297dbf");
                 return new ResponseEntity<>("INVALID SIGNATURE", HttpStatus.BAD_REQUEST);
             }
 
