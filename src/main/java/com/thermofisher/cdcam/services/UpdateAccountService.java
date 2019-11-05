@@ -21,6 +21,7 @@ public class UpdateAccountService implements Runnable {
     @Override
     public void run() {
         try {
+            logger.fatal("thread.run");
             CDCAccounts cdcAccounts = new CDCAccounts();
             Thermofisher thermofisher = Thermofisher.builder()
                     .legacyEmail(emailAddress)
@@ -38,14 +39,16 @@ public class UpdateAccountService implements Runnable {
             String dataJsonString = mapper.writeValueAsString(data);
             String profileJsonString = mapper.writeValueAsString(profile);
 
+            logger.fatal("cdcAccounts.setUserInfo");
             GSResponse response = cdcAccounts.setUserInfo(uid, dataJsonString, profileJsonString);
+            logger.fatal("gigya response code: " + response.getErrorCode());
             if (response.getErrorCode() == SUCCESS_CODE) {
                 logger.fatal("uid: " + uid + " updated.");
             } else {
                 logger.fatal("uid: " + uid + " failed. error Code: " + response.getLog());
             }
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.fatal("error message: " + e.getMessage());
         }
     }
 }
