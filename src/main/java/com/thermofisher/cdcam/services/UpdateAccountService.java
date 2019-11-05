@@ -8,7 +8,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class UpdateAccountService implements Runnable {
-
     static final Logger logger = LogManager.getLogger("CdcamApp");
     private static final int SUCCESS_CODE = 0;
     private String emailAddress;
@@ -41,7 +40,7 @@ public class UpdateAccountService implements Runnable {
 
             GSResponse response = cdcAccounts.setUserInfo(uid, dataJsonString, profileJsonString);
             if (response.getErrorCode() == SUCCESS_CODE) {
-                logger.info("uid: " + uid + " updated.");
+                logger.fatal("uid: " + uid + " updated.");
             } else {
                 logger.fatal("uid: " + uid + " failed. error Code: " + response.getLog());
             }
