@@ -53,7 +53,7 @@ public class CDCAccountsService {
         logger.fatal("profileJson");
         String profileJson = (profile != null) ? profile.toString() : "";
 
-        logger.fatal("cdc.setUserInfo")
+        logger.fatal("cdc.setUserInfo");
         GSResponse cdcResponse = cdcAccounts.setUserInfo(uid, dataJson, profileJson);
 
         ObjectNode response = JsonNodeFactory.instance.objectNode();
