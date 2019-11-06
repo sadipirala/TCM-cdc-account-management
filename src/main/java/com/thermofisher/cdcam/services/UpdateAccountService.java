@@ -13,9 +13,9 @@ public class UpdateAccountService implements Runnable {
     private String emailAddress;
     private String uid;
 
-    public UpdateAccountService(String emailAddress, String uid) {
-        this.emailAddress = emailAddress;
+    public UpdateAccountService(String uid, String emailAddress) {
         this.uid = uid;
+        this.emailAddress = emailAddress;
     }
 
     @Override
