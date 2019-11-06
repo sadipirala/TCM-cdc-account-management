@@ -45,7 +45,6 @@ public class UpdateAccountService {
             jsonAccount.put("uid", uid);
             jsonAccount.put("data", Utils.convertJavaToJsonString(data));
             jsonAccount.put("profile", Utils.convertJavaToJsonString(profile));
-
             logger.fatal("cdcAccountsService.update");
             JsonNode response = cdcAccountsService.update(jsonAccount);
             logger.fatal("gigya response code: " + response.get("code").asInt());
@@ -55,6 +54,7 @@ public class UpdateAccountService {
                 logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
             }
         } catch (Exception e) {
+            logger.fatal(e.getStackTrace().toString());
             logger.fatal("error message: " + e.getMessage());
         }
     }
