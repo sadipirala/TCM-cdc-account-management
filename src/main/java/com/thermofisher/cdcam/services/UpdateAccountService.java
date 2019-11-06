@@ -25,7 +25,7 @@ public class UpdateAccountService {
     @Async
     public void updateLegacyDataInCDC(String uid, String emailAddress) {
         try {
-            logger.fatal("thread.run");
+            logger.fatal("Execute method asynchronously - " + Thread.currentThread().getName());
             Thermofisher thermofisher = Thermofisher.builder()
                     .legacyEmail(emailAddress)
                     .legacyUsername(emailAddress)
@@ -46,9 +46,9 @@ public class UpdateAccountService {
             jsonAccount.put("data", Utils.convertJavaToJsonString(data));
             jsonAccount.put("profile", Utils.convertJavaToJsonString(profile));
 
-            logger.fatal("cdcAccounts.setUserInfo");
+            logger.fatal("cdcAccountsService.update");
             JsonNode response = cdcAccountsService.update(jsonAccount);
-            logger.fatal("gigya response code: " + response.get("code"));
+            logger.fatal("gigya response code: " + response.get("code").asInt());
             if (response.get("code").asInt() == SUCCESS_CODE) {
                 logger.fatal("uid: " + uid + " updated.");
             } else {
