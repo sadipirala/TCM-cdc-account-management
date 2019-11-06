@@ -109,7 +109,7 @@ public class CDCAccountsServiceTests {
 
         // then
         Assert.assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("message").asText());
+        Assert.assertEquals(message, updateResponse.get("error").asText());
     }
 
     @Test
@@ -130,6 +130,6 @@ public class CDCAccountsServiceTests {
 
         // then
         Assert.assertEquals(errorCode, updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("message").asText());
+        Assert.assertEquals(message, updateResponse.get("error").asText());
     }
 }

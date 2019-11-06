@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -59,6 +60,9 @@ public class FederationControllerTests {
 
     @Mock
     AccountInfoHandler accountInfoHandler;
+
+    @Mock
+    UpdateAccountService updateAccountService;
 
     private AccountInfo federationAccount = AccountInfo.builder()
             .username("federatedUser@OIDC.com")
@@ -241,6 +245,7 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
         federationController.notifyRegistration("Test", mockBody);
@@ -270,6 +275,7 @@ public class FederationControllerTests {
         Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);
         doNothing().when(mockResponse).close();
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
         ResponseEntity response = federationController.notifyRegistration("Test", mockBody);
