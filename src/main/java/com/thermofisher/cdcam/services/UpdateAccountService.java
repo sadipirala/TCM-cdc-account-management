@@ -1,5 +1,8 @@
 package com.thermofisher.cdcam.services;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.Data;
@@ -54,7 +57,10 @@ public class UpdateAccountService {
                 logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
             }
         } catch (Exception e) {
-            logger.fatal(e.getStackTrace().toString());
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String exceptionAsString = sw.toString();
+            logger.fatal(exceptionAsString);
             logger.fatal("error message: " + e.getMessage());
         }
     }
