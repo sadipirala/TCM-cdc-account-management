@@ -62,6 +62,9 @@ public class FederationController {
     @Autowired
     NotificationService notificationService;
 
+    @Autowired
+    UpdateAccountService updateAccountService;
+
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         final int FED_PASSWORD_LENGTH = 10;
@@ -109,12 +112,10 @@ public class FederationController {
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
 
-                //Start thread to update user info.
-                UpdateAccountService updateAccountService = new UpdateAccountService(uid, account.getEmailAddress());
-                Thread thread = new Thread(updateAccountService);
+                // Start thread to update user info.
                 logger.fatal("thread.start");
-                thread.start();
-
+                updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
+                // federation random password
                 account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
 
                 ObjectMapper mapper = new ObjectMapper();
