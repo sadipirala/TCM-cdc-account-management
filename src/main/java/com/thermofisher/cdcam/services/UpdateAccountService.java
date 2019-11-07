@@ -1,14 +1,10 @@
 package com.thermofisher.cdcam.services;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
-import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,8 +35,8 @@ public class UpdateAccountService {
 
         JSONObject jsonAccount = new JSONObject();
         jsonAccount.put("uid", uid);
-        jsonAccount.put("data", data);
-        jsonAccount.put("profile", profile);
+        jsonAccount.put("data", new JSONObject(data));
+        jsonAccount.put("profile", new JSONObject(profile));
         logger.fatal("cdcAccountsService.update");
         JsonNode response = cdcAccountsService.update(jsonAccount);
         logger.fatal("gigya response code: " + response.get("code").asInt());

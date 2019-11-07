@@ -93,7 +93,7 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void updateFedUser_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
+    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
             throws JSONException {
         // given
         String message = "Success";
@@ -113,7 +113,7 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void updateFedUser_WhenGSResponseCodeIsZero_AnObjectNodeWith599999ErrorCodeShouldBeReturned()
+    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith599999ErrorCodeShouldBeReturned()
             throws JSONException {
         // given
         String message = "Something went bad.";
