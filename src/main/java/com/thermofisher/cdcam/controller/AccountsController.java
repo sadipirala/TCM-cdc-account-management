@@ -123,7 +123,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true, type = "query", dataType = "array")
+    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
     public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
         String body = String.join(",",uids);
         String secretKey = secretsManager.getSecret(federationSecret);
