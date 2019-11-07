@@ -112,8 +112,6 @@ public class FederationController {
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
 
-                // Start thread to update user info.
-                logger.fatal("thread.start");
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
                 // federation random password
                 account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
@@ -132,7 +130,6 @@ public class FederationController {
             logger.error("NO EVENT FOUND");
             return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            logger.fatal("federation controller error: " + e.getMessage());
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);

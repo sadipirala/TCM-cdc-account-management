@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.Thermofisher;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -22,10 +23,8 @@ public class UpdateAccountService {
     CDCAccountsService cdcAccountsService;
 
     @Async
-    public void updateLegacyDataInCDC(String uid, String emailAddress) throws Exception {
-        logger.fatal("Execute method asynchronously - " + Thread.currentThread().getName());
-        Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress)
-                .build();
+    public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException {
+        Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress).build();
         Data data = Data.builder().thermofisher(thermofisher).build();
         Profile profile = Profile.builder().username(emailAddress).build();
         CDCAccount account = new CDCAccount();
@@ -37,11 +36,9 @@ public class UpdateAccountService {
         jsonAccount.put("uid", uid);
         jsonAccount.put("data", new JSONObject(data));
         jsonAccount.put("profile", new JSONObject(profile));
-        logger.fatal("cdcAccountsService.update");
         JsonNode response = cdcAccountsService.update(jsonAccount);
-        logger.fatal("gigya response code: " + response.get("code").asInt());
         if (response.get("code").asInt() == SUCCESS_CODE) {
-            logger.fatal("uid: " + uid + " updated.");
+            logger.info("uid: " + uid + " updated.");
         } else {
             logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
         }
