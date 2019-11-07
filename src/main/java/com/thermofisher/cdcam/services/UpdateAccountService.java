@@ -39,8 +39,8 @@ public class UpdateAccountService {
 
         JSONObject jsonAccount = new JSONObject();
         jsonAccount.put("uid", uid);
-        jsonAccount.put("data", Utils.convertJavaToJsonString(data));
-        jsonAccount.put("profile", Utils.convertJavaToJsonString(profile));
+        jsonAccount.put("data", data);
+        jsonAccount.put("profile", profile);
         logger.fatal("cdcAccountsService.update");
         JsonNode response = cdcAccountsService.update(jsonAccount);
         logger.fatal("gigya response code: " + response.get("code").asInt());

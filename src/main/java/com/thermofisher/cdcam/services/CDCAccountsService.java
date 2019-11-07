@@ -41,19 +41,13 @@ public class CDCAccountsService {
 
     public ObjectNode update(JSONObject account) {
         if (account == null) return null;
-        logger.fatal("getStringFromJson UID");
         String uid = Utils.getStringFromJSON(account, "uid");
-        logger.fatal("getObjectFromJson data");
         JSONObject data = Utils.getObjectFromJSON(account, "data");
-        logger.fatal("getObjectFromJson profile");
         JSONObject profile = Utils.getObjectFromJSON(account, "profile");
 
-        logger.fatal("dataJson");
         String dataJson = (data != null) ? data.toString() : "";
-        logger.fatal("profileJson");
         String profileJson = (profile != null) ? profile.toString() : "";
 
-        logger.fatal("cdc.setUserInfo");
         GSResponse cdcResponse = cdcAccounts.setUserInfo(uid, dataJson, profileJson);
 
         ObjectNode response = JsonNodeFactory.instance.objectNode();
