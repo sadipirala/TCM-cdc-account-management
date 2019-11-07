@@ -26,42 +26,28 @@ public class UpdateAccountService {
     CDCAccountsService cdcAccountsService;
 
     @Async
-    public void updateLegacyDataInCDC(String uid, String emailAddress) {
-        try {
-            logger.fatal("Execute method asynchronously - " + Thread.currentThread().getName());
-            Thermofisher thermofisher = Thermofisher.builder()
-                    .legacyEmail(emailAddress)
-                    .legacyUsername(emailAddress)
-                    .build();
-            Data data = Data.builder()
-                    .thermofisher(thermofisher)
-                    .build();
-            Profile profile = Profile.builder()
-                    .username(emailAddress)
-                    .build();
-            CDCAccount account = new CDCAccount();
-            account.setUID(uid);
-            account.setProfile(profile);
-            account.setData(data);
+    public void updateLegacyDataInCDC(String uid, String emailAddress) throws Exception {
+        logger.fatal("Execute method asynchronously - " + Thread.currentThread().getName());
+        Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress)
+                .build();
+        Data data = Data.builder().thermofisher(thermofisher).build();
+        Profile profile = Profile.builder().username(emailAddress).build();
+        CDCAccount account = new CDCAccount();
+        account.setUID(uid);
+        account.setProfile(profile);
+        account.setData(data);
 
-            JSONObject jsonAccount = new JSONObject();
-            jsonAccount.put("uid", uid);
-            jsonAccount.put("data", Utils.convertJavaToJsonString(data));
-            jsonAccount.put("profile", Utils.convertJavaToJsonString(profile));
-            logger.fatal("cdcAccountsService.update");
-            JsonNode response = cdcAccountsService.update(jsonAccount);
-            logger.fatal("gigya response code: " + response.get("code").asInt());
-            if (response.get("code").asInt() == SUCCESS_CODE) {
-                logger.fatal("uid: " + uid + " updated.");
-            } else {
-                logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
-            }
-        } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            String exceptionAsString = sw.toString();
-            logger.fatal(exceptionAsString);
-            logger.fatal("error message: " + e.getMessage());
+        JSONObject jsonAccount = new JSONObject();
+        jsonAccount.put("uid", uid);
+        jsonAccount.put("data", Utils.convertJavaToJsonString(data));
+        jsonAccount.put("profile", Utils.convertJavaToJsonString(profile));
+        logger.fatal("cdcAccountsService.update");
+        JsonNode response = cdcAccountsService.update(jsonAccount);
+        logger.fatal("gigya response code: " + response.get("code").asInt());
+        if (response.get("code").asInt() == SUCCESS_CODE) {
+            logger.fatal("uid: " + uid + " updated.");
+        } else {
+            logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
         }
     }
 }

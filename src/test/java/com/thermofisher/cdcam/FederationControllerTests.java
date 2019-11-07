@@ -235,7 +235,7 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws IOException {
+    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws Exception, IOException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
@@ -255,7 +255,7 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException {
+    public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws Exception, IOException {
         //set up
         ReflectionTestUtils.setField(federationController,"regNotificationUrl", "http://google.com");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
