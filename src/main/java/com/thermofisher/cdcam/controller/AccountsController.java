@@ -215,7 +215,7 @@ public class AccountsController {
                     return new ResponseEntity<>("Account not found.", HttpStatus.BAD_REQUEST);
                 }
 
-                String accountToNotify = accountHandler.parseToNotify(account);
+                String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
                     logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));

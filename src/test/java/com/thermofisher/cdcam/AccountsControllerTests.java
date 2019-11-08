@@ -448,7 +448,7 @@ public class AccountsControllerTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
 
         //execution
@@ -473,7 +473,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
         Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);
