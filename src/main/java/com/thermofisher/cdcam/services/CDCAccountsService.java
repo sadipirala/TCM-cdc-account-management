@@ -39,26 +39,26 @@ public class CDCAccountsService {
         }
     }
 
-    public ObjectNode update(JSONObject user) {
-        if (user == null) return null;
-
-        String uid = Utils.getStringFromJSON(user, "uid");
-        JSONObject data = Utils.getObjectFromJSON(user,"data");
-        JSONObject profile = Utils.getObjectFromJSON(user, "profile");
+    public ObjectNode update(JSONObject account) {
+        if (account == null) return null;
+        String uid = Utils.getStringFromJSON(account, "uid");
+        JSONObject data = Utils.getObjectFromJSON(account, "data");
+        JSONObject profile = Utils.getObjectFromJSON(account, "profile");
 
         String dataJson = (data != null) ? data.toString() : "";
         String profileJson = (profile != null) ? profile.toString() : "";
 
-        GSResponse response = cdcAccounts.setUserInfo(uid, dataJson, profileJson);
+        GSResponse cdcResponse = cdcAccounts.setUserInfo(uid, dataJson, profileJson);
 
-        ObjectNode json = JsonNodeFactory.instance.objectNode();
-        if (response.getErrorCode() == SUCCESS_CODE) {
-            json.put("code", HttpStatus.OK.value());
+        ObjectNode response = JsonNodeFactory.instance.objectNode();
+        if (cdcResponse.getErrorCode() == SUCCESS_CODE) {
+            response.put("code", HttpStatus.OK.value());
         } else {
-            json.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-        json.put("message", response.getErrorMessage());
+        response.put("log", cdcResponse.getLog());
+        response.put("error", cdcResponse.getErrorMessage());
         
-        return json;
+        return response;
     }
 }

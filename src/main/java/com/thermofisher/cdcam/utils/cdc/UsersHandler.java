@@ -32,9 +32,9 @@ public class UsersHandler {
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {
             if (cdcSearchResponse.getTotalCount() > 0) {
-                for (CDCResult result : cdcSearchResponse.getResults()) {
+                for (CDCAccount result : cdcSearchResponse.getResults()) {
 
-                    CDCProfile profile = result.getProfile();
+                    Profile profile = result.getProfile();
                     Object isReg = result.getIsRegistered();
                     UserDetails user = UserDetails.builder()
                             .uid(result.getUID())
@@ -75,9 +75,9 @@ public class UsersHandler {
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {
             if (cdcSearchResponse.getTotalCount() > 0) {
-                for (CDCResult result : cdcSearchResponse.getResults()) {
+                for (CDCAccount result : cdcSearchResponse.getResults()) {
 
-                    CDCProfile profile = result.getProfile();
+                    Profile profile = result.getProfile();
                     Object isReg = result.getIsRegistered();
                     UserDetails user = UserDetails.builder()
                             .uid(result.getUID())

@@ -3,7 +3,6 @@ package com.thermofisher.cdcam.controller;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
@@ -12,6 +11,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -61,6 +61,9 @@ public class FederationController {
     @Autowired
     NotificationService notificationService;
 
+    @Autowired
+    UpdateAccountService updateAccountService;
+
     @PostMapping("/user")
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
         final int FED_PASSWORD_LENGTH = 10;
@@ -94,13 +97,12 @@ public class FederationController {
                     return new ResponseEntity<>("Account not found.", HttpStatus.BAD_REQUEST);
                 }
 
-                String accountToNotify = accountHandler.parseToNotify(account);
+                String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
-                    logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
+                    logger.info("Response: " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
                     response.close();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
@@ -108,19 +110,21 @@ public class FederationController {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
-                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
 
-                ObjectMapper mapper = new ObjectMapper();
-                String jsonString = mapper.writeValueAsString(account);
-                if (!snsHandler.sendSNSNotification(jsonString)) {
+                updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
+                // federation random password
+                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                String accountForGRP = accountHandler.prepareForGRPNotification(account);
+                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
+                if (!SNSSentCorrectly) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
                 }
 
                 logger.info("User sent to SNS.");
-                return new ResponseEntity<>(jsonString, HttpStatus.OK);
+                return new ResponseEntity<>(accountForGRP, HttpStatus.OK);
             }
-            
+
             logger.error("NO EVENT FOUND");
             return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {

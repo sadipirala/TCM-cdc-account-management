@@ -13,6 +13,6 @@ public class CDCSearchResponse {
     private int errorCode;
     private int statusCode;
     private String statusReason;
-    private List<CDCResult> results;
+    private List<CDCAccount> results;
     private int totalCount;
 }

@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -8,10 +9,12 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
+import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,6 +63,9 @@ public class FederationControllerTests {
     @Mock
     AccountInfoHandler accountInfoHandler;
 
+    @Mock
+    UpdateAccountService updateAccountService;
+
     private AccountInfo federationAccount = AccountInfo.builder()
             .username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com")
@@ -96,15 +102,17 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_ifGivenAFederationUserUIDisSent_returnFederationAccount() {
+    public void notifyRegistration_ifGivenAFederationUserUIDisSent_returnFederationAccount() throws JSONException, JsonProcessingException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
+        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
         
         //execution
         ResponseEntity<String> res = federationController.notifyRegistration("Test", mockBody);
@@ -231,7 +239,7 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws IOException {
+    public void notifyRegistration_givenARegistrationOccurs_ThenNotificationServicePostRequestShouldBeCalled() throws IOException, JSONException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
@@ -239,8 +247,9 @@ public class FederationControllerTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
         federationController.notifyRegistration("Test", mockBody);
@@ -250,9 +259,9 @@ public class FederationControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException {
+    public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException, JSONException {
         //set up
-        ReflectionTestUtils.setField(federationController,"regNotificationUrl", "http://google.com");
+        ReflectionTestUtils.setField(federationController, "regNotificationUrl", "http://google.com");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
         CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
@@ -264,11 +273,13 @@ public class FederationControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
         Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);
         doNothing().when(mockResponse).close();
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
         Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
 
         //execution
