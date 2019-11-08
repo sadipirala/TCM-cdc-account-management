@@ -40,13 +40,21 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
+        propertiesToRemove.add("password");
         json.put("uuid", json.get("uid").asText());
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
 
+    private String prepareJsonForGRP(ObjectNode json) throws JsonProcessingException {
+        List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("loginProvider");
+        json.remove(propertiesToRemove);
+        return mapper.writeValueAsString(json);
+    }
+
     @Test
-    public void parseToNotify_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
+    public void prepareForProfileInfoNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountInfoUtils.getAccount();
@@ -55,10 +63,27 @@ public class AccountInfoHandlerTests {
         AccountInfo account = AccountInfoUtils.getAccount();
 
         // when
-        String parsedAccount = accountHandler.parseToNotify(account);
+        String parsedAccount = accountHandler.prepareForProfileInfoNotification(account);
         
         // then
         assertTrue(parsedAccount.indexOf("\"password\"") == -1);
+        assertTrue(expectedAccountToNotify.equals(parsedAccount));
+    }
+
+    @Test
+    public void prepareForGRPNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
+        // given
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        AccountInfo mockAccount = AccountInfoUtils.getAccount();
+        ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
+        String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
+        AccountInfo account = AccountInfoUtils.getAccount();
+
+        // when
+        String parsedAccount = accountHandler.prepareForGRPNotification(account);
+
+        // then
+        assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);
         assertTrue(expectedAccountToNotify.equals(parsedAccount));
     }
 }

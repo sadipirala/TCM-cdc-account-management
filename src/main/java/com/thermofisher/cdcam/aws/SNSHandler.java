@@ -18,6 +18,7 @@ public class SNSHandler {
     private String region;
     @Value("${aws.sns.topic}")
     private String snsTopic;
+    
     public boolean sendSNSNotification(String message) {
         try {
             AmazonSNS snsClient = AmazonSNSClient.builder()
@@ -28,9 +29,7 @@ public class SNSHandler {
             String resultPublish = snsClient.publish(snsTopic, message).getMessageId();
 
             return resultPublish.length() > 0;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
