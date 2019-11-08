@@ -1,8 +1,14 @@
 package com.thermofisher.cdcam.controller;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+
+import javax.validation.Valid;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
@@ -19,7 +25,7 @@ import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-import io.swagger.annotations.*;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,15 +41,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ResponseHeader;
 
 @RestController
 @RequestMapping("/accounts")
@@ -132,31 +144,6 @@ public class AccountsController {
         }
     }
 
-    @PutMapping("/user")
-    @ApiOperation(value = "Update user's data in CDC.")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
-    })
-    @ApiImplicitParam(name = "body", value = "Request body with user data. Only UID is required, any profile/data property is optional.\nex: {\"uid\": \" \", \"profile\": { }, \"data\": { }}", required = true, type = "body", dataType = "string")
-    public ResponseEntity<String> updateUser(@RequestHeader("x-fed-sig") String headerHashSignature, @NotEmpty @NotNull @RequestBody String body) throws JSONException {
-        JSONObject jsonBody = Utils.convertStringToJson(body);
-        if (jsonBody == null) return ResponseEntity.badRequest().header(requestExceptionHeader, "Body cannot be empty or null").body(null);
-
-        String secretKey = secretsManager.getSecret(federationSecret);
-        if(!isValidHeader(secretKey, fedKey, jsonBody.toString(), headerHashSignature))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-
-        ObjectNode response = cdcAccountsService.update(jsonBody);
-        if (response == null) ResponseEntity.badRequest().header(requestExceptionHeader, "Invalid body structure").body(null);
-
-        if (response.get("code").asInt() == HttpStatus.INTERNAL_SERVER_ERROR.value())
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response.get("message").asText());
-
-        return ResponseEntity.ok().build();
-    }
-
     @GetMapping("/users/{uids}")
     @ApiOperation(value = "Gets a list of users.")
     @ApiResponses({
@@ -164,7 +151,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true, type = "query", dataType = "array")
+    @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
     public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
         String body = String.join(",",uids);
         String secretKey = secretsManager.getSecret(federationSecret);
@@ -228,7 +215,7 @@ public class AccountsController {
                     return new ResponseEntity<>("Account not found.", HttpStatus.BAD_REQUEST);
                 }
 
-                String accountToNotify = accountHandler.parseToNotify(account);
+                String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
                     logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));

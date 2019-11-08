@@ -93,7 +93,7 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void updateFedUser_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
+    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
             throws JSONException {
         // given
         String message = "Success";
@@ -109,11 +109,11 @@ public class CDCAccountsServiceTests {
 
         // then
         Assert.assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("message").asText());
+        Assert.assertEquals(message, updateResponse.get("error").asText());
     }
 
     @Test
-    public void updateFedUser_WhenGSResponseCodeIsZero_AnObjectNodeWith599999ErrorCodeShouldBeReturned()
+    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith599999ErrorCodeShouldBeReturned()
             throws JSONException {
         // given
         String message = "Something went bad.";
@@ -130,6 +130,6 @@ public class CDCAccountsServiceTests {
 
         // then
         Assert.assertEquals(errorCode, updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("message").asText());
+        Assert.assertEquals(message, updateResponse.get("error").asText());
     }
 }

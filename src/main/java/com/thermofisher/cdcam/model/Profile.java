@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
 import lombok.Getter;
 
-@Builder(builderClassName = "CDCProfileBuilder", toBuilder = true)
+@Builder(builderClassName = "ProfileBuilder", toBuilder = true)
 @Getter
-@JsonDeserialize(builder = CDCProfile.CDCProfileBuilder.class)
-public class CDCProfile {
+@JsonDeserialize(builder = Profile.ProfileBuilder.class)
+public class Profile {
     private String username;
     private String email;
     private String firstName;
@@ -18,7 +18,7 @@ public class CDCProfile {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
-    public static class CDCProfileBuilder {
+    public static class ProfileBuilder {
 
     }
 }

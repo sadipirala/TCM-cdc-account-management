@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -237,59 +235,6 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void userUpdate_WhenHashSignatureIsDifferent_returnBadRequest() throws JSONException {
-        // given
-        final String requestExceptionHeader = "Request-Exception";
-        String badRequestHeaderMessage = "Invalid request header.";
-        String invalidHash = String.format("%s=extraInvalidCharacters", hashedString);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(invalidHash, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
-        Assert.assertEquals(badRequestHeaderMessage, res.getHeaders().get(requestExceptionHeader).get(0));
-    }
-
-    @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithErrorCodeShouldReturnResponseEntityWithError500() throws JSONException {
-        // given
-        String message = "Internal server error.";
-        ObjectNode response = JsonNodeFactory.instance.objectNode();
-        response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("message", message);
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), res.getStatusCode().value());
-        Assert.assertEquals(message, res.getBody());
-    }
-
-    @Test
-    public void userUpdate_WhenCallingCDCAccountsService_WithSuccessCodeShouldReturnResponseEntityWithStatus200() throws JSONException {
-        // given
-        String message = "OK";
-        ObjectNode response = JsonNodeFactory.instance.objectNode();
-        response.put("code", HttpStatus.OK.value());
-        response.put("message", message);
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcAccountsService.update(any())).thenReturn(response);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
-
-        // when
-        ResponseEntity<String> res = accountsController.updateUser(header, "{\"test\":\"test\"}");
-
-        // then
-        Assert.assertEquals(ResponseEntity.ok().build().getStatusCode(), res.getStatusCode());
-    }
-
-    @Test
     public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException, JSONException {
         //setup
         List<UserDetails> userDetailsList = new ArrayList<>();
@@ -503,7 +448,7 @@ public class AccountsControllerTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
 
         //execution
@@ -528,7 +473,7 @@ public class AccountsControllerTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
-        Mockito.when(accountInfoHandler.parseToNotify(any())).thenReturn(mockAccountToNotify);
+        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
         Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);

@@ -39,7 +39,7 @@ public class CDCAccounts {
 
     @Autowired
     SecretsManager secretsManager;
-
+    
     @PostConstruct
     public void setCredentials() throws ParseException {
         if (env.equals("local") || env.equals("test")) return;
@@ -70,7 +70,7 @@ public class CDCAccounts {
             if (data != null) request.setParam("data", data);
             if (profile != null) request.setParam("profile", profile);
             return request.send();
-        }catch (Exception e) {
+        } catch (Exception e) {
             logStackTrace(e);
             return null;
         }
