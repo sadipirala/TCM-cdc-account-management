@@ -16,6 +16,7 @@ public class AccountInfoUtils {
     public static final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
     public static final String username = "federatedUser@OIDC.com";
     public static final String emailAddress = "federatedUser@OIDC.com";
+    public static final String password = "Xh9s8Jml0";
     public static final String firstName = "first";
     public static final String lastName = "first";
     public static final String country = "United States";
