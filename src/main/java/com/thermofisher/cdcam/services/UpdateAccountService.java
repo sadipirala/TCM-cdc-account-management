@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class UpdateAccountService {
     static final Logger logger = LogManager.getLogger("CdcamApp");
-    private static final int SUCCESS_CODE = 0;
+    private static final int SUCCESS_CODE = 200;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
