@@ -198,7 +198,7 @@
 				<spring.profiles.active>local</spring.profiles.active>
 				<server.servlet.context-path>local</server.servlet.context-path>
 				<build.profile.id>local</build.profile.id>
-				<coverage.threshold.min>0.85</coverage.threshold.min>
+				<coverage.threshold.min>0.70</coverage.threshold.min>
 			</properties>
 			<build>
 				<finalName>cdcam</finalName>
