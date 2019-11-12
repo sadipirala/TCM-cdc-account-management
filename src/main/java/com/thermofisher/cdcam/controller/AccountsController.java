@@ -116,14 +116,7 @@ public class AccountsController {
             })
     })
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
-    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@RequestHeader("x-eec-sig-hmac-sha1") String headerHashSignature, @Valid @RequestBody EmailList emailList)
-            throws JsonProcessingException, JSONException {
-        String body = Utils.convertJavaToJsonString(emailList);
-        String secretKey = secretsManager.getSecret(eecSecret);
-
-        if(!isValidHeader(secretKey, eecKey, body, headerHashSignature))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-
+    public ResponseEntity<List<EECUser>> emailOnlyRegistration(@Valid @RequestBody EmailList emailList) {
         if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
             String errorMessage = "No users requested.";
             logger.error(errorMessage);
@@ -152,13 +145,7 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
-    public ResponseEntity<List<UserDetails>> getUsers(@RequestHeader("x-user-sig") String headerHashSignature, @PathVariable List<String> uids) throws JSONException {
-        String body = String.join(",",uids);
-        String secretKey = secretsManager.getSecret(federationSecret);
-
-        if(!isValidHeader(secretKey, fedKey, body, headerHashSignature))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, "Invalid request header.").body(null);
-
+    public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids)  {
         try {
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);

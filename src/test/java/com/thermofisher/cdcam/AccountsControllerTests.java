@@ -128,7 +128,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() throws JsonProcessingException, JSONException {
+    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
         // setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -137,15 +137,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // execution
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest()
-            throws JsonProcessingException, JSONException {
+    public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest() {
         // given
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -153,14 +152,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(null).build();
 
         // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException, JSONException {
+    public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException {
         // given
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -174,14 +173,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
-    public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException, JSONException {
+    public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
         // given
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -193,14 +192,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
-    public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException, JSONException {
+    public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
         // given
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
@@ -213,14 +212,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() throws IOException, JSONException {
+    public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() {
         // given
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -228,14 +227,14 @@ public class AccountsControllerTests {
         EmailList emailList = EmailList.builder().emails(null).build();
 
         // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(header, emailList);
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException, JSONException {
+    public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException {
         //setup
         List<UserDetails> userDetailsList = new ArrayList<>();
         userDetailsList.add(UserDetails.builder().uid(uids.get(0)).email(username).firstName(firstName).lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
@@ -246,7 +245,7 @@ public class AccountsControllerTests {
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
         //execution
-        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
@@ -254,14 +253,14 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void getUsers_GivenAnEmptyListOfUID_ShouldReturnBadRequest() throws IOException, JSONException {
+    public void getUsers_GivenAnEmptyListOfUID_ShouldReturnBadRequest() throws IOException {
         //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(usersHandler.getUser(anyString())).thenReturn(null);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
         //execution
-        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, emptyUIDs);
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(emptyUIDs);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -269,14 +268,14 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException, JSONException {
+    public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException {
         //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(usersHandler.getUsers(uids)).thenThrow(Exception.class);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
         //execution
-        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -285,13 +284,13 @@ public class AccountsControllerTests {
 
 
     @Test
-    public void getUsers_GivenAnInvalidSHASignature_ShouldReturnBadRequest() throws JSONException {
+    public void getUsers_GivenAnInvalidSHASignature_ShouldReturnBadRequest() {
         //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"cdc-secret-key\":\"x\"}");
 
         //execution
-        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(header, uids);
+        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
         //validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
