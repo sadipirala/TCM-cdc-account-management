@@ -163,7 +163,7 @@ public class AccountsController {
     }
 
     @PostMapping("/user")
-    @ApiOperation(value = "Create account in CDC.")
+    @ApiOperation(value = "Notifies a user successfull registration in CDC to the subscribed entities.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
