@@ -1,19 +1,9 @@
 package com.thermofisher.cdcam;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.controller.AccountsController;
-import com.thermofisher.cdcam.controller.FederationController;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
@@ -27,7 +17,6 @@ import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
-import org.json.JSONException;
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,11 +34,20 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class AccountsControllerTests {
-    private String header = "test";
     private final List<String> uids = new ArrayList<>();
     private final List<String> emptyUIDs = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";
@@ -81,9 +79,6 @@ public class AccountsControllerTests {
 
     @Mock
     CDCAccountsService accountsService;
-
-    @Mock
-    CDCAccountsService cdcAccountsService;
 
     @Mock
     NotificationService notificationService;
@@ -129,38 +124,38 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
-        // setup
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
 
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // execution
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest() {
-        // given
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
 
         EmailList emailList = EmailList.builder().emails(null).build();
 
-        // when
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // then
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException {
-        // given
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
 
@@ -172,16 +167,16 @@ public class AccountsControllerTests {
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // when
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // then
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
-        // given
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
 
@@ -191,16 +186,16 @@ public class AccountsControllerTests {
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // when
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // then
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
-        // given
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
@@ -211,25 +206,25 @@ public class AccountsControllerTests {
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // when
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // then
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() {
-        // given
+        //setup
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"eec-secret-key\":\"x\"}");
 
         EmailList emailList = EmailList.builder().emails(null).build();
 
-        // when
+        //execution
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // then
+        //validation
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
@@ -459,7 +454,7 @@ public class AccountsControllerTests {
 
     @Test
     public void notifyRegistration_givenGNSPostRequestExecute_ShouldReceiveRequestResponse() throws IOException {
-        //set up
+        //setup
         ReflectionTestUtils.setField(accountsController,"regNotificationUrl", "http://google.com");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";

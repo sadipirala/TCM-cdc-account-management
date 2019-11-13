@@ -62,11 +62,6 @@ import io.swagger.annotations.ResponseHeader;
 public class AccountsController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
     static final String requestExceptionHeader = "Request-Exception";
-    static final String eecKey = "eec-secret-key";
-    static final String fedKey = "cdc-secret-key";
-
-    @Value("${eec.aws.secret}")
-    private String eecSecret;
 
     @Value("${federation.aws.secret}")
     private String federationSecret;
@@ -154,16 +149,8 @@ public class AccountsController {
         }
     }
 
-    private boolean isValidHeader(String secret, String property, String data, String receivedHashString) throws JSONException {
-        JSONObject secretProperties = new JSONObject(secret);
-        String secretKey = Utils.getStringFromJSON(secretProperties, property);
-        String generatedHashString = hashValidationService.getHashedString(secretKey, data);
-
-        return hashValidationService.isValidHash(generatedHashString, receivedHashString);
-    }
-
     @PostMapping("/user")
-    @ApiOperation(value = "Notifies a user successfull registration in CDC to the subscribed entities.")
+    @ApiOperation(value = "Notifies a user successful registration in CDC to the subscribed entities.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
