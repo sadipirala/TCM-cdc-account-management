@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
@@ -115,7 +114,7 @@ public class AccountsController {
             } catch (IOException e) {
                 String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
                 logger.error(errorMessage);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, "An error occurred during EEC email only registration process...").body(null);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, errorMessage).body(null);
             }
         }
     }
