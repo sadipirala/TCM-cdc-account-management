@@ -14,6 +14,7 @@ import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
@@ -81,6 +82,9 @@ public class AccountsController {
 
     @Autowired
     NotificationService notificationService;
+
+    @Autowired
+    UpdateAccountService updateAccountService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -186,17 +190,19 @@ public class AccountsController {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
                 }
-                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
 
-                ObjectMapper mapper = new ObjectMapper();
-                String jsonString = mapper.writeValueAsString(account);
-                if (!snsHandler.sendSNSNotification(jsonString)) {
+                updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
+                // federation random password
+                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                String accountForGRP = accountHandler.prepareForGRPNotification(account);
+                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
+                if (!SNSSentCorrectly) {
                     logger.error("The user was not created through federation.");
                     return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
                 }
 
                 logger.info("User sent to SNS.");
-                return new ResponseEntity<>(jsonString, HttpStatus.OK);
+                return new ResponseEntity<>(accountForGRP, HttpStatus.OK);
             }
 
             logger.error("NO EVENT FOUND");
