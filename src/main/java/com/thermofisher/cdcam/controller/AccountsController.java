@@ -24,6 +24,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,7 +144,7 @@ public class AccountsController {
         final int FED_PASSWORD_LENGTH = 10;
 
         try {
-            org.json.simple.JSONObject secretProperties = (org.json.simple.JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+            JSONObject secretProperties =  (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
             String hash = hashValidationService.getHashedString(key, rawBody);
 
@@ -153,12 +154,12 @@ public class AccountsController {
             }
 
             JSONParser parser = new JSONParser();
-            org.json.simple.JSONObject mainObject = (org.json.simple.JSONObject) parser.parse(rawBody);
+            JSONObject mainObject = (JSONObject) parser.parse(rawBody);
             JSONArray events = (JSONArray) mainObject.get("events");
 
             for (Object singleEvent : events) {
-                org.json.simple.JSONObject event = (org.json.simple.JSONObject) singleEvent;
-                org.json.simple.JSONObject data = (org.json.simple.JSONObject) event.get("data");
+                JSONObject event = (JSONObject) singleEvent;
+                JSONObject data = (JSONObject) event.get("data");
 
                 if (!event.get("type").equals(Events.REGISTRATION.getValue())) {
                     logger.error("The event type was not recognized");
