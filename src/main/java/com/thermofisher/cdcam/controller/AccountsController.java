@@ -4,28 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
-import com.thermofisher.cdcam.enums.cdc.Events;
-import com.thermofisher.cdcam.enums.cdc.FederationProviders;
-import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.services.CDCAccountsService;
-import com.thermofisher.cdcam.services.HashValidationService;
-import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
-import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import io.swagger.annotations.*;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,8 +25,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.List;
 
 @RestController
@@ -85,6 +71,9 @@ public class AccountsController {
 
     @Autowired
     UpdateAccountService updateAccountService;
+
+    @Autowired
+    AccountRequestService accountRequestService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -144,81 +133,8 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody){
-        final int FED_PASSWORD_LENGTH = 10;
-
-        try {
-            JSONObject secretProperties =  (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
-            String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-            String hash = hashValidationService.getHashedString(key, rawBody);
-
-            if (!hashValidationService.isValidHash(hash, headerValue)) {
-                logger.error("INVALID SIGNATURE");
-                return new ResponseEntity<>("INVALID SIGNATURE", HttpStatus.BAD_REQUEST);
-            }
-
-            JSONParser parser = new JSONParser();
-            JSONObject mainObject = (JSONObject) parser.parse(rawBody);
-            JSONArray events = (JSONArray) mainObject.get("events");
-
-            for (Object singleEvent : events) {
-                JSONObject event = (JSONObject) singleEvent;
-                JSONObject data = (JSONObject) event.get("data");
-
-                if (!event.get("type").equals(Events.REGISTRATION.getValue())) {
-                    logger.error("The event type was not recognized");
-                    return new ResponseEntity<>("the event type was not recognized", HttpStatus.OK);
-                }
-
-                String uid = data.get("uid").toString();
-                AccountInfo account = accountsService.getAccountInfo(uid);
-                if (account == null) {
-                    logger.error("Account not found. UID: " + uid);
-                    return new ResponseEntity<>("Account not found.", HttpStatus.BAD_REQUEST);
-                }
-
-                String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
-                try {
-                    CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
-                    logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
-                    response.close();
-                }
-                catch (Exception e) {
-                    logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
-                }
-
-                if (!hasFederationProvider(account)) {
-                    logger.error("The user was not created through federation.");
-                    return new ResponseEntity<>("The user was not created through federation.", HttpStatus.OK);
-                }
-
-                updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
-                // federation random password
-                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
-                String accountForGRP = accountHandler.prepareForGRPNotification(account);
-                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
-                if (!SNSSentCorrectly) {
-                    logger.error("The user was not created through federation.");
-                    return new ResponseEntity<>("Something went wrong... An SNS Notification failed to be sent.", HttpStatus.SERVICE_UNAVAILABLE);
-                }
-
-                logger.info("User sent to SNS.");
-                return new ResponseEntity<>(accountForGRP, HttpStatus.OK);
-            }
-
-            logger.error("NO EVENT FOUND");
-            return new ResponseEntity<>("NO EVENT FOUND", HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
-            return new ResponseEntity<>("ERROR: " + stackTrace, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private boolean hasFederationProvider(AccountInfo account) {
-        return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
+        accountRequestService.processRequest(headerValue,rawBody);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
