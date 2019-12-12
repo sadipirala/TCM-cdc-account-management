@@ -101,7 +101,7 @@ public class AccountRequestService {
                     logger.error("Account not found. UID: " + uid);
                     return;
                 }
-                //1. Sends user account info to defined url (general post)
+
                 String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
@@ -111,18 +111,16 @@ public class AccountRequestService {
                 catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
-                //Validates if account has federation provider-----------------------------------------------------
+
                 if (!hasFederationProvider(account)) {
                     logger.error("The user was not created through federation.");
                     return;
                 }
-                //2. Updated user account info in CDC (username, LegacyUserName,LegacyEmailAddress)
+
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
-                // federation random password
                 account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 String accountForGRP = accountHandler.prepareForGRPNotification(account);
 
-                //3. Send SNS notification with account info Federation only
                 boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
                 if (!SNSSentCorrectly) {
                     logger.error("The user was not created through federation.");
