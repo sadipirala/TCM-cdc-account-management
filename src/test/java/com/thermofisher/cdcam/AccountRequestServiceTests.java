@@ -64,12 +64,12 @@ public class AccountRequestServiceTests {
 
     private AccountInfo federationAccount = AccountInfo.builder().username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
-            .localeName("en_US").loginProvider("oidc").password("Password1").regAttempts(0).city("testCity")
+            .localeName("en_US").loginProvider("oidc").password("Randompassword1").regAttempts(0).city("testCity")
             .department("dep").company("myCompany").build();
 
-    private AccountInfo nonFederationAccount = AccountInfo.builder().username("federatedUser@OIDC.com")
-            .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
-            .localeName("en_US").loginProvider("site").password("Password1").regAttempts(0).city("testCity")
+    private AccountInfo nonFederationAccount = AccountInfo.builder().username("nonFederatedUser@mail.com")
+            .emailAddress("nonFederatedUser@mail.com").firstName("first").lastName("last").country("country")
+            .localeName("en_US").loginProvider("site").password("Randompassword1").regAttempts(0).city("testCity")
             .department("dep").company("myCompany").build();
 
     @Before
@@ -256,6 +256,6 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Test", mockBody);
 
         //validation
-        snsHandler.sendSNSNotification(mockAccountToNotify);
+        Mockito.verify(snsHandler).sendSNSNotification(anyString());
     }
 }
