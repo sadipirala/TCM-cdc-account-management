@@ -67,8 +67,8 @@ public class AccountRequestServiceTests {
             .localeName("en_US").loginProvider("oidc").password("Randompassword1").regAttempts(0).city("testCity")
             .department("dep").company("myCompany").build();
 
-    private AccountInfo nonFederationAccount = AccountInfo.builder().username("nonFederatedUser@mail.com")
-            .emailAddress("nonFederatedUser@mail.com").firstName("first").lastName("last").country("country")
+    private AccountInfo nonFederationAccount = AccountInfo.builder().username("nonFederatedUser@email.com")
+            .emailAddress("nonFederatedUser@email.com").firstName("first").lastName("last").country("country")
             .localeName("en_US").loginProvider("site").password("Randompassword1").regAttempts(0).city("testCity")
             .department("dep").company("myCompany").build();
 
