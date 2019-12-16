@@ -64,7 +64,9 @@
 		<dependency>
 			<groupId>com.gigya</groupId>
 			<artifactId>gigya-sdk</artifactId>
-			<version>3.2.1</version>
+			<version>3.2.2</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/gigya-sdk-3.2.2.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -134,6 +136,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<includeSystemScope>true</includeSystemScope>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
@@ -205,16 +210,5 @@
 			</build>
 		</profile>
 	</profiles>
-	<repositories>
-	<repository>
-		<id>buildlx.dev.releases</id>
-		<name>releases</name>
-		<url>http://buildlx.dev.invitrogen.net/nexus/content/repositories/releases</url>
-	</repository>
-		<repository>
-			<id>buildlx.dev.thirdparty</id>
-			<name>third party</name>
-			<url>http://buildlx.dev.invitrogen.net/nexus/content/repositories/thirdparty</url>
-		</repository>
-	</repositories>
+
 </project>
