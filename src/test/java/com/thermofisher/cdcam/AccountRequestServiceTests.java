@@ -101,22 +101,6 @@ public class AccountRequestServiceTests {
         Mockito.verify(accountsService).getAccountInfo(any());
     }
 
-    @Test
-    public void processRequest_IfGivenANonFederatedAccount_thenLogError(){
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-
-        //validation
-        Mockito.verify(accountsService).getAccountInfo(any());
-    }
 
     @Test
     public void processRequest_IfValidHashIsFalse_thenLogError(){
