@@ -112,7 +112,9 @@ public class AccountRequestService {
                 }
 
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
-                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                if(account.getPassword().isEmpty()){
+                    account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                }
                 String accountForGRP = accountHandler.prepareForGRPNotification(account);
 
                 boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);

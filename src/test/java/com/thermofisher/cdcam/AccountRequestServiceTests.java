@@ -182,7 +182,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
@@ -202,7 +202,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
@@ -226,7 +226,7 @@ public class AccountRequestServiceTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getAccount());
+        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
