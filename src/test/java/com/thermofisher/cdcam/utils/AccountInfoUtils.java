@@ -19,7 +19,7 @@ public class AccountInfoUtils {
     public static final String siteUsername = "siteUsername@mail.com";
     public static final String siteEmailAddress = "siteUsername@mail.com";
     public static final String password = "Xh9s8Jml0";
-    public static final String hash = "CxG+eRQhmhmou/Nq0a/uKA==";
+    public static final String hash = "CXG+ERQHMHMOU/NQ0A/UKA==";
     public static final String algorithm = "MD5";
     public static final String firstName = "first";
     public static final String lastName = "first";

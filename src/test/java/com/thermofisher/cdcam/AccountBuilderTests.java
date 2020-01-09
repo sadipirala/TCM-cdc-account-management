@@ -63,7 +63,7 @@ public class AccountBuilderTests {
         //validation
         String expectedAccount = mapper.writeValueAsString(siteAccount);
         String resAccount = mapper.writeValueAsString(res);
-        assertEquals(expectedAccount, resAccount);
+        assertTrue(expectedAccount.equals(resAccount));
     }
 
     @Test
