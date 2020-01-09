@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest(classes = AccountBuilder.class)
 public class AccountBuilderTests {
     private final ObjectMapper mapper = new ObjectMapper();
-    private String obj = AccountInfoUtils.cdcResponse;
+    private String federatedObj = AccountInfoUtils.federatedCdcResponse;
     private String siteObj = AccountInfoUtils.siteUserCdcResponse;
     private String invalidObj = AccountInfoUtils.invalidCDCResponse;
     private AccountInfo federatedAccount;
@@ -44,7 +44,7 @@ public class AccountBuilderTests {
         Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         
         // execution
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(obj));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(federatedObj));
 
         // validation
         String expectedAccount = mapper.writeValueAsString(federatedAccount);

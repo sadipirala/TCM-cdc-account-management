@@ -20,7 +20,7 @@ public class AccountBuilder {
             String company = "";
             String department = "";
             String finalPassword = "";
-            
+
             if (password != null) {
                 String hash = password.containsKey("hash") ? password.getString("hash") : "";
                 GSObject hashSettings = password.containsKey("hashSettings") ? (GSObject) password.get("hashSettings") : null;
