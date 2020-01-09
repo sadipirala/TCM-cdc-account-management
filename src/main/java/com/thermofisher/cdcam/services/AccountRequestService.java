@@ -4,7 +4,6 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.Events;
-import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
@@ -112,13 +111,10 @@ public class AccountRequestService {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
-                if (!hasFederationProvider(account)) {
-                    logger.error("The user was not created through federation.");
-                    return;
-                }
-
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
-                account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                if(account.getPassword().isEmpty()){
+                    account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+                }
                 String accountForGRP = accountHandler.prepareForGRPNotification(account);
 
                 boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
@@ -139,8 +135,4 @@ public class AccountRequestService {
             logger.error(stackTrace);
         }
     }
-
-    private boolean hasFederationProvider(AccountInfo account) {
-        return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
-        }
-    }
+}

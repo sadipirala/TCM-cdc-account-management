@@ -15,8 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @ActiveProfiles("test")
@@ -24,31 +23,47 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest(classes = AccountBuilder.class)
 public class AccountBuilderTests {
     private final ObjectMapper mapper = new ObjectMapper();
-    private String obj = AccountInfoUtils.cdcResponse;
+    private String federatedObj = AccountInfoUtils.federatedCdcResponse;
+    private String siteObj = AccountInfoUtils.siteUserCdcResponse;
     private String invalidObj = AccountInfoUtils.invalidCDCResponse;
-    private AccountInfo account;
+    private AccountInfo federatedAccount;
+    private AccountInfo siteAccount;
 
     @Mock
     AccountBuilder accountBuilder = new AccountBuilder();
 
     @Before
     public void setup() {
-        account = AccountInfoUtils.getAccount();
+        federatedAccount = AccountInfoUtils.getFederatedAccount();
+        siteAccount = AccountInfoUtils.getSiteAccount();
     }
 
     @Test
-    public void getAccountInfo_ifGivenAnyUserInfoAndObj_returnAccountInfo() throws Exception {
+    public void getAccountInfo_ifGivenFederatedUserInfoAndObj_returnAccountInfo() throws Exception {
         // setup
         Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         
         // execution
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(obj));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(federatedObj));
 
         // validation
-        String expectedAccount = mapper.writeValueAsString(account);
+        String expectedAccount = mapper.writeValueAsString(federatedAccount);
+        String resAccount = mapper.writeValueAsString(res);
+        assertEquals(expectedAccount, resAccount);
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserInfoAndObj_returnAccountInfo() throws Exception{
+        //setup
+        Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        //execution
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
+
+        //validation
+        String expectedAccount = mapper.writeValueAsString(siteAccount);
         String resAccount = mapper.writeValueAsString(res);
         assertTrue(expectedAccount.equals(resAccount));
-        assertNull(res.getPassword());
     }
 
     @Test
