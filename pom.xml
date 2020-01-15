@@ -144,12 +144,6 @@
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>
-				<configuration>
-					<excludes>
-						<exclude>com/thermofisher/cdcam/aws/**/*</exclude>
-						<exclude>com/thermofisher/cdcam/cdc/*CDCAccounts.*</exclude>
-					</excludes>
-				</configuration>
 				<executions>
 					<execution>
 						<id>default-prepare-agent</id>
@@ -163,26 +157,11 @@
 						<goals>
 							<goal>report</goal>
 						</goals>
-					</execution>
-					<execution>
-						<id>check</id>
-						<phase>test</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
 						<configuration>
-							<rules>
-								<rule>
-									<element>BUNDLE</element>
-									<limits>
-										<limit>
-											<counter>LINE</counter>
-											<value>COVEREDRATIO</value>
-											<minimum>${coverage.threshold.min}</minimum>
-										</limit>
-									</limits>
-								</rule>
-							</rules>
+							<excludes>
+								<exclude>com/thermofisher/cdcam/aws/**/*</exclude>
+								<exclude>com/thermofisher/cdcam/cdc/*CDCAccounts.*</exclude>
+							</excludes>
 						</configuration>
 					</execution>
 				</executions>
@@ -203,7 +182,6 @@
 				<spring.profiles.active>local</spring.profiles.active>
 				<server.servlet.context-path>local</server.servlet.context-path>
 				<build.profile.id>local</build.profile.id>
-				<coverage.threshold.min>0.70</coverage.threshold.min>
 			</properties>
 			<build>
 				<finalName>cdcam</finalName>
