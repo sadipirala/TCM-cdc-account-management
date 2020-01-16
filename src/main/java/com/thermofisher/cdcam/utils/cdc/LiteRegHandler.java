@@ -2,9 +2,9 @@ package com.thermofisher.cdcam.utils.cdc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.AccountTypes;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +25,7 @@ public class LiteRegHandler {
     public int requestLimit;
 
     @Autowired
-    CDCAccounts cdcAccounts;
+    CDCAccountsService cdcAccountsService;
 
     public List<EECUser> process(EmailList emailList) throws IOException {
         List<EECUser> users = new ArrayList<>();
@@ -50,7 +50,7 @@ public class LiteRegHandler {
             }
 
             String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
-            GSResponse response = cdcAccounts.search(query,AccountTypes.FULL_LITE.getValue());
+            GSResponse response = cdcAccountsService.search(query,AccountTypes.FULL_LITE.getValue());
 
             if (response == null) {
                 EECUser failedSearchUser = EECUser.builder()
@@ -105,7 +105,7 @@ public class LiteRegHandler {
     }
 
     private EECUser liteRegisterUser(String email) throws IOException {
-        GSResponse response = cdcAccounts.setLiteReg(email);
+        GSResponse response = cdcAccountsService.setLiteReg(email);
 
         if (response == null) {
             logger.error(String.format("An error occurred during CDC Lite Registration for '%s'", email));

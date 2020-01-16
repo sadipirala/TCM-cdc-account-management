@@ -22,14 +22,6 @@ public class Utils {
         return mapper.writeValueAsString(t);
     }
 
-    public static JSONObject convertStringToJson(String object) {
-        try {
-            return new JSONObject(object);
-        } catch (JSONException e) {
-            return null;
-        }
-    }
-
     public static String getStringFromJSON(JSONObject object, String value) {
         try {
             return (String) object.get(value);

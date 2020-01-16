@@ -2,7 +2,7 @@ package com.thermofisher.cdcam;
 
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
@@ -34,7 +34,7 @@ public class LiteRegHandlerTests {
     LiteRegHandler liteRegHandler;
 
     @Mock
-    CDCAccounts cdcAccounts;
+    CDCAccountsService cdcAccountsService;
 
     @Before
     public void setup() {
@@ -70,7 +70,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -100,7 +100,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -138,10 +138,10 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
-        when(cdcAccounts.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
+        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add(email);
@@ -159,7 +159,7 @@ public class LiteRegHandlerTests {
 
     @Test
     public void process_givenSearchReturnsNull_returnEECUserWith500Error() throws IOException {
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(null);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(null);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -188,7 +188,7 @@ public class LiteRegHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -213,10 +213,10 @@ public class LiteRegHandlerTests {
                 "  \"results\": []\n" +
                 "}";
 
-        when(cdcAccounts.setLiteReg(anyString())).thenReturn(null);
+        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(null);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -263,10 +263,10 @@ public class LiteRegHandlerTests {
 
         when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
         when(mockLiteRegResponse.getErrorCode()).thenReturn(errorCode);
-        when(cdcAccounts.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
+        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");

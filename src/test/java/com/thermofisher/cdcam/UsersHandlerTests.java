@@ -3,7 +3,7 @@ package com.thermofisher.cdcam;
 
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.junit.Assert;
@@ -34,7 +34,7 @@ public class UsersHandlerTests {
     UsersHandler usersHandler;
 
     @Mock
-    CDCAccounts cdcAccounts;
+    CDCAccountsService cdcAccountsService;
 
     @Before
     public void setup() {
@@ -66,7 +66,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         UserDetails userDetails = usersHandler.getUser(uid);
@@ -108,7 +108,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         UserDetails userDetails = usersHandler.getUser(uid);
@@ -134,7 +134,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         UserDetails userDetails = usersHandler.getUser(uid);
@@ -172,7 +172,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
@@ -217,7 +217,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
@@ -245,7 +245,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccounts.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
 
         //execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);

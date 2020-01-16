@@ -2,9 +2,12 @@ package com.thermofisher.cdcam.utils.cdc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.AccountTypes;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.CDCAccount;
+import com.thermofisher.cdcam.model.CDCSearchResponse;
+import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +24,13 @@ public class UsersHandler {
     static final Logger logger = LogManager.getLogger("CdcamApp");
 
     @Autowired
-    CDCAccounts cdcAccounts;
+    CDCAccountsService cdcAccountsService;
 
     public UserDetails getUser(String uid) throws IOException {
         List<UserDetails> userDetails = new ArrayList<>();
         logger.info(String.format("%s user requested...", uid));
         String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID = '%s' ", uid);
-        GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
+        GSResponse response = cdcAccountsService.search(query, AccountTypes.FULL_LITE.getValue());
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {
@@ -70,7 +73,7 @@ public class UsersHandler {
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
         String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
-        GSResponse response = cdcAccounts.search(query, AccountTypes.FULL_LITE.getValue());
+        GSResponse response = cdcAccountsService.search(query, AccountTypes.FULL_LITE.getValue());
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {
