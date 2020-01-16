@@ -4,9 +4,13 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.services.*;
+import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
 import org.json.JSONException;
@@ -54,7 +58,7 @@ public class AccountRequestServiceTests {
     HashValidationService hashValidationService;
 
     @Mock
-    CDCAccountsService accountsService;
+    CDCResponseHandler cdcResponseHandler;
 
     @Mock
     NotificationService notificationService;
@@ -85,7 +89,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfGivenAUID_searchAccountInfo() throws JSONException, IOException{
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -98,7 +102,7 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Test", mockBody);
 
         //validation
-        Mockito.verify(accountsService).getAccountInfo(any());
+        Mockito.verify(cdcResponseHandler).getAccountInfo(any());
     }
 
 
@@ -106,7 +110,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfValidHashIsFalse_thenLogError(){
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
@@ -120,7 +124,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfEventTypeIsNotRegistration_thenLogError(){
         //setup
         String mockBody = "{\"events\":[{\"type\":\"undefined\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -134,7 +138,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfRawBodyHasNoEvents_thenLogError(){
         //setup
         String mockBody = "{\"events\":[]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -148,7 +152,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfAccountIsNull_thenLogError(){
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(null);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(null);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -162,7 +166,7 @@ public class AccountRequestServiceTests {
     public void processRequest_IfGivenAnInvalidUid_thenCatchException(){
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenThrow(Exception.class);
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenThrow(Exception.class);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\"`:\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
@@ -182,7 +186,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
@@ -202,7 +206,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
 
         //execution
@@ -226,7 +230,7 @@ public class AccountRequestServiceTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountsService.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);

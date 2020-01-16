@@ -2,13 +2,11 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,31 +33,19 @@ public class AccountRequestService {
     private String regNotificationUrl;
 
     @Autowired
-    CDCAccounts cdcAccounts;
-
-    @Autowired
     SecretsManager secretsManager;
 
     @Autowired
     SNSHandler snsHandler;
 
     @Autowired
-    LiteRegHandler handler;
-
-    @Autowired
     AccountInfoHandler accountHandler;
-
-    @Autowired
-    UsersHandler usersHandler;
-
-    @Autowired
-    CDCAccountsService cdcAccountsService;
 
     @Autowired
     HashValidationService hashValidationService;
 
     @Autowired
-    CDCAccountsService accountsService;
+    CDCResponseHandler cdcResponseHandler;
 
     @Autowired
     NotificationService notificationService;
@@ -95,7 +81,7 @@ public class AccountRequestService {
                 }
 
                 String uid = data.get("uid").toString();
-                AccountInfo account = accountsService.getAccountInfo(uid);
+                AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
                 if (account == null) {
                     logger.error("Account not found. UID: " + uid);
                     return;

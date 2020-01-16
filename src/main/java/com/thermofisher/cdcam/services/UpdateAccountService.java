@@ -6,6 +6,7 @@ import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
 
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -20,7 +21,7 @@ public class UpdateAccountService {
     private static final int SUCCESS_CODE = 200;
 
     @Autowired
-    CDCAccountsService cdcAccountsService;
+    CDCResponseHandler cdcAccountsService;
 
     @Async
     public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException {

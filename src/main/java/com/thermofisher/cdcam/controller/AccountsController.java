@@ -1,14 +1,10 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.thermofisher.cdcam.aws.SNSHandler;
-import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.cdc.CDCAccounts;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.services.*;
-import com.thermofisher.cdcam.utils.AccountInfoHandler;
+import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import io.swagger.annotations.*;
@@ -16,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -33,44 +28,11 @@ public class AccountsController {
     static final Logger logger = LogManager.getLogger("CdcamApp");
     static final String requestExceptionHeader = "Request-Exception";
 
-    @Value("${federation.aws.secret}")
-    private String federationSecret;
-
-    @Value("${cdcam.reg.notification.url}")
-    private String regNotificationUrl;
-
-    @Autowired
-    CDCAccounts cdcAccounts;
-
-    @Autowired
-    SecretsManager secretsManager;
-
-    @Autowired
-    SNSHandler snsHandler;
-
     @Autowired
     LiteRegHandler handler;
 
     @Autowired
-    AccountInfoHandler accountHandler;
-
-    @Autowired
     UsersHandler usersHandler;
-
-    @Autowired
-    CDCAccountsService cdcAccountsService;
-
-    @Autowired
-    HashValidationService hashValidationService;
-
-    @Autowired
-    CDCAccountsService accountsService;
-
-    @Autowired
-    NotificationService notificationService;
-
-    @Autowired
-    UpdateAccountService updateAccountService;
 
     @Autowired
     AccountRequestService accountRequestService;
