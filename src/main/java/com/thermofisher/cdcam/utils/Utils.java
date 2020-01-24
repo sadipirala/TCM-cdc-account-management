@@ -6,6 +6,10 @@ import com.monitorjbl.json.JsonViewModule;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import org.apache.logging.log4j.Logger;
+
 public class Utils {
     public static String getAlphaNumericString(int lenght) {
         final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
@@ -36,5 +40,12 @@ public class Utils {
         } catch (JSONException e) {
             return null;
         }
+    }
+    public static void logStackTrace(Exception e, Logger logger) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        logger.error(stackTrace);
     }
 }

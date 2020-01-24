@@ -4,15 +4,22 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.validation.constraints.NotBlank;
+
 @Builder
 @Getter
 @Setter
 public class AccountInfo {
     private String uid;
+    @NotBlank
     private String username;
+    @NotBlank
     private String firstName;
+    @NotBlank
     private String lastName;
+    @NotBlank
     private String emailAddress;
+    @NotBlank
     private String password;
     private String localeName;
     private String company;

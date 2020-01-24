@@ -1,9 +1,7 @@
 package com.thermofisher.cdcam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
@@ -97,6 +95,20 @@ public class AccountsController {
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody){
         accountRequestService.processRequest(headerValue,rawBody);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+
+    @PostMapping("/")
+    @ApiOperation(value = "Inserts a new Account")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody AccountInfo accountInfo){
+
+        CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
+       return (cdcResponseData != null ?  new ResponseEntity<>(cdcResponseData,HttpStatus.OK) :  new ResponseEntity<>(HttpStatus.BAD_REQUEST));
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

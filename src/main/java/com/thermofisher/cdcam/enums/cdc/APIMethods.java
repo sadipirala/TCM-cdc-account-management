@@ -4,7 +4,8 @@ public enum APIMethods {
     GET("accounts.getAccountInfo"),
     INITREG("accounts.initRegistration"),
     SEARCH("accounts.search"),
-    SETINFO("accounts.setAccountInfo");
+    SETINFO("accounts.setAccountInfo"),
+    REGISTER("accounts.register");
 
     private String value;
 

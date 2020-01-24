@@ -4,6 +4,8 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.CDCResponseData;
+import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -11,16 +13,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 @Service
 public class AccountRequestService {
@@ -54,11 +52,11 @@ public class AccountRequestService {
     UpdateAccountService updateAccountService;
 
     @Async
-    public void processRequest( String headerValue, String rawBody){
+    public void processRequest(String headerValue, String rawBody) {
         final int FED_PASSWORD_LENGTH = 10;
 
         try {
-            JSONObject secretProperties =  (JSONObject) new JSONParser().parse(secretsManager.getSecret(federationSecret));
+            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
             String hash = hashValidationService.getHashedString(key, rawBody);
 
@@ -67,12 +65,11 @@ public class AccountRequestService {
                 return;
             }
 
-            JSONParser parser = new JSONParser();
-            JSONObject mainObject = (JSONObject) parser.parse(rawBody);
+            JSONObject mainObject =  new JSONObject(rawBody) ;
             JSONArray events = (JSONArray) mainObject.get("events");
 
-            for (Object singleEvent : events) {
-                JSONObject event = (JSONObject) singleEvent;
+            for (int i =0;i<events.length() ; i++) {
+                JSONObject event = events.getJSONObject(i);
                 JSONObject data = (JSONObject) event.get("data");
 
                 if (!event.get("type").equals(Events.REGISTRATION.getValue())) {
@@ -92,13 +89,12 @@ public class AccountRequestService {
                     CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
                     logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
                     response.close();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
-                if(account.getPassword().isEmpty()){
+                if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 }
                 String accountForGRP = accountHandler.prepareForGRPNotification(account);
@@ -114,11 +110,23 @@ public class AccountRequestService {
             logger.error("NO EVENT FOUND");
 
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            logger.error(stackTrace);
+            Utils.logStackTrace(e,logger);
+        }
+    }
+
+    public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
+        try {
+
+            Profile profile = Profile.builder()
+                    .firstName(accountInfo.getFirstName())
+                    .lastName(accountInfo.getLastName()).build();
+           String json = accountHandler.prepareProfileForRegistration(profile);
+
+            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), "", json);
+
+        } catch (Exception e) {
+            Utils.logStackTrace(e,logger);
+            return null;
         }
     }
 }

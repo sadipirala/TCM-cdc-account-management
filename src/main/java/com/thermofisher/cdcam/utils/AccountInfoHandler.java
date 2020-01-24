@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -43,6 +44,18 @@ public class AccountInfoHandler {
         propertiesToRemove.add("loginProvider");
         
         ObjectNode json = mapper.valueToTree(account);
+        json.remove(propertiesToRemove);
+
+        return mapper.writeValueAsString(json);
+    }
+
+    public String prepareProfileForRegistration(Profile profile) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("username");
+        propertiesToRemove.add("email");
+
+        ObjectNode json = mapper.valueToTree(profile);
         json.remove(propertiesToRemove);
 
         return mapper.writeValueAsString(json);

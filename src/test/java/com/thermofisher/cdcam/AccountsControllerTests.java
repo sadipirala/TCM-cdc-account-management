@@ -2,9 +2,7 @@ package com.thermofisher.cdcam;
 
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
@@ -234,4 +232,43 @@ public class AccountsControllerTests {
         // validation
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
     }
+
+    @Test
+    public void newAccount_givenAnAccountWithBlankPassword_returnBadRequest(){
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("")
+                .build();
+
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
+
+        Assert.assertEquals(HttpStatus.BAD_REQUEST,response.getStatusCode());
+    }
+
+    @Test
+    public void newAccount_givenAValidAccount_returnCDCResponseData(){
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("test")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
+        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
+
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
+
+        Assert.assertEquals(HttpStatus.OK,response.getStatusCode());
+    }
+
 }

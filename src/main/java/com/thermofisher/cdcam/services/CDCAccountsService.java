@@ -7,7 +7,8 @@ import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+
+import com.thermofisher.cdcam.utils.Utils;
 
 @Service
 public class CDCAccountsService {
@@ -37,9 +38,10 @@ public class CDCAccountsService {
 
     @Autowired
     SecretsManager secretsManager;
-    
+
+
     @PostConstruct
-    public void setCredentials() throws ParseException {
+    public void setCredentials() throws ParseException, JSONException {
         if (env.equals("local") || env.equals("test")) return;
         JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(cdcKey));
         secretKey = secretsManager.getProperty(secretProperties, "secretKey");
@@ -55,7 +57,7 @@ public class CDCAccountsService {
             request.setParam("extraProfileFields", "username, locale, work");
             return request.send();
         } catch (Exception e) {
-            logStackTrace(e);
+            Utils.logStackTrace(e,logger);
             return null;
         }
     }
@@ -69,7 +71,7 @@ public class CDCAccountsService {
             request.setParam("profile", profile);
             return request.send();
         } catch (Exception e) {
-            logStackTrace(e);
+            Utils.logStackTrace(e,logger);
             return null;
         }
     }
@@ -82,7 +84,7 @@ public class CDCAccountsService {
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            logStackTrace(e);
+            Utils.logStackTrace(e,logger);
             return null;
         }
     }
@@ -95,6 +97,22 @@ public class CDCAccountsService {
         request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
         return request.send();
+    }
+
+    public GSResponse register(String username,String email,String password,String data,String profile){
+        try{
+            String apiMethod = APIMethods.REGISTER.getValue();
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("username",username);
+            request.setParam("email",email);
+            request.setParam("password",password);
+            request.setParam("data",data);
+            request.setParam("profile",profile);
+            return request.send();
+        }catch (Exception ex){
+            Utils.logStackTrace(ex,logger);
+            return null;
+        }
     }
 
     private String getRegToken(boolean isLite) {
@@ -111,16 +129,10 @@ public class CDCAccountsService {
                 return ("Uh-oh, we got the following error: " + response.getLog());
             }
         } catch (Exception e) {
-            logStackTrace(e);
+            Utils.logStackTrace(e,logger);
             return null;
         }
     }
 
-    private void logStackTrace(Exception e) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        String stackTrace = sw.toString();
-        logger.fatal(stackTrace);
-    }
+
 }
