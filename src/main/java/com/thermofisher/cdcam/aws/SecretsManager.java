@@ -5,7 +5,8 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
-import org.json.simple.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -39,7 +40,7 @@ public class SecretsManager {
         }
     }
 
-    public String getProperty(JSONObject secretProperties, String property) {
+    public String getProperty(JSONObject secretProperties, String property) throws JSONException {
         return secretProperties.get(property).toString();
     }
 }
