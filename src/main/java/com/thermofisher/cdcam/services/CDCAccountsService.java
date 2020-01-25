@@ -9,8 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,11 +39,15 @@ public class CDCAccountsService {
 
 
     @PostConstruct
-    public void setCredentials() throws ParseException, JSONException {
-        if (env.equals("local") || env.equals("test")) return;
-        JSONObject secretProperties = (JSONObject) new JSONParser().parse(secretsManager.getSecret(cdcKey));
-        secretKey = secretsManager.getProperty(secretProperties, "secretKey");
-        userKey = secretsManager.getProperty(secretProperties, "userKey");
+    public void setCredentials() throws JSONException {
+        try {
+            if (env.equals("local") || env.equals("test")) return;
+            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
+            secretKey = secretsManager.getProperty(secretProperties, "secretKey");
+            userKey = secretsManager.getProperty(secretProperties, "userKey");
+        } catch (Exception e) {
+            Utils.logStackTrace(e, logger);
+        }
     }
 
     public GSResponse getAccount(String UID) {
@@ -57,7 +59,7 @@ public class CDCAccountsService {
             request.setParam("extraProfileFields", "username, locale, work");
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
             return null;
         }
     }
@@ -71,11 +73,11 @@ public class CDCAccountsService {
             request.setParam("profile", profile);
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
             return null;
         }
     }
-    
+
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
@@ -84,13 +86,13 @@ public class CDCAccountsService {
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
             return null;
         }
     }
 
     public GSResponse search(String query, String accountTypes) {
-        if(query == null) return null;
+        if (query == null) return null;
         final boolean USE_HTTPS = true;
         String apiMethod = APIMethods.SEARCH.getValue();
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
@@ -99,18 +101,18 @@ public class CDCAccountsService {
         return request.send();
     }
 
-    public GSResponse register(String username,String email,String password,String data,String profile){
-        try{
+    public GSResponse register(String username, String email, String password, String data, String profile) {
+        try {
             String apiMethod = APIMethods.REGISTER.getValue();
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-            request.setParam("username",username);
-            request.setParam("email",email);
-            request.setParam("password",password);
-            request.setParam("data",data);
-            request.setParam("profile",profile);
+            request.setParam("username", username);
+            request.setParam("email", email);
+            request.setParam("password", password);
+            request.setParam("data", data);
+            request.setParam("profile", profile);
             return request.send();
-        }catch (Exception ex){
-            Utils.logStackTrace(ex,logger);
+        } catch (Exception ex) {
+            Utils.logStackTrace(ex, logger);
             return null;
         }
     }
@@ -129,7 +131,7 @@ public class CDCAccountsService {
                 return ("Uh-oh, we got the following error: " + response.getLog());
             }
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
             return null;
         }
     }
