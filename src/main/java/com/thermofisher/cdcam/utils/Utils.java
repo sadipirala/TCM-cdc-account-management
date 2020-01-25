@@ -46,6 +46,6 @@ public class Utils {
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         String stackTrace = sw.toString();
-        logger.error(stackTrace);
+        logger.fatal(stackTrace);
     }
 }
