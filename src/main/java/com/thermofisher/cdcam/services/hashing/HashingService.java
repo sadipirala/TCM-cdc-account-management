@@ -27,6 +27,6 @@ public class HashingService {
     }
 
     public static String concat(String value) {
-        return String.format("%1$s:%2$s", PASSWORD_ALGORITHM, value);
+        return (String.format("%1$s:%2$s", PASSWORD_ALGORITHM, value)).toUpperCase();
     }
 }

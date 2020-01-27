@@ -137,7 +137,21 @@ public class AccountRequestService {
                     .build();
             String jsonProfile = accountHandler.prepareProfileForRegistration(profile);
             String jsonData = accountHandler.prepareDataForRegistration(data);
-            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), HashingService.concat(HashingService.hash(accountInfo.getPassword())), jsonData, jsonProfile);
+            CDCResponseData cdcResponseData =  cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
+
+            if(cdcResponseData != null) {
+                accountInfo.setUid(cdcResponseData.getUID());
+                accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
+                String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
+
+                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
+                if (!SNSSentCorrectly) {
+                    logger.error("The user was not created through federation.");
+                }
+                logger.info("User sent to SNS.");
+            }
+
+            return cdcResponseData;
 
         } catch (Exception e) {
             Utils.logStackTrace(e, logger);
