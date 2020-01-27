@@ -3,10 +3,8 @@ package com.thermofisher.cdcam.services;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CDCResponseData;
-import com.thermofisher.cdcam.model.Profile;
-import com.thermofisher.cdcam.model.Work;
+import com.thermofisher.cdcam.enums.cdc.FederationProviders;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
@@ -67,10 +65,10 @@ public class AccountRequestService {
                 return;
             }
 
-            JSONObject mainObject =  new JSONObject(rawBody) ;
+            JSONObject mainObject = new JSONObject(rawBody);
             JSONArray events = (JSONArray) mainObject.get("events");
 
-            for (int i =0;i<events.length() ; i++) {
+            for (int i = 0; i < events.length(); i++) {
                 JSONObject event = events.getJSONObject(i);
                 JSONObject data = (JSONObject) event.get("data");
 
@@ -95,6 +93,11 @@ public class AccountRequestService {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
 
+                if (!hasFederationProvider(account)) {
+                    logger.info("The user was not created through federation.");
+                    return;
+                }
+
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
                 if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
@@ -112,13 +115,15 @@ public class AccountRequestService {
             logger.error("NO EVENT FOUND");
 
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
         }
     }
 
     public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
         try {
-
+            Data data = Data.builder()
+                    .subscribe(accountInfo.getMember())
+                    .build();
             Work work = Work.builder()
                     .company(accountInfo.getCompany())
                     .location(accountInfo.getDepartment())
@@ -130,13 +135,17 @@ public class AccountRequestService {
                     .city(accountInfo.getCity())
                     .work(work)
                     .build();
-           String json = accountHandler.prepareProfileForRegistration(profile);
-
-            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), HashingService.concat(HashingService.hash(accountInfo.getPassword())), "", json);
+            String jsonProfile = accountHandler.prepareProfileForRegistration(profile);
+            String jsonData = accountHandler.prepareDataForRegistration(data);
+            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), HashingService.concat(HashingService.hash(accountInfo.getPassword())), jsonData, jsonProfile);
 
         } catch (Exception e) {
-            Utils.logStackTrace(e,logger);
+            Utils.logStackTrace(e, logger);
             return null;
         }
+    }
+
+    private boolean hasFederationProvider(AccountInfo account) {
+        return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
     }
 }

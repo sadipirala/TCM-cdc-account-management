@@ -36,7 +36,6 @@ public class UpdateAccountService {
         profileJson.remove("country");
         profileJson.remove("city");
         jsonAccount.put("profile",profileJson);
-        logger.fatal(profileJson.toString());
         JsonNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");

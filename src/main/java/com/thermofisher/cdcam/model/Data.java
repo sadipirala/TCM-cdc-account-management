@@ -14,9 +14,10 @@ import lombok.Setter;
 @JsonDeserialize(builder = Data.DataBuilder.class)
 public class Data {
     private Thermofisher thermofisher;
+    private String subscribe;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
-    public static class DataBuilder { 
+    public static class DataBuilder {
     }
 }
