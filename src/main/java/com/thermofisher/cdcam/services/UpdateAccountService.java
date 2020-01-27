@@ -1,12 +1,10 @@
 package com.thermofisher.cdcam.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
 
-import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,12 +22,8 @@ public class UpdateAccountService {
     @Autowired
     CDCResponseHandler cdcAccountsService;
 
-    @Autowired
-    AccountInfoHandler accountHandler;
-
-
     @Async
-    public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException, JsonProcessingException {
+    public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException {
         Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress).build();
         Data data = Data.builder().thermofisher(thermofisher).build();
         Profile profile = Profile.builder().username(emailAddress).build();
@@ -37,7 +31,12 @@ public class UpdateAccountService {
         JSONObject jsonAccount = new JSONObject();
         jsonAccount.put("uid", uid);
         jsonAccount.put("data", new JSONObject(data));
-        jsonAccount.put("profile", accountHandler.prepareProfileForUpdate(profile));
+        JSONObject profileJson = new JSONObject(profile);
+        profileJson.remove("work");
+        profileJson.remove("country");
+        profileJson.remove("city");
+        jsonAccount.put("profile",profileJson);
+        logger.fatal(profileJson.toString());
         JsonNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");
