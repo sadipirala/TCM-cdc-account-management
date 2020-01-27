@@ -5,7 +5,9 @@ import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.json.simple.parser.ParseException;
@@ -42,6 +44,10 @@ public class AccountsControllerTests {
     private final String username = "federatedUser@OIDC.com";
     private final String firstName = "first";
     private final String lastName = "last";
+    private final UserTimezone emptyUserTimezone = UserTimezone.builder().uid("").timezone("").build();
+    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("288d20e5e0b04422a027f24820d20ba8")
+            .timezone("America/Tijuana").build();
+    private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("").timezone(null).build();
     private final int assoiciatedAccounts = 1;
 
     @InjectMocks
@@ -55,6 +61,9 @@ public class AccountsControllerTests {
 
     @Mock
     AccountRequestService accountRequestService;
+
+    @Mock
+    UpdateAccountService UpdateAccountService;
 
     @Before
     public void setup() {
@@ -233,5 +242,32 @@ public class AccountsControllerTests {
 
         // validation
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void updateTimezone_GivenEmptyUserUIDOrTimezoneShouldReturnBadRequest() throws IOException {
+        // execution
+        ResponseEntity<String> resp = accountsController.setTimezone(emptyUserTimezone);
+
+        // validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void updateTimezone_GivenAValidUserUIDAndTimezoneShouldReturnOK() throws IOException {
+        // execution
+        ResponseEntity<String> resp = accountsController.setTimezone(validUserTimezone);
+
+        // validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void updateTimezoneMissingRequestBodyParamShouldReturnBadRequest() {
+        // execution
+        ResponseEntity<String> resp = accountsController.setTimezone(invalidUserTimezone);
+        
+        // validation
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 }

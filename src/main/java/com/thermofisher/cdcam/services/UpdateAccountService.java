@@ -5,7 +5,7 @@ import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
-
+import com.thermofisher.cdcam.model.ProfileTimezone;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +25,8 @@ public class UpdateAccountService {
 
     @Async
     public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException {
-        Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress).build();
+        Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress)
+                .build();
         Data data = Data.builder().thermofisher(thermofisher).build();
         Profile profile = Profile.builder().username(emailAddress).build();
         CDCAccount account = new CDCAccount();
@@ -37,6 +38,20 @@ public class UpdateAccountService {
         jsonAccount.put("uid", uid);
         jsonAccount.put("data", new JSONObject(data));
         jsonAccount.put("profile", new JSONObject(profile));
+        JsonNode response = cdcAccountsService.update(jsonAccount);
+        if (response.get("code").asInt() == SUCCESS_CODE) {
+            logger.info("uid: " + uid + " updated.");
+        } else {
+            logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
+        }
+    }
+
+    public void updateTimezoneInCDC(String uid, String timezone) throws JSONException {
+        ProfileTimezone profileTimezone = ProfileTimezone.builder()
+                .timezone(timezone).build();
+        JSONObject jsonAccount = new JSONObject();
+        jsonAccount.put("uid", uid);
+        jsonAccount.put("profile", new JSONObject(profileTimezone));
         JsonNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");
