@@ -110,6 +110,7 @@ public class CDCAccountsService {
             request.setParam("password", password);
             request.setParam("data", data);
             request.setParam("profile", profile);
+            request.setParam("finalizeRegistration", "true");
             return request.send();
         } catch (Exception ex) {
             Utils.logStackTrace(ex, logger);

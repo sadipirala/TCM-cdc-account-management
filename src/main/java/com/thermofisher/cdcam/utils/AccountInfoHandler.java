@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Profile;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -60,4 +61,18 @@ public class AccountInfoHandler {
 
         return mapper.writeValueAsString(json);
     }
+
+    public String prepareProfileForUpdate(Profile profile) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("city");
+        propertiesToRemove.add("country");
+        propertiesToRemove.add("work");
+
+        ObjectNode json = mapper.valueToTree(profile);
+        json.remove(propertiesToRemove);
+
+        return mapper.writeValueAsString(json);
+    }
+
 }
