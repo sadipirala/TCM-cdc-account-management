@@ -6,12 +6,11 @@ import javax.validation.constraints.NotNull;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class HashingService implements IHashingService {
+public class HashingService {
 
-    private String PASSWORD_ALGORITHM = "MD5";
+    private static String PASSWORD_ALGORITHM = "MD5";
 
-    @Override
-    public String hash(@NotNull String value) throws NoSuchAlgorithmException {
+    public static String hash(@NotNull String value) throws NoSuchAlgorithmException {
         Preconditions.checkArgument(value != null, "Value cannot be null");
 
         MessageDigest messageDigest = messageDigest = MessageDigest.getInstance(PASSWORD_ALGORITHM);
@@ -27,8 +26,7 @@ public class HashingService implements IHashingService {
         return stringBuilder.toString();
     }
 
-    @Override
-    public String concat(String value) {
+    public static String concat(String value) {
         return String.format("%1$s:%2$s", PASSWORD_ALGORITHM, value);
     }
 }

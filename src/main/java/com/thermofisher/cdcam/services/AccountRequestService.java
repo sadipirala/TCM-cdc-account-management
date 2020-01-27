@@ -6,6 +6,8 @@ import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.Work;
+import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -117,12 +119,20 @@ public class AccountRequestService {
     public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
         try {
 
+            Work work = Work.builder()
+                    .company(accountInfo.getCompany())
+                    .location(accountInfo.getDepartment())
+                    .build();
             Profile profile = Profile.builder()
                     .firstName(accountInfo.getFirstName())
-                    .lastName(accountInfo.getLastName()).build();
+                    .lastName(accountInfo.getLastName())
+                    .country(accountInfo.getCountry())
+                    .city(accountInfo.getCity())
+                    .work(work)
+                    .build();
            String json = accountHandler.prepareProfileForRegistration(profile);
 
-            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), "", json);
+            return cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), HashingService.concat(HashingService.hash(accountInfo.getPassword())), "", json);
 
         } catch (Exception e) {
             Utils.logStackTrace(e,logger);

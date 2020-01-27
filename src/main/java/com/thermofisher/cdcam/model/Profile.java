@@ -15,6 +15,9 @@ public class Profile {
     private String email;
     private String firstName;
     private String lastName;
+    private String country;
+    private String city;
+    private Work work;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
