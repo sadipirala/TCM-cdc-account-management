@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.model;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -10,8 +10,8 @@ import lombok.Setter;
 @Setter
 @Builder
 public class UserTimezone {
-    @NotNull
+    @NotBlank
     private String uid;
-    @NotNull
+    @NotBlank
     private String timezone;
 }

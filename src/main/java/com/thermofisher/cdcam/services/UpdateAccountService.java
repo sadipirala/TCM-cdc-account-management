@@ -1,12 +1,20 @@
 package com.thermofisher.cdcam.services;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
-import com.thermofisher.cdcam.model.ProfileTimezone;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -46,13 +54,22 @@ public class UpdateAccountService {
         }
     }
 
-    public void updateTimezoneInCDC(String uid, String timezone) throws JSONException {
-        ProfileTimezone profileTimezone = ProfileTimezone.builder()
-                .timezone(timezone).build();
+    public void updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
+        Profile profile = Profile.builder().timezone(timezone).build();
+        ObjectMapper mapper = new ObjectMapper();
         JSONObject jsonAccount = new JSONObject();
+
+        List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("username");
+        propertiesToRemove.add("email");
+        propertiesToRemove.add("firstName");
+        propertiesToRemove.add("lastName");
+        ObjectNode jsonProfile = mapper.valueToTree(profile);
+        jsonProfile.remove(propertiesToRemove);
         jsonAccount.put("uid", uid);
-        jsonAccount.put("profile", new JSONObject(profileTimezone));
+        jsonAccount.put("profile", new JSONObject(mapper.writeValueAsString(jsonProfile)));
         JsonNode response = cdcAccountsService.update(jsonAccount);
+
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");
         } else {

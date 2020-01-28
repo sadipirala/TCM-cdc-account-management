@@ -114,24 +114,19 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.") 
     })
     public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone) {
-        if (userTimezone.getUid() == "" || userTimezone.getTimezone() == "") {
-            String errorMessage = "Invalid input format.";
-            logger.error(errorMessage);
-            return new ResponseEntity<String>(errorMessage, HttpStatus.BAD_REQUEST);
-        } else {
-            try {
+        try {
             uptadeAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
             String successMessage = String.format("User %s updated.", userTimezone.getUid());
             return new ResponseEntity<String>(successMessage, HttpStatus.OK);
-            } catch (Exception e) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                e.printStackTrace(pw);
-                String stackTrace = sw.toString();
-                logger.error(stackTrace);
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+        } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            logger.error(stackTrace);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
