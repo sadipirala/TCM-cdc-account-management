@@ -1,7 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +52,7 @@ public class UpdateAccountService {
         }
     }
 
-    public void updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
+    public int updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
         Profile profile = Profile.builder().timezone(timezone).build();
         ObjectMapper mapper = new ObjectMapper();
         JSONObject jsonAccount = new JSONObject();
@@ -68,12 +66,14 @@ public class UpdateAccountService {
         jsonProfile.remove(propertiesToRemove);
         jsonAccount.put("uid", uid);
         jsonAccount.put("profile", new JSONObject(mapper.writeValueAsString(jsonProfile)));
-        JsonNode response = cdcAccountsService.update(jsonAccount);
+        ObjectNode response = cdcAccountsService.update(jsonAccount);
 
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");
         } else {
             logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
         }
+
+        return (response.get("code").asInt());
     }
 }

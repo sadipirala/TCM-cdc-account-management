@@ -1,5 +1,14 @@
 package com.thermofisher.cdcam;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.model.EECUser;
@@ -10,6 +19,7 @@ import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+
 import org.json.simple.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,15 +36,6 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
@@ -45,9 +46,10 @@ public class AccountsControllerTests {
     private final String firstName = "first";
     private final String lastName = "last";
     private final UserTimezone emptyUserTimezone = UserTimezone.builder().uid("").timezone("").build();
-    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("288d20e5e0b04422a027f24820d20ba8")
+    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("1234567890")
             .timezone("America/Tijuana").build();
-    private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("").timezone(null).build();
+    private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890")
+            .timezone(null).build();
     private final int assoiciatedAccounts = 1;
 
     @InjectMocks
@@ -63,7 +65,7 @@ public class AccountsControllerTests {
     AccountRequestService accountRequestService;
 
     @Mock
-    UpdateAccountService UpdateAccountService;
+    UpdateAccountService updateAccountService;
 
     @Before
     public void setup() {
@@ -245,7 +247,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void updateTimezone_GivenEmptyUserUIDOrTimezoneShouldReturnBadRequest() throws IOException {
+    public void updateTimezone_GivenEmptyUserUIDOrTimezoneShouldReturnBadRequest() throws Exception {
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(emptyUserTimezone);
 
@@ -254,7 +256,11 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void updateTimezone_GivenAValidUserUIDAndTimezoneShouldReturnOK() throws IOException {
+    public void updateTimezone_GivenAValidUserUIDAndTimezoneShouldReturnOK() throws Exception {
+        // setup
+        Mockito.when(updateAccountService.updateTimezoneInCDC(any(String.class), any(String.class)))
+                .thenReturn(HttpStatus.OK.value());
+
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(validUserTimezone);
 
@@ -263,10 +269,11 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void updateTimezoneMissingRequestBodyParamShouldReturnBadRequest() {
+    public void updateTimezoneMissingRequestBodyParamShouldReturnBadRequest() throws Exception {
+
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(invalidUserTimezone);
-        
+
         // validation
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
