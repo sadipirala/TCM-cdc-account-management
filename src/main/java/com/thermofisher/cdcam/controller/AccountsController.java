@@ -16,9 +16,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import javax.validation.*;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/accounts")
@@ -105,10 +106,14 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody AccountInfo accountInfo){
-
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo){
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        Validator validator = factory.getValidator();
+        Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
+        if(violations.size() > 0)
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
-       return (cdcResponseData != null ?  new ResponseEntity<>(cdcResponseData,HttpStatus.OK) :  new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+       return (cdcResponseData != null ?  new ResponseEntity<>(cdcResponseData,HttpStatus.OK) :  new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -145,4 +150,6 @@ public class AccountsController {
             NullPointerException ex) {
         return "Invalid input. Null body present.";
     }
+
+
 }
