@@ -57,7 +57,7 @@ public class AccountsController {
     AccountRequestService accountRequestService;
 
     @Autowired
-    UpdateAccountService uptadeAccountService;
+    UpdateAccountService updateAccountService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -129,7 +129,7 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.") 
     })
     public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone)throws JSONException, JsonProcessingException {
-        HttpStatus updateUserTimezoneStatus = uptadeAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
+        HttpStatus updateUserTimezoneStatus = updateAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
         if (updateUserTimezoneStatus == HttpStatus.OK) {
             String successMessage = String.format("User %s updated.", userTimezone.getUid());
             return new ResponseEntity<String>(successMessage, updateUserTimezoneStatus);
