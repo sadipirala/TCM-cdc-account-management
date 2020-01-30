@@ -1,25 +1,47 @@
 package com.thermofisher.cdcam.controller;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-import io.swagger.annotations.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.*;
-import java.io.IOException;
-import java.util.List;
 import java.util.Set;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ResponseHeader;
 
 @RestController
 @RequestMapping("/accounts")
@@ -35,6 +57,9 @@ public class AccountsController {
 
     @Autowired
     AccountRequestService accountRequestService;
+
+    @Autowired
+    UpdateAccountService updateAccountService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -77,7 +102,7 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
-    public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids)  {
+    public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids) {
         try {
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -93,11 +118,10 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody){
-        accountRequestService.processRequest(headerValue,rawBody);
+    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
+        accountRequestService.processRequest(headerValue, rawBody);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
 
     @PostMapping("/")
     @ApiOperation(value = "Inserts a new Account")
@@ -106,14 +130,33 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo){
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
-        if(violations.size() > 0)
+        if (violations.size() > 0)
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
-       return (cdcResponseData != null ?  new ResponseEntity<>(cdcResponseData,HttpStatus.OK) :  new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        return (cdcResponseData != null ? new ResponseEntity<>(cdcResponseData, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+    }
+
+    @PutMapping("/user/timezone")
+    @ApiOperation(value = "Sets the user's Timezone in CDC.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone) throws JSONException, JsonProcessingException {
+        HttpStatus updateUserTimezoneStatus = updateAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
+        if (updateUserTimezoneStatus == HttpStatus.OK) {
+            String successMessage = String.format("User %s updated.", userTimezone.getUid());
+            return new ResponseEntity<String>(successMessage, updateUserTimezoneStatus);
+        } else {
+            String errorMessage = "An error occurred during the user's timezone update.";
+            logger.error(errorMessage);
+            return new ResponseEntity<String>(errorMessage, updateUserTimezoneStatus);
+        }
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

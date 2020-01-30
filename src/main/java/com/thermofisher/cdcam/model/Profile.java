@@ -18,6 +18,7 @@ public class Profile {
     private String country;
     private String city;
     private Work work;
+    private String timezone;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
