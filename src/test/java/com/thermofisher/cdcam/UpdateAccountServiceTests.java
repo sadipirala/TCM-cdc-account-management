@@ -40,14 +40,32 @@ public class UpdateAccountServiceTests {
     }
 
     @Test
-    public void updateTimezoneInCDC_GivenAValidUIDAndTimezone() throws Exception {
+    public void updateTimezoneInCDC_GivenAValidUIDAndTimezone_ReturnOK() throws Exception {
         // setup
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
         when(cdcAccountsService.update(any())).thenReturn(response);
 
+        // execution
+        HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
+
         // validation
-        Assert.assertEquals(updateAccountService.updateTimezoneInCDC(uid, timezone), HttpStatus.OK.value());
+        Assert.assertEquals(updateResponse, HttpStatus.OK);
+    }
+
+    @Test
+    public void updateTimezoneInCDC_GivenAnInvalidUIDAndTimezone_ReturnInternalServerError() throws Exception {
+        // setup
+        ObjectNode response = JsonNodeFactory.instance.objectNode();
+        response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        response.put("log", "");
+        when(cdcAccountsService.update(any())).thenReturn(response);
+
+        // execution
+        HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
+
+        // validation
+        Assert.assertEquals(updateResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

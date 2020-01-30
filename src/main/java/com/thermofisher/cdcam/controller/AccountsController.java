@@ -128,15 +128,15 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.") 
     })
-    public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone)
-            throws JSONException, JsonProcessingException {
-        if (uptadeAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone()) == (HttpStatus.OK.value())) {
+    public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone)throws JSONException, JsonProcessingException {
+        HttpStatus updateUserTimezoneStatus = uptadeAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
+        if (updateUserTimezoneStatus == HttpStatus.OK) {
             String successMessage = String.format("User %s updated.", userTimezone.getUid());
-            return new ResponseEntity<String>(successMessage, HttpStatus.OK);
+            return new ResponseEntity<String>(successMessage, updateUserTimezoneStatus);
         } else {
             String errorMessage = "An error occurred during the user's timezone update.";
             logger.error(errorMessage);
-            return new ResponseEntity<String>(errorMessage, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<String>(errorMessage, updateUserTimezoneStatus);
         }
     }
 

@@ -46,10 +46,8 @@ public class AccountsControllerTests {
     private final String firstName = "first";
     private final String lastName = "last";
     private final UserTimezone emptyUserTimezone = UserTimezone.builder().uid("").timezone("").build();
-    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("1234567890")
-            .timezone("America/Tijuana").build();
-    private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890")
-            .timezone(null).build();
+    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("1234567890").timezone("America/Tijuana").build();
+    private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890").timezone(null).build();
     private final int assoiciatedAccounts = 1;
 
     @InjectMocks
@@ -248,6 +246,9 @@ public class AccountsControllerTests {
 
     @Test
     public void updateTimezone_GivenEmptyUserUIDOrTimezoneShouldReturnBadRequest() throws Exception {
+        // setup
+        Mockito.when(updateAccountService.updateTimezoneInCDC(emptyUserTimezone.getUid(), emptyUserTimezone.getTimezone())).thenReturn(HttpStatus.BAD_REQUEST);
+
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(emptyUserTimezone);
 
@@ -258,8 +259,7 @@ public class AccountsControllerTests {
     @Test
     public void updateTimezone_GivenAValidUserUIDAndTimezoneShouldReturnOK() throws Exception {
         // setup
-        Mockito.when(updateAccountService.updateTimezoneInCDC(any(String.class), any(String.class)))
-                .thenReturn(HttpStatus.OK.value());
+        Mockito.when(updateAccountService.updateTimezoneInCDC(any(String.class), any(String.class))).thenReturn(HttpStatus.OK);
 
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(validUserTimezone);
@@ -269,7 +269,9 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void updateTimezoneMissingRequestBodyParamShouldReturnBadRequest() throws Exception {
+    public void updateTimezone_MissingRequestBodyParamShouldReturnBadRequest() throws Exception {
+        // setup
+        Mockito.when(updateAccountService.updateTimezoneInCDC(invalidUserTimezone.getUid(), null)).thenReturn(HttpStatus.BAD_REQUEST);
 
         // execution
         ResponseEntity<String> resp = accountsController.setTimezone(invalidUserTimezone);

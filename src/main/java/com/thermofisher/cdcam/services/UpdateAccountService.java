@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 
 @Service
 public class UpdateAccountService {
@@ -52,7 +53,7 @@ public class UpdateAccountService {
         }
     }
 
-    public int updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
+    public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
         Profile profile = Profile.builder().timezone(timezone).build();
         ObjectMapper mapper = new ObjectMapper();
         JSONObject jsonAccount = new JSONObject();
@@ -74,6 +75,6 @@ public class UpdateAccountService {
             logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
         }
 
-        return (response.get("code").asInt());
+        return HttpStatus.valueOf(response.get("code").asInt());
     }
 }
