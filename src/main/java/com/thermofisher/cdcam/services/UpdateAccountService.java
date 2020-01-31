@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
@@ -36,15 +35,15 @@ public class UpdateAccountService {
                 .build();
         Data data = Data.builder().thermofisher(thermofisher).build();
         Profile profile = Profile.builder().username(emailAddress).build();
-        CDCAccount account = new CDCAccount();
-        account.setUID(uid);
-        account.setProfile(profile);
-        account.setData(data);
 
         JSONObject jsonAccount = new JSONObject();
         jsonAccount.put("uid", uid);
         jsonAccount.put("data", new JSONObject(data));
-        jsonAccount.put("profile", new JSONObject(profile));
+        JSONObject profileJson = new JSONObject(profile);
+        profileJson.remove("work");
+        profileJson.remove("country");
+        profileJson.remove("city");
+        jsonAccount.put("profile",profileJson);
         JsonNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info("uid: " + uid + " updated.");

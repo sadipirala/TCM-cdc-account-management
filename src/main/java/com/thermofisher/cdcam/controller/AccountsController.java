@@ -3,9 +3,8 @@ package com.thermofisher.cdcam.controller;
 import java.io.IOException;
 import java.util.List;
 
-import javax.validation.Valid;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
@@ -34,6 +33,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.*;
+import java.util.Set;
 
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -100,7 +102,7 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
-    public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids)  {
+    public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids) {
         try {
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -116,19 +118,36 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody){
-        accountRequestService.processRequest(headerValue,rawBody);
+    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
+        accountRequestService.processRequest(headerValue, rawBody);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/")
+    @ApiOperation(value = "Inserts a new Account")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        Validator validator = factory.getValidator();
+        Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
+        if (violations.size() > 0)
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
+        return (cdcResponseData != null ? new ResponseEntity<>(cdcResponseData, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
     @PutMapping("/user/timezone")
     @ApiOperation(value = "Sets the user's Timezone in CDC.")
-    @ApiResponses({ 
-            @ApiResponse(code = 200, message = "OK"), 
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.") 
+            @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone)throws JSONException, JsonProcessingException {
+    public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone) throws JSONException, JsonProcessingException {
         HttpStatus updateUserTimezoneStatus = updateAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
         if (updateUserTimezoneStatus == HttpStatus.OK) {
             String successMessage = String.format("User %s updated.", userTimezone.getUid());
@@ -174,4 +193,6 @@ public class AccountsController {
             NullPointerException ex) {
         return "Invalid input. Null body present.";
     }
+
+
 }

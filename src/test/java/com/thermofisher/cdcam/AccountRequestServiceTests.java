@@ -4,6 +4,7 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.NotificationService;
@@ -14,6 +15,7 @@ import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
 import org.json.JSONException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -107,7 +109,7 @@ public class AccountRequestServiceTests {
 
 
     @Test
-    public void processRequest_IfValidHashIsFalse_thenLogError(){
+    public void processRequest_IfValidHashIsFalse_thenLogError() throws JSONException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
@@ -121,7 +123,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfEventTypeIsNotRegistration_thenLogError(){
+    public void processRequest_IfEventTypeIsNotRegistration_thenLogError() throws JSONException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"undefined\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
@@ -135,7 +137,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfRawBodyHasNoEvents_thenLogError(){
+    public void processRequest_IfRawBodyHasNoEvents_thenLogError() throws JSONException {
         //setup
         String mockBody = "{\"events\":[]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
@@ -149,7 +151,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfAccountIsNull_thenLogError(){
+    public void processRequest_IfAccountIsNull_thenLogError() throws JSONException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(null);
@@ -163,7 +165,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfGivenAnInvalidUid_thenCatchException(){
+    public void processRequest_IfGivenAnInvalidUid_thenCatchException() throws JSONException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenThrow(Exception.class);
@@ -245,5 +247,37 @@ public class AccountRequestServiceTests {
 
         //validation
         Mockito.verify(snsHandler).sendSNSNotification(anyString());
+    }
+
+    @Test
+    public void processRegistrationRequest_givenANullAccount_returnNull(){
+
+        CDCResponseData responseData = accountRequestService.processRegistrationRequest(null);
+
+        Assert.assertNull(responseData);
+    }
+
+    @Test
+    public void processRegistrationRequest_givenAValidAccount_returnCDCResposnseData() throws IOException {
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("test")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
+        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+
+        accountRequestService.processRegistrationRequest(accountInfo);
+
+        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
     }
 }
