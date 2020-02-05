@@ -16,10 +16,8 @@ public class SNSHandler {
     final static Logger logger = LogManager.getLogger("AWSSecretManager");
     @Value("${aws.sns.client.region}")
     private String region;
-    @Value("${aws.sns.topic}")
-    private String snsTopic;
     
-    public boolean sendSNSNotification(String message) {
+    public boolean sendSNSNotification(String message,String snsTopic) {
         try {
             AmazonSNS snsClient = AmazonSNSClient.builder()
                     .withRegion(region)

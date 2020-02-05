@@ -9,8 +9,6 @@ import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -30,6 +28,12 @@ public class AccountRequestService {
     @Value("${cdcam.reg.notification.url}")
     private String regNotificationUrl;
 
+    @Value("${aws.sns.reg.topic}")
+    private String snsRegistrationTopic;
+
+    @Value("${aws.sns.accnt.info.topic}")
+    private String snsAccountInfoTopic;
+
     @Autowired
     SecretsManager secretsManager;
 
@@ -45,8 +49,6 @@ public class AccountRequestService {
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
-    @Autowired
-    NotificationService notificationService;
 
     @Autowired
     UpdateAccountService updateAccountService;
@@ -86,9 +88,11 @@ public class AccountRequestService {
 
                 String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
-                    CloseableHttpResponse response = notificationService.postRequest(accountToNotify, regNotificationUrl);
-                    logger.info("Response:  " + response.getStatusLine().getStatusCode() + ". Response message: " + EntityUtils.toString(response.getEntity()));
-                    response.close();
+                    boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountToNotify,snsAccountInfoTopic);
+                    if (!SNSSentCorrectly) {
+                        logger.error("There was an error sending the account information.");
+                    }
+                    logger.info("User sent to SNS.");
                 } catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
@@ -104,12 +108,12 @@ public class AccountRequestService {
                 }
                 String accountForGRP = accountHandler.prepareForGRPNotification(account);
 
-                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
+                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP,snsRegistrationTopic);
                 if (!SNSSentCorrectly) {
                     logger.error("The user was not created through federation.");
                     return;
                 }
-                logger.info("User sent to SNS.");
+                logger.info("Account info sent to SNS.");
                 return;
             }
             logger.error("NO EVENT FOUND");
@@ -144,7 +148,7 @@ public class AccountRequestService {
                 accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
                 String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
 
-                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP);
+                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP,snsRegistrationTopic);
                 if (!SNSSentCorrectly) {
                     logger.error("The user was not created through federation.");
                 }

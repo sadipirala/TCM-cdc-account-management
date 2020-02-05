@@ -12,10 +12,10 @@ public class HashingService {
 
     public static String hash(@NotNull String value) throws NoSuchAlgorithmException {
         Preconditions.checkArgument(value != null, "Value cannot be null");
+        MessageDigest messageDigest = null;
 
-        MessageDigest messageDigest = messageDigest = MessageDigest.getInstance(PASSWORD_ALGORITHM);
+        messageDigest = MessageDigest.getInstance(PASSWORD_ALGORITHM);
         messageDigest.update(value.getBytes());
-
 
         byte[] bytes = messageDigest != null ? messageDigest.digest() : new byte[0];
 

@@ -35,6 +35,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 
 @ActiveProfiles("test")
@@ -62,8 +63,6 @@ public class AccountRequestServiceTests {
     @Mock
     CDCResponseHandler cdcResponseHandler;
 
-    @Mock
-    NotificationService notificationService;
 
     @Mock
     UpdateAccountService updateAccountService;
@@ -98,7 +97,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
         Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
 
         //execution
         accountRequestService.processRequest("Test", mockBody);
@@ -179,7 +178,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfGivenAccountToNotify_ThenMakePostRequest() throws JSONException, IOException {
+    public void processRequest_IfGivenAccountToNotify_ThenSendNotification() throws JSONException, IOException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
@@ -195,7 +194,7 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Test", mockBody);
 
         //validation
-        Mockito.verify(notificationService).postRequest(any(), any());
+        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(any(), any());
     }
 
     @Test
@@ -222,6 +221,8 @@ public class AccountRequestServiceTests {
     public void processRequest_IfGivenAccount_ThenSendNotificationToGRP() throws JSONException, IOException{
         //setup
         ReflectionTestUtils.setField(accountRequestService,"regNotificationUrl", "http://google.com");
+        ReflectionTestUtils.setField(accountRequestService,"snsRegistrationTopic","regSNS");
+        ReflectionTestUtils.setField(accountRequestService,"snsAccountInfoTopic","infoSNS");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
         String mockAccountToNotify = "Test Account";
         CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
@@ -236,17 +237,17 @@ public class AccountRequestServiceTests {
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
-        Mockito.when(notificationService.postRequest(anyString(), anyString())).thenReturn(mockResponse);
+
         doNothing().when(mockResponse).close();
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
         Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString())).thenReturn(true);
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
 
         //execution
         accountRequestService.processRequest("Test", mockBody);
 
         //validation
-        Mockito.verify(snsHandler).sendSNSNotification(anyString());
+        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(anyString(),anyString());
     }
 
     @Test
