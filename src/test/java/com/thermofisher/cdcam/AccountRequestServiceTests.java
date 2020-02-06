@@ -220,7 +220,6 @@ public class AccountRequestServiceTests {
     @Test
     public void processRequest_IfGivenAccount_ThenSendNotificationToGRP() throws JSONException, IOException{
         //setup
-        ReflectionTestUtils.setField(accountRequestService,"regNotificationUrl", "http://google.com");
         ReflectionTestUtils.setField(accountRequestService,"snsRegistrationTopic","regSNS");
         ReflectionTestUtils.setField(accountRequestService,"snsAccountInfoTopic","infoSNS");
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
