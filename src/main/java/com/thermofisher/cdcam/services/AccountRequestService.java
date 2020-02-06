@@ -92,7 +92,7 @@ public class AccountRequestService {
                     if (!SNSSentCorrectly) {
                         logger.error("There was an error sending the account information.");
                     }
-                    logger.info("User sent to SNS.");
+                    logger.info("Account info sent to SNS.");
                 } catch (Exception e) {
                     logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
                 }
@@ -113,7 +113,7 @@ public class AccountRequestService {
                     logger.error("The user was not created through federation.");
                     return;
                 }
-                logger.info("Account info sent to SNS.");
+                logger.info("User sent to SNS.");
                 return;
             }
             logger.error("NO EVENT FOUND");
