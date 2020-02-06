@@ -25,9 +25,6 @@ public class AccountRequestService {
     @Value("${federation.aws.secret}")
     private String federationSecret;
 
-    @Value("${cdcam.reg.notification.url}")
-    private String regNotificationUrl;
-
     @Value("${aws.sns.reg.topic}")
     private String snsRegistrationTopic;
 
@@ -94,7 +91,7 @@ public class AccountRequestService {
                     }
                     logger.info("Account info sent to SNS.");
                 } catch (Exception e) {
-                    logger.error("EXCEPTION: The call to " + regNotificationUrl + " has failed with errors " + e.getMessage());
+                    logger.error("EXCEPTION: The call to SNS has failed with errors " + e.getMessage());
                 }
 
                 if (!hasFederationProvider(account)) {
