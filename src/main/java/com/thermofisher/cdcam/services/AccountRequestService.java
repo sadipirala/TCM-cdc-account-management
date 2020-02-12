@@ -141,7 +141,7 @@ public class AccountRequestService {
             CDCResponseData cdcResponseData = cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
 
             if (cdcResponseData != null) {
-                if (cdcResponseData.getValidationErrors().size() == 0) {
+                if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : cdcResponseData.getStatusCode() == 200) {
                     accountInfo.setUid(cdcResponseData.getUID());
                     accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
                     String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
