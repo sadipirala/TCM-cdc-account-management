@@ -8,7 +8,6 @@ import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCValidationError;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.HashValidationService;
-import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
