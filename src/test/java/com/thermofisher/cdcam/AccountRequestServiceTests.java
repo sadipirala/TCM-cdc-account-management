@@ -313,4 +313,28 @@ public class AccountRequestServiceTests {
         Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
         Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
     }
+
+    @Test
+    public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResposnseData() throws IOException {
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("1")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setStatusCode(400);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+
+        accountRequestService.processRegistrationRequest(accountInfo);
+
+        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
+    }
 }

@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -141,7 +142,7 @@ public class AccountRequestService {
             CDCResponseData cdcResponseData = cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
 
             if (cdcResponseData != null) {
-                if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : cdcResponseData.getStatusCode() == 200) {
+                if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : HttpStatus.valueOf(cdcResponseData.getStatusCode()).is2xxSuccessful()) {
                     accountInfo.setUid(cdcResponseData.getUID());
                     accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
                     String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
