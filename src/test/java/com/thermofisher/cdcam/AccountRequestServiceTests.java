@@ -259,7 +259,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRegistrationRequest_givenAValidAccount_returnCDCResposnseData() throws IOException {
+    public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -283,7 +283,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRegistrationRequest_givenAnInvalidAccount_returnCDCResposnseData() throws IOException {
+    public void processRegistrationRequest_givenAnInvalidAccount_returnCDCResponseData() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -314,7 +314,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResposnseData() throws IOException {
+    public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResponseData() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
