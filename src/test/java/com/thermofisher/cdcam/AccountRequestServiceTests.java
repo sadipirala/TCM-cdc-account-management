@@ -5,9 +5,9 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.CDCResponseData;
+import com.thermofisher.cdcam.model.CDCValidationError;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.HashValidationService;
-import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -258,7 +259,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRegistrationRequest_givenAValidAccount_returnCDCResposnseData() throws IOException {
+    public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -279,5 +280,60 @@ public class AccountRequestServiceTests {
         accountRequestService.processRegistrationRequest(accountInfo);
 
         Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+    }
+
+    @Test
+    public void processRegistrationRequest_givenAnInvalidAccount_returnCDCResponseData() throws IOException {
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("1")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setStatusCode(400);
+        cdcResponseData.setStatusReason("");
+        List<CDCValidationError> errors = new ArrayList<>();
+        CDCValidationError error = new CDCValidationError();
+        error.setErrorCode(400);
+        error.setFieldName("password");
+        error.setMessage("incorrect password");
+        errors.add(error);
+        cdcResponseData.setValidationErrors(errors);
+
+        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+
+        accountRequestService.processRegistrationRequest(accountInfo);
+
+        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
+    }
+
+    @Test
+    public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResponseData() throws IOException {
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("1")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setStatusCode(400);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+
+        accountRequestService.processRegistrationRequest(accountInfo);
+
+        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
     }
 }
