@@ -134,8 +134,10 @@ public class AccountsController {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
+
         if (violations.size() > 0)
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
         return (cdcResponseData != null ? new ResponseEntity<>(cdcResponseData, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
     }
