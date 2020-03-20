@@ -62,6 +62,9 @@ public class UpdateAccountService {
         propertiesToRemove.add("email");
         propertiesToRemove.add("firstName");
         propertiesToRemove.add("lastName");
+        propertiesToRemove.add("country");
+        propertiesToRemove.add("city");
+        propertiesToRemove.add("work");
         ObjectNode jsonProfile = mapper.valueToTree(profile);
         jsonProfile.remove(propertiesToRemove);
         jsonAccount.put("uid", uid);

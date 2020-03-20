@@ -59,7 +59,7 @@ public class CdcamApplication {
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/cdcam/**")
 					.allowedOrigins("*")
-					.allowedMethods("GET", "POST", "PUT", "DELETE")
+					.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
 					.allowedHeaders("*")
 					.allowCredentials(false)
 					.maxAge(3600);
