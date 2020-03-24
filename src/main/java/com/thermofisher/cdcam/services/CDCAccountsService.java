@@ -20,7 +20,7 @@ import com.thermofisher.cdcam.utils.Utils;
 @Service
 public class CDCAccountsService {
 
-    final static Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${cdc.apiKey}")
     private String apiKey;
@@ -39,27 +39,30 @@ public class CDCAccountsService {
 
 
     @PostConstruct
-    public void setCredentials() throws JSONException {
+    public void setCredentials() {
         try {
             if (env.equals("local") || env.equals("test")) return;
+            logger.info("Setting up CDC credentials.");
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
             secretKey = secretsManager.getProperty(secretProperties, "secretKey");
             userKey = secretsManager.getProperty(secretProperties, "userKey");
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
         }
     }
 
-    public GSResponse getAccount(String UID) {
+    public GSResponse getAccount(String uid) {
         try {
             String apiMethod = APIMethods.GET.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-            request.setParam("UID", UID);
+            request.setParam("UID", uid);
             request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
             request.setParam("extraProfileFields", "username, locale, work");
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -67,13 +70,15 @@ public class CDCAccountsService {
     public GSResponse setUserInfo(String uid, String data, String profile) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("UID", uid);
             request.setParam("data", data);
             request.setParam("profile", profile);
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -81,20 +86,26 @@ public class CDCAccountsService {
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
+            logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
+
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("regToken", getRegToken(true));
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s", email, Utils.stackTraceToString(e)));
             return null;
         }
     }
 
     public GSResponse search(String query, String accountTypes) {
-        if (query == null) return null;
         final boolean USE_HTTPS = true;
+
         String apiMethod = APIMethods.SEARCH.getValue();
+        logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
+
+        if (query == null) return null;
+
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
@@ -104,6 +115,8 @@ public class CDCAccountsService {
     public GSResponse register(String username, String email, String password, String data, String profile) {
         try {
             String apiMethod = APIMethods.REGISTER.getValue();
+            logger.info(String.format("%s triggered. Username: %s", apiMethod, username));
+
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("username", username);
             request.setParam("email", email);
@@ -112,8 +125,8 @@ public class CDCAccountsService {
             request.setParam("profile", profile);
             request.setParam("finalizeRegistration", "true");
             return request.send();
-        } catch (Exception ex) {
-            Utils.logStackTrace(ex, logger);
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", username, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -121,6 +134,8 @@ public class CDCAccountsService {
     private String getRegToken(boolean isLite) {
         try {
             String apiMethod = APIMethods.INITREG.getValue();
+            logger.info(String.format("%s triggered. Email-only: %s", apiMethod, Boolean.toString(isLite)));
+
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("isLite", isLite);
 
@@ -129,10 +144,13 @@ public class CDCAccountsService {
                 GSObject obj = response.getData();
                 return obj.getString("regToken");
             } else {
-                return ("Uh-oh, we got the following error: " + response.getLog());
+                String message = String.format("An error occurred while generating a regToken. Error: %s", response.getErrorMessage());
+                logger.error(message);
+
+                return (message);
             }
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while generating a regToken. Error: %s", Utils.stackTraceToString(e)));
             return null;
         }
     }

@@ -184,19 +184,6 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void getUsers_GivenAnEmptyListOfUID_ShouldReturnBadRequest() throws IOException {
-        // setup
-        Mockito.when(usersHandler.getUser(anyString())).thenReturn(null);
-
-        // execution
-        ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(emptyUIDs);
-
-        // validation
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
-
-    }
-
-    @Test
     public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException {
         // setup
         Mockito.when(usersHandler.getUsers(uids)).thenThrow(Exception.class);
