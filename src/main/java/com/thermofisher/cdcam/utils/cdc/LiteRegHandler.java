@@ -19,7 +19,7 @@ import java.util.List;
 @Configuration
 public class LiteRegHandler {
 
-    static final Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${eec.request.limit}")
     public int requestLimit;
@@ -28,12 +28,16 @@ public class LiteRegHandler {
     CDCAccountsService cdcAccountsService;
 
     public List<EECUser> process(EmailList emailList) throws IOException {
+        logger.info("EEC account processing initiated.");
         List<EECUser> users = new ArrayList<>();
         List<String> emails = emailList.getEmails();
 
-        if (emails.size() == 0) return users;
+        if (emails.size() == 0) {
+            logger.warn("No accounts were sent in the request.");
+            return users;
+        }
 
-        logger.info(String.format("%d EEC users requested...", emails.size()));
+        logger.info(String.format("%d EEC users requested.", emails.size()));
 
         for (String email: emails) {
             if (email == null) {
@@ -53,6 +57,8 @@ public class LiteRegHandler {
             GSResponse response = cdcAccountsService.search(query,AccountTypes.FULL_LITE.getValue());
 
             if (response == null) {
+                logger.error(String.format("No response from CDC when searching '%s'.", email));
+
                 EECUser failedSearchUser = EECUser.builder()
                         .uid(null)
                         .username(null)
@@ -88,19 +94,24 @@ public class LiteRegHandler {
                     users.add(liteRegisterUser(email));
                 }
             } else {
+                int errorCode = cdcSearchResponse.getErrorCode();
+                String errorMessage = cdcSearchResponse.getStatusReason();
+
                 EECUser failedSearchUser = EECUser.builder()
                         .uid(null)
                         .username(null)
                         .email(email)
-                        .responseCode(cdcSearchResponse.getErrorCode())
-                        .responseMessage(cdcSearchResponse.getStatusReason())
+                        .responseCode(errorCode)
+                        .responseMessage(errorMessage)
                         .build();
 
                 users.add(failedSearchUser);
+
+                logger.error(String.format("Failed searching account with email: %s. CDC Error code: %d. CDC Error message: %s", email, errorCode, errorMessage));
             }
         }
 
-        logger.info(String.format("%d EEC users returned...", users.size()));
+        logger.info(String.format("%d EEC users processed.", users.size()));
         return users;
     }
 
@@ -108,19 +119,19 @@ public class LiteRegHandler {
         GSResponse response = cdcAccountsService.setLiteReg(email);
 
         if (response == null) {
-            logger.error(String.format("An error occurred during CDC Lite Registration for '%s'", email));
+            logger.error(String.format("An error occurred during CDC email only registration for '%s'", email));
             return EECUser.builder()
                     .uid(null)
                     .email(email)
                     .responseCode(500)
-                    .responseMessage("An error occurred during CDC Lite Registration...")
+                    .responseMessage("An error occurred during CDC email only registration...")
                     .build();
         }
 
         CDCResponseData cdcData = new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
 
         if(response.getErrorCode() == 0) {
-            logger.info(String.format("New email only registration for '%s'", email));
+            logger.info(String.format("Successful email only registration for '%s'", email));
             return EECUser.builder()
                     .uid(cdcData.getUID())
                     .username(null)
@@ -130,10 +141,11 @@ public class LiteRegHandler {
                     .responseMessage(cdcData.getStatusReason())
                     .build();
         } else {
-            logger.error(String.format("Email only registration failed for '%s'", email));
             String errorList = Utils.convertJavaToJsonString(cdcData.getValidationErrors());
             String errorDetails = String.format("%s: %s -> %s",
                     response.getErrorMessage(), response.getErrorDetails(), errorList);
+
+            logger.error(String.format("Email only registration failed. Email: %s. Error details: %s", email, errorDetails));
 
             return EECUser.builder()
                     .uid(null)

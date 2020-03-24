@@ -8,13 +8,12 @@ import org.json.JSONObject;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import org.apache.logging.log4j.Logger;
 
 public class Utils {
-    public static String getAlphaNumericString(int lenght) {
+    public static String getAlphaNumericString(int length) {
         final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
-        StringBuilder sb = new StringBuilder(lenght);
-        for (int i = 0; i < lenght; i++) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
             int index = (int) (ALPHANUMERIC_STRING.length() * Math.random());
             sb.append(ALPHANUMERIC_STRING.charAt(index));
         }
@@ -41,11 +40,11 @@ public class Utils {
             return null;
         }
     }
-    public static void logStackTrace(Exception e, Logger logger) {
+
+    public static String stackTraceToString(Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
-        String stackTrace = sw.toString();
-        logger.fatal(stackTrace);
+        return sw.toString();
     }
 }

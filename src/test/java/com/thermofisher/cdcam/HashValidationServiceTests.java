@@ -1,7 +1,10 @@
 package com.thermofisher.cdcam;
 
 import com.thermofisher.cdcam.services.HashValidationService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -18,8 +21,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 @SpringBootTest(classes = HashValidationService.class)
 public class HashValidationServiceTests {
 
+    private Logger logger = LogManager.getLogger(HashValidationService.class);
+
     @Mock
     private HashValidationService hashValidationService = new HashValidationService();
+
+    @Before
+    public void setup() {
+        ReflectionTestUtils.setField(hashValidationService, "logger", logger);
+    }
 
     @Test
     public void isValidHash_ifGivenMatchingHashedStrings_returnTrue() {

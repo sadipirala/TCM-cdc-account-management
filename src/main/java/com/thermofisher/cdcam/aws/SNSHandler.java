@@ -13,12 +13,16 @@ import java.io.StringWriter;
 
 @Configuration
 public class SNSHandler {
-    final static Logger logger = LogManager.getLogger("AWSSecretManager");
+
     @Value("${aws.sns.client.region}")
     private String region;
+
+    private final static Logger logger = LogManager.getLogger("AWSSecretManager");
     
     public boolean sendSNSNotification(String message,String snsTopic) {
         try {
+            logger.info(String.format("Posting SNS message to topic: %s", snsTopic));
+
             AmazonSNS snsClient = AmazonSNSClient.builder()
                     .withRegion(region)
                     .withCredentials(new InstanceProfileCredentialsProvider(false))
@@ -32,7 +36,7 @@ public class SNSHandler {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             String stackTrace = sw.toString();
-            logger.fatal(stackTrace);
+            logger.error(String.format("An error occurred while sending an SNS message for topic: %s. Error: %s", snsTopic, stackTrace));
             return false;
         }
     }
