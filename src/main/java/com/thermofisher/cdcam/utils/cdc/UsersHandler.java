@@ -30,7 +30,7 @@ public class UsersHandler {
         final int ONE_ACCOUNT = 1;
         final int TWO_ACCOUNTS = 2;
 
-        logger.info(String.format("Requested user details for multiple users. Count: %d", uids.size()));
+        logger.info(String.format("Requested user details for one or multiple users. Count: %d", uids.size()));
 
         List<UserDetails> userDetails = new ArrayList<>();
 

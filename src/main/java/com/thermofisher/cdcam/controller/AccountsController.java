@@ -81,7 +81,7 @@ public class AccountsController {
             logger.info(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         } else if (emailList.getEmails().size() > handler.requestLimit) {
-            String errorMessage = String.format("Requested users exceed request limit. %s.", handler.requestLimit);
+            String errorMessage = String.format("Requested users exceed request limit: %s.", handler.requestLimit);
             logger.error(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         } else {
