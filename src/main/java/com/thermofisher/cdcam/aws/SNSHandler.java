@@ -13,13 +13,15 @@ import java.io.StringWriter;
 
 @Configuration
 public class SNSHandler {
-    final static Logger logger = LogManager.getLogger("AWSSecretManager");
+
     @Value("${aws.sns.client.region}")
     private String region;
+
+    private final static Logger logger = LogManager.getLogger("AWSSecretManager");
     
     public boolean sendSNSNotification(String message,String snsTopic) {
         try {
-            logger.info("Posting SNS message to topic: %s", snsTopic);
+            logger.info(String.format("Posting SNS message to topic: %s", snsTopic));
 
             AmazonSNS snsClient = AmazonSNSClient.builder()
                     .withRegion(region)
