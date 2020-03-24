@@ -78,7 +78,7 @@ public class AccountsController {
         logger.info("Email only registration initiated.");
         if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
             String errorMessage = "No users requested.";
-            logger.info(errorMessage);
+            logger.warn(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         } else if (emailList.getEmails().size() > handler.requestLimit) {
             String errorMessage = String.format("Requested users exceed request limit: %s.", handler.requestLimit);
