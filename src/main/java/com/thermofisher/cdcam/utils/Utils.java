@@ -41,11 +41,11 @@ public class Utils {
             return null;
         }
     }
-    public static void logStackTrace(Exception e, Logger logger) {
+
+    public static String stackTraceToString(Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
-        String stackTrace = sw.toString();
-        logger.fatal(stackTrace);
+        return sw.toString();
     }
 }

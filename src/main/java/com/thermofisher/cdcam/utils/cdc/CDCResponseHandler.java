@@ -26,8 +26,9 @@ import java.io.IOException;
 @Configuration
 public class CDCResponseHandler {
     private final int SUCCESS_CODE = 0;
-    static final Logger logger = LogManager.getLogger("CdcamApp");
     private final AccountBuilder accountBuilder = new AccountBuilder();
+
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -38,7 +39,7 @@ public class CDCResponseHandler {
             GSObject obj = response.getData();
             return accountBuilder.getAccountInfo(obj);
         } else {
-            logger.error("Get account error: " + response.getErrorDetails());
+            logger.error(String.format("An error occurred while retrieving account info. UID: %s. Error: %s", uid, response.getErrorDetails()));
             return null;
         }
     }
@@ -59,6 +60,7 @@ public class CDCResponseHandler {
             response.put("code", HttpStatus.OK.value());
         } else {
             response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid, cdcResponse.getErrorMessage()));
         }
         response.put("log", cdcResponse.getLog());
         response.put("error", cdcResponse.getErrorMessage());

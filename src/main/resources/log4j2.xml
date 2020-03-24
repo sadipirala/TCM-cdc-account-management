@@ -1,33 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
-<Appenders>
-    <Console name="Console">
-        <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
-    </Console>
-    <File name="CdcamLogFile" fileName="./logs/cdcam.log">
-        <PatternLayout pattern="%d{HH:mm:ss.SSS}{PST} %-5p %c{1}:%L - %m%n"/>
-    </File>
-    <SMTP name="Mail" subject="Error Log" to="david.ortiz@thermofisher.com" from="account-security-noreply@thermofisher.com"
-          smtpHost="smtp.cloud.thermofisher.net" smtpPort="25" bufferSize="465">
-    </SMTP>
-</Appenders>
-<Loggers>
-    <Root level="FATAL">
-        <AppenderRef ref="Mail"/>
-    </Root>
-    <Root level="INFO">
-        <AppenderRef ref="Console"/>
-    </Root>
-    <Root level="ERROR">
-        <AppenderRef ref="CdcamLogFile"/>
-    </Root>
-    <logger name="CdcamApp" level="TRACE" additivity="false">
-        <AppenderRef ref="CdcamLogFile"/>
-        <AppenderRef ref="Mail" level="FATAL"/>
-    </logger>
-    <logger name="AWSSecretManager" level="TRACE" additivity="false">
-        <AppenderRef ref="CdcamLogFile"/>
-        <AppenderRef ref="Mail" level="FATAL"/>
-    </logger>
-</Loggers>
+    <Appenders>
+        <Console name="Console">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
+        </Console>
+        <File name="CdcamLogFile" fileName="./logs/cdcam.log">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS}{PST} [%t] %-5p %c{1}.%M Line(%L) - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="CdcamLogFile"/>
+        </Root>
+    </Loggers>
 </Configuration>

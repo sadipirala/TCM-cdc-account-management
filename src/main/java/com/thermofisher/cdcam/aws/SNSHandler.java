@@ -19,6 +19,8 @@ public class SNSHandler {
     
     public boolean sendSNSNotification(String message,String snsTopic) {
         try {
+            logger.info("Posting SNS message to topic: %s", snsTopic);
+
             AmazonSNS snsClient = AmazonSNSClient.builder()
                     .withRegion(region)
                     .withCredentials(new InstanceProfileCredentialsProvider(false))
@@ -32,7 +34,7 @@ public class SNSHandler {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             String stackTrace = sw.toString();
-            logger.fatal(stackTrace);
+            logger.error(String.format("An error occurred while sending an SNS message for topic: %s. Error: %s", snsTopic, stackTrace));
             return false;
         }
     }

@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.services;
 
+import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,8 @@ import java.security.NoSuchAlgorithmException;
 @Service
 public class HashValidationService {
 
-    final static Logger logger = LogManager.getLogger("CdcamApp");
-
-    String algorithm = "HmacSHA1";
+    private Logger logger = LogManager.getLogger(this.getClass());
+    private String algorithm = "HmacSHA1";
 
     public String getHashedString(String secretKey, String msg) {
         try {
@@ -27,7 +27,7 @@ public class HashValidationService {
 
             return new String(java.util.Base64.getEncoder().encode(bytes));
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            logger.error(e.getMessage());
+            logger.error(String.format("An error occurred while hashing a string. Error: %s", Utils.stackTraceToString(e)));
         }
         return null;
     }

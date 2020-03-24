@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AccountRequestService {
-    static final Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${federation.aws.secret}")
     private String federationSecret;
@@ -55,13 +55,14 @@ public class AccountRequestService {
     public void processRequest(String headerValue, String rawBody) {
         final int FED_PASSWORD_LENGTH = 10;
 
+        logger.info("Async process for notify registration initiated.");
         try {
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(federationSecret));
             String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
             String hash = hashValidationService.getHashedString(key, rawBody);
 
             if (!hashValidationService.isValidHash(hash, headerValue)) {
-                logger.error("INVALID SIGNATURE");
+                logger.error("Invalid hash signature.");
                 return;
             }
 
@@ -73,30 +74,33 @@ public class AccountRequestService {
                 JSONObject data = (JSONObject) event.get("data");
 
                 if (!event.get("type").equals(Events.REGISTRATION.getValue())) {
-                    logger.error("The event type was not recognized");
+                    logger.warn(String.format("Notify registration webhook event type was not recognized: %s", event.get("type")));
                     return;
                 }
 
                 String uid = data.get("uid").toString();
+                logger.info(String.format("Account UID: %s", uid));
+
                 AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
                 if (account == null) {
-                    logger.error("Account not found. UID: " + uid);
+                    logger.error(String.format("Account not found in CDC. UID: %s", uid));
                     return;
                 }
 
+                logger.info(String.format("Account username: %s. UID: %s", account.getUsername(), account.getUid()));
                 String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
                     boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountToNotify, snsAccountInfoTopic);
                     if (!SNSSentCorrectly) {
-                        logger.error("There was an error sending the account information.");
+                        logger.error(String.format("There was an error sending the account information to SNS Topic (%s). UID: %s", snsAccountInfoTopic, uid));
                     }
-                    logger.info("Account info sent to SNS.");
+                    logger.info(String.format("Account Info Notification sent successfully. UID: %s", uid));
                 } catch (Exception e) {
-                    logger.error("EXCEPTION: The call to SNS has failed with errors " + e.getMessage());
+                    logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s. Error: %s", snsAccountInfoTopic, uid, Utils.stackTraceToString(e)));
                 }
 
                 if (!hasFederationProvider(account)) {
-                    logger.info("The user was not created through federation.");
+                    logger.info(String.format("Account is not federated. UID: %s", account.getUid()));
                     return;
                 }
 
@@ -108,16 +112,16 @@ public class AccountRequestService {
 
                 boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP, snsRegistrationTopic);
                 if (!SNSSentCorrectly) {
-                    logger.error("The user was not created through federation.");
+                    logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s.", snsRegistrationTopic, uid));
                     return;
                 }
-                logger.info("User sent to SNS.");
+                logger.info(String.format("Account Registration Notification sent successfully. UID: %s", uid));
                 return;
             }
-            logger.error("NO EVENT FOUND");
+            logger.error("No webhook events found in request.");
 
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while processing an account notify registration request. Error: %s", Utils.stackTraceToString(e)));
         }
     }
 
@@ -137,6 +141,7 @@ public class AccountRequestService {
                     .city(accountInfo.getCity())
                     .work(work)
                     .build();
+
             String jsonProfile = accountHandler.prepareProfileForRegistration(profile);
             String jsonData = accountHandler.prepareDataForRegistration(data);
             CDCResponseData cdcResponseData = cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
@@ -145,19 +150,26 @@ public class AccountRequestService {
                 if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : HttpStatus.valueOf(cdcResponseData.getStatusCode()).is2xxSuccessful()) {
                     accountInfo.setUid(cdcResponseData.getUID());
                     accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
+
+                    logger.info(String.format("Account registration successful. Username: %s. UID: %s.", accountInfo.getUsername(), accountInfo.getUid()));
+
                     String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
                     boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP, snsRegistrationTopic);
                     if (!SNSSentCorrectly) {
-                        logger.error("The user was not created through federation.");
+                        logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s.", snsRegistrationTopic, accountInfo.getUid()));
+                    } else {
+                        logger.info(String.format("Account Registration Notification sent successfully. UID: %s", accountInfo.getUid()));
                     }
-                    logger.info("User sent to SNS.");
+                } else {
+                    logger.error(String.format("An error occurred while processing an account registration request. Username: %s. Error: %s",
+                            accountInfo.getUsername(), cdcResponseData.getStatusReason()));
                 }
             }
 
             return cdcResponseData;
 
         } catch (Exception e) {
-            Utils.logStackTrace(e, logger);
+            logger.error(String.format("An error occurred while processing an account registration request. Error: %s", Utils.stackTraceToString(e)));
             return null;
         }
     }
