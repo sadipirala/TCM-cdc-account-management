@@ -76,7 +76,7 @@ public class LiteRegHandler {
             if (cdcSearchResponse.getErrorCode() == 0) {
                 if (cdcSearchResponse.getTotalCount() > 0) {
                     for (CDCAccount result: cdcSearchResponse.getResults()) {
-                        
+
                         Profile profile = result.getProfile();
                         Object isReg = result.getIsRegistered();
                         EECUser user = EECUser.builder()

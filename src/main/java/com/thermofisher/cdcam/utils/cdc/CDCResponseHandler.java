@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.model.CDCAccount;
 import com.thermofisher.cdcam.model.CDCResponseData;
+import com.thermofisher.cdcam.model.CDCSearchResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.Utils;
@@ -71,5 +73,33 @@ public class CDCResponseHandler {
     public CDCResponseData register(String username,String email,String password,String data,String profile)throws IOException {
         GSResponse response = cdcAccountsService.register( username, email, password, data, profile);
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
+    }
+
+    public void disableDuplicatedAccounts(String uid, String federatedEmail) {
+        String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", federatedEmail);
+        GSResponse response = cdcAccountsService.search(query, "");
+
+        try {
+            CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+            if (cdcSearchResponse.getErrorCode() == 0) {
+                if (cdcSearchResponse.getTotalCount() > 0) {
+                    for (CDCAccount result : cdcSearchResponse.getResults()) {
+                        if (!uid.equals(result.getUID())) {
+                            GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(result.getUID(), false);
+                            if (changeStatusResponse != null) {
+                                if (changeStatusResponse.getErrorCode() == SUCCESS_CODE) {
+                                    logger.info(String.format("Account status successfully changed. UID: %s", uid));
+                                } else {
+                                    logger.error(String.format("An error occurred while updating an account status. UID: %s. Error: %s", uid, changeStatusResponse.getErrorMessage()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e) {
+            logger.error(String.format("An error occurred while processing an account status update request. Error: %s", Utils.stackTraceToString(e)));
+        }
     }
 }

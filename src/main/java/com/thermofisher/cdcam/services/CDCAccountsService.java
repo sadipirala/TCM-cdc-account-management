@@ -83,6 +83,21 @@ public class CDCAccountsService {
         }
     }
 
+    public GSResponse changeAccountStatus (String uid, boolean status ) {
+        try {
+            String apiMethod = APIMethods.SETINFO.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+            GSRequest request = new GSRequest(apiKey,secretKey, apiMethod, null, true, userKey);
+            request.setParam("UID", uid);
+            request.setParam("isActive", status);
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
     public GSResponse setLiteReg(String email) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
