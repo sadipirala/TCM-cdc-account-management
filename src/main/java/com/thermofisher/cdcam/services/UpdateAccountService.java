@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 
 @Service
 public class UpdateAccountService {
-    static final Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
     private static final int SUCCESS_CODE = 200;
 
     @Autowired
@@ -31,6 +31,8 @@ public class UpdateAccountService {
 
     @Async
     public void updateLegacyDataInCDC(String uid, String emailAddress) throws JSONException {
+        logger.info(String.format("Account update for legacy data triggered. UID: %s", uid));
+
         Thermofisher thermofisher = Thermofisher.builder().legacyEmail(emailAddress).legacyUsername(emailAddress)
                 .build();
         Data data = Data.builder().thermofisher(thermofisher).build();
@@ -46,13 +48,15 @@ public class UpdateAccountService {
         jsonAccount.put("profile",profileJson);
         JsonNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
-            logger.info("uid: " + uid + " updated.");
+            logger.info(String.format("Account update success. UID: %s", uid));
         } else {
-            logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
+            logger.error(String.format("Account update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
         }
     }
 
     public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
+        logger.info(String.format("Account update for time zone triggered. UID: %s", uid));
+
         Profile profile = Profile.builder().timezone(timezone).build();
         ObjectMapper mapper = new ObjectMapper();
         JSONObject jsonAccount = new JSONObject();
@@ -62,6 +66,9 @@ public class UpdateAccountService {
         propertiesToRemove.add("email");
         propertiesToRemove.add("firstName");
         propertiesToRemove.add("lastName");
+        propertiesToRemove.add("country");
+        propertiesToRemove.add("city");
+        propertiesToRemove.add("work");
         ObjectNode jsonProfile = mapper.valueToTree(profile);
         jsonProfile.remove(propertiesToRemove);
         jsonAccount.put("uid", uid);
@@ -69,9 +76,9 @@ public class UpdateAccountService {
         ObjectNode response = cdcAccountsService.update(jsonAccount);
 
         if (response.get("code").asInt() == SUCCESS_CODE) {
-            logger.info("uid: " + uid + " updated.");
+            logger.info(String.format("Account update success. UID: %s", uid));
         } else {
-            logger.fatal("uid: " + uid + " failed. error Code: " + response.get("log").asText());
+            logger.error(String.format("Account update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
         }
 
         return HttpStatus.valueOf(response.get("code").asInt());

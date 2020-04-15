@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 public class AccountBuilder {
 
-    final static Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     public AccountInfo getAccountInfo(GSObject obj) {
         try {
@@ -51,8 +51,9 @@ public class AccountBuilder {
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .regAttempts(0)
                     .build();
+
         } catch (Exception e) {
-            logger.error("Error building account info object:  " + e.getMessage());
+            logger.error(String.format("Error building account info object: %s", e.getMessage()));
             return null;
         }
     }

@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
@@ -46,8 +47,8 @@ import io.swagger.annotations.ResponseHeader;
 @RestController
 @RequestMapping("/accounts")
 public class AccountsController {
-    static final Logger logger = LogManager.getLogger("CdcamApp");
-    static final String requestExceptionHeader = "Request-Exception";
+    private Logger logger = LogManager.getLogger(this.getClass());
+    private static final String requestExceptionHeader = "Request-Exception";
 
     @Autowired
     LiteRegHandler handler;
@@ -74,12 +75,12 @@ public class AccountsController {
     })
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
     public ResponseEntity<List<EECUser>> emailOnlyRegistration(@Valid @RequestBody EmailList emailList) {
+        logger.info("Email only registration initiated.");
         if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
-            String errorMessage = "No users requested.";
-            logger.error(errorMessage);
-            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+            logger.warn("No users requested.");
+            return ResponseEntity.badRequest().header(requestExceptionHeader, "No users requested.").body(null);
         } else if (emailList.getEmails().size() > handler.requestLimit) {
-            String errorMessage = String.format("Requested users exceed request limit [%s].", handler.requestLimit);
+            String errorMessage = String.format("Requested users exceed request limit: %s.", handler.requestLimit);
             logger.error(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         } else {
@@ -87,7 +88,7 @@ public class AccountsController {
                 List<EECUser> response = handler.process(emailList);
                 return ResponseEntity.ok().body(response);
             } catch (IOException e) {
-                String errorMessage = String.format("An error occurred during EEC email only registration process... [%s]", e.toString());
+                String errorMessage = String.format("An error occurred during email only registration process... %s", e.toString());
                 logger.error(errorMessage);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, errorMessage).body(null);
             }
@@ -104,9 +105,13 @@ public class AccountsController {
     @ApiImplicitParam(name = "uids", value = "Comma-separated list of CDC UIDs", required = true)
     public ResponseEntity<List<UserDetails>> getUsers(@PathVariable List<String> uids) {
         try {
+            logger.info("User data by UID requested.");
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
+
+            logger.info(String.format("Retrieved %d user(s)", userDetails.size()));
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
+            logger.error(String.format("An error occurred while retrieving user data from CDC: %s", Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -119,6 +124,7 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
+        logger.info("Notify registration initiated.");
         accountRequestService.processRequest(headerValue, rawBody);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -131,13 +137,25 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) {
+        logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
+
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
-        if (violations.size() > 0)
+
+        if (violations.size() > 0) {
+            logger.error(String.format("One or more errors occurred while creating the account. %s", violations.toArray()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
-        return (cdcResponseData != null ? new ResponseEntity<>(cdcResponseData, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        if (cdcResponseData != null) {
+            logger.info(String.format("Account registration request completed. Status: %d. Status reason: %s", cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason()));
+            return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);
+        } else {
+            logger.error(String.format("An error occurred while creating account for: %s", accountInfo.getUsername()));
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping("/user/timezone")
@@ -150,12 +168,13 @@ public class AccountsController {
     public ResponseEntity<String> setTimezone(@RequestBody @Valid UserTimezone userTimezone) throws JSONException, JsonProcessingException {
         HttpStatus updateUserTimezoneStatus = updateAccountService.updateTimezoneInCDC(userTimezone.getUid(), userTimezone.getTimezone());
         if (updateUserTimezoneStatus == HttpStatus.OK) {
-            String successMessage = String.format("User %s updated.", userTimezone.getUid());
-            return new ResponseEntity<String>(successMessage, updateUserTimezoneStatus);
+            String message = String.format("User %s updated.", userTimezone.getUid());
+            logger.info(message);
+            return new ResponseEntity<>(message, updateUserTimezoneStatus);
         } else {
-            String errorMessage = "An error occurred during the user's timezone update.";
-            logger.error(errorMessage);
-            return new ResponseEntity<String>(errorMessage, updateUserTimezoneStatus);
+            String message = String.format("An error occurred during the user's timezone update. UID: %s", userTimezone.getUid());
+            logger.error(message);
+            return new ResponseEntity<>(message, updateUserTimezoneStatus);
         }
     }
 

@@ -21,54 +21,19 @@ import java.util.stream.Collectors;
 @Configuration
 public class UsersHandler {
 
-    static final Logger logger = LogManager.getLogger("CdcamApp");
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Autowired
     CDCAccountsService cdcAccountsService;
 
-    public UserDetails getUser(String uid) throws IOException {
-        List<UserDetails> userDetails = new ArrayList<>();
-        logger.info(String.format("%s user requested...", uid));
-        String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID = '%s' ", uid);
-        GSResponse response = cdcAccountsService.search(query, AccountTypes.FULL_LITE.getValue());
-
-        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-        if (cdcSearchResponse.getErrorCode() == 0) {
-            if (cdcSearchResponse.getTotalCount() > 0) {
-                for (CDCAccount result : cdcSearchResponse.getResults()) {
-
-                    Profile profile = result.getProfile();
-                    Object isReg = result.getIsRegistered();
-                    UserDetails user = UserDetails.builder()
-                            .uid(result.getUID())
-                            .email(profile.getEmail())
-                            .firstName(profile.getFirstName())
-                            .lastName(profile.getLastName())
-                            .isEmailOnly(isReg == null)
-                            .build();
-
-                    UserDetails existingUser = userDetails.stream().filter(usr -> result.getUID().equals(usr.getUid())).findAny().orElse(null);
-                    if (existingUser != null) {
-                        if (user.getFirstName() != null) {
-
-                            user.setAssociatedAccounts(2);
-                            userDetails.set(0, user);
-                        }
-                    } else {
-                        user.setAssociatedAccounts(1);
-                        userDetails.add(user);
-                    }
-                }
-            }
-        }
-        return userDetails.size() > 0 ? userDetails.get(0) : null;
-    }
-
     public List<UserDetails> getUsers(List<String> uids) throws IOException {
         final int ONE_ACCOUNT = 1;
         final int TWO_ACCOUNTS = 2;
+
+        logger.info(String.format("Requested user details for one or multiple users. Count: %d", uids.size()));
+
         List<UserDetails> userDetails = new ArrayList<>();
-        logger.info(String.format("%s users requested...", uids.size()));
+
         String joinedUids = uids.stream()
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
@@ -103,7 +68,10 @@ public class UsersHandler {
                     }
                 }
             }
+        } else {
+            logger.error(String.format("An error occurred when searching users. Error: %s", cdcSearchResponse.getStatusReason()));
         }
+
         return userDetails;
     }
 }

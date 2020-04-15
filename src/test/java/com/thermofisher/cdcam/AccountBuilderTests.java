@@ -5,6 +5,8 @@ import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,14 +16,18 @@ import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AccountBuilder.class)
 public class AccountBuilderTests {
+    private Logger logger = LogManager.getLogger(AccountBuilder.class);
+
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedObj = AccountInfoUtils.federatedCdcResponse;
     private String siteObj = AccountInfoUtils.siteUserCdcResponse;
@@ -36,6 +42,7 @@ public class AccountBuilderTests {
     public void setup() {
         federatedAccount = AccountInfoUtils.getFederatedAccount();
         siteAccount = AccountInfoUtils.getSiteAccount();
+        ReflectionTestUtils.setField(accountBuilder, "logger", logger);
     }
 
     @Test
