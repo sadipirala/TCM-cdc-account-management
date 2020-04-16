@@ -1,10 +1,7 @@
 package com.thermofisher.cdcam.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.enums.cdc.AccountTypes;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.*;
@@ -22,12 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-
 @Service
 public class AccountRequestService {
     private Logger logger = LogManager.getLogger(this.getClass());
-    private final int SUCCESS_CODE = 0;
 
     @Value("${federation.aws.secret}")
     private String federationSecret;

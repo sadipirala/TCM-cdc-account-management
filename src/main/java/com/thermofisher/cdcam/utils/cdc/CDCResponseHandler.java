@@ -75,10 +75,12 @@ public class CDCResponseHandler {
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 
-    public void disableDuplicatedAccounts(String uid, String federatedEmail) {
+    public boolean disableDuplicatedAccounts(String uid, String federatedEmail) {
+
+        boolean SUCCESSFUL_UPDATE = true;
+        boolean UNSUCCESSFUL_UPDATE = false;
         String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", federatedEmail);
         GSResponse response = cdcAccountsService.search(query, "");
-
         try {
             CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
             if (cdcSearchResponse.getErrorCode() == 0) {
@@ -86,20 +88,29 @@ public class CDCResponseHandler {
                     for (CDCAccount result : cdcSearchResponse.getResults()) {
                         if (!uid.equals(result.getUID())) {
                             GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(result.getUID(), false);
-                            if (changeStatusResponse != null) {
                                 if (changeStatusResponse.getErrorCode() == SUCCESS_CODE) {
                                     logger.info(String.format("Account status successfully changed. UID: %s", uid));
                                 } else {
                                     logger.error(String.format("An error occurred while updating an account status. UID: %s. Error: %s", uid, changeStatusResponse.getErrorMessage()));
+                                    return UNSUCCESSFUL_UPDATE;
                                 }
-                            }
                         }
                     }
+                    return SUCCESSFUL_UPDATE;
                 }
+                else {
+                    logger.error(String.format("Could not match an account with that email on CDC. Email: %s. Error: %s", federatedEmail, response.getErrorMessage()));
+                    return UNSUCCESSFUL_UPDATE;
+                }
+            }
+            else {
+                logger.error(String.format("An error occurred while searching in CDC. UID: %s. Error: %s", uid, response.getErrorMessage()));
+                return UNSUCCESSFUL_UPDATE;
             }
         }
         catch(Exception e) {
             logger.error(String.format("An error occurred while processing an account status update request. Error: %s", Utils.stackTraceToString(e)));
+            return UNSUCCESSFUL_UPDATE;
         }
     }
 }

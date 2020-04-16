@@ -107,6 +107,25 @@ public class AccountRequestServiceTests {
         Mockito.verify(cdcResponseHandler).getAccountInfo(any());
     }
 
+    @Test
+    public void processRequest_IfGivenAFederatedUser_disableDuplicatedAccounts() throws JSONException {
+        //setup
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+
+        //execution
+        accountRequestService.processRequest("Federated account", mockBody);
+
+        //validation
+        Mockito.verify(cdcResponseHandler).disableDuplicatedAccounts(anyString(), anyString());
+    }
+
 
     @Test
     public void processRequest_IfValidHashIsFalse_thenLogError() throws JSONException {
