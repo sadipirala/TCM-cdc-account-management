@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.JsonViewModule;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,5 +47,16 @@ public class Utils {
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         return sw.toString();
+    }
+
+    public static JSONObject removeNullValuesFromJsonObject(JSONObject object) throws JSONException {
+        JSONArray names = object.names();
+        for (int i = 0; i < names.length(); ++i) {
+            String key = names.getString(i);
+            if (object.isNull(key)) {
+                object.remove(key);
+            }
+        }
+        return object;
     }
 }
