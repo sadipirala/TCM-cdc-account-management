@@ -29,4 +29,5 @@ public class AccountInfo {
     private String member;
     private String loginProvider;
     private int regAttempts;
+    private String duplicatedUid;
 }
