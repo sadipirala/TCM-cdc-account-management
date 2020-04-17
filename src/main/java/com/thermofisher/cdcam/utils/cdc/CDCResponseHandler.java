@@ -83,8 +83,7 @@ public class CDCResponseHandler {
         GSResponse response = cdcAccountsService.search(query, "");
         try {
             CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-            if (cdcSearchResponse.getErrorCode() == 0) {
-                if (cdcSearchResponse.getTotalCount() > 0) {
+                if (cdcSearchResponse.getTotalCount() > 1) {
                     for (CDCAccount result : cdcSearchResponse.getResults()) {
                         if (!uid.equals(result.getUID())) {
                             GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(result.getUID(), false);
@@ -102,11 +101,6 @@ public class CDCResponseHandler {
                     logger.error(String.format("Could not match an account with that email on CDC. Email: %s. Error: %s", federatedEmail, response.getErrorMessage()));
                     return UNSUCCESSFUL_UPDATE;
                 }
-            }
-            else {
-                logger.error(String.format("An error occurred while searching in CDC. UID: %s. Error: %s", uid, response.getErrorMessage()));
-                return UNSUCCESSFUL_UPDATE;
-            }
         }
         catch(Exception e) {
             logger.error(String.format("An error occurred while processing an account status update request. Error: %s", Utils.stackTraceToString(e)));

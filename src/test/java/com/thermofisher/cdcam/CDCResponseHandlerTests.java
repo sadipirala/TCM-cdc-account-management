@@ -137,10 +137,9 @@ public class CDCResponseHandlerTests {
         //given
         String uid = "0001";
         String fedEmail = "test@mail.com";
-        int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         int successCode = 0;
         String duplicatedUid = "2588";
-        String message = "Something went bad.";
+        String message = "Account status successfully changed.";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
         String mockResponseText = "{\n" +
@@ -160,7 +159,7 @@ public class CDCResponseHandlerTests {
                 "}";
 
         Mockito.when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockCdcResponse);
-        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
         Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
 
@@ -180,9 +179,8 @@ public class CDCResponseHandlerTests {
         String uid = "0001";
         String fedEmail = "test@mail.com";
         int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
-        int successCode = 1;
         String duplicatedUid = "2588";
-        String message = "Something went bad.";
+        String message = "An error occurred while updating an account status.";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
         String mockResponseText = "{\n" +
@@ -207,7 +205,7 @@ public class CDCResponseHandlerTests {
         Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
 
         Mockito.when(cdcAccountsService.changeAccountStatus(anyString(), anyBoolean())).thenReturn(mockChangeStatusResponse);
-        Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(successCode);
+        Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(errorCode);
 
         //when
         boolean updateResponse = cdcResponseHandler.disableDuplicatedAccounts(uid, fedEmail);
@@ -229,14 +227,6 @@ public class CDCResponseHandlerTests {
                 "  \"statusCode\": 200,\n" +
                 "  \"statusReason\": \"OK\",\n" +
                 "  \"results\": [\n" +
-                "  \t{\n" +
-                "  \t\t\"UID\": \"" + uid + "\",\n" +
-                "  \t\t\"isRegistered\": true,\n" +
-                "  \t\t\"profile\": {\n" +
-                "  \t\t\t\"username\": \"armatest\",\n" +
-                "  \t\t\t\"country\": \"MX\"\n" +
-                "  \t\t}\n" +
-                "  \t}\n" +
                 "  ]\n" +
                 "}";
 
@@ -244,6 +234,24 @@ public class CDCResponseHandlerTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
         Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
+
+        //when
+        boolean updateResponse = cdcResponseHandler.disableDuplicatedAccounts(uid, fedEmail);
+
+        //then
+        Assert.assertFalse(updateResponse);
+    }
+
+    @Test
+    public void disableDuplicatedAccounts_WhenCdcSearchResponseFails_ThenReturnUnsuccessfulUpdate() {
+        //given
+        String uid = "0001";
+        String fedEmail = "test@mail.com";
+        int errorCode = 1;
+
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        Mockito.when(cdcAccountsService.search(anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
 
         //when
         boolean updateResponse = cdcResponseHandler.disableDuplicatedAccounts(uid, fedEmail);
