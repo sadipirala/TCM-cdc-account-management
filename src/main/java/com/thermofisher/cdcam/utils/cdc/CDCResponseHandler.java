@@ -28,6 +28,7 @@ import java.io.IOException;
 @Configuration
 public class CDCResponseHandler {
     private final int SUCCESS_CODE = 0;
+    private final String NO_RESULTS_FOUND = "";
     private final AccountBuilder accountBuilder = new AccountBuilder();
 
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -75,36 +76,31 @@ public class CDCResponseHandler {
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 
-    public boolean disableDuplicatedAccounts(String uid, String federatedEmail) {
-
-        boolean SUCCESSFUL_UPDATE = true;
-        boolean UNSUCCESSFUL_UPDATE = false;
-        String query = String.format("SELECT * FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", federatedEmail);
+    public String searchDuplicatedUid (String uid, String federatedEmail) throws IOException {
+        String query = String.format("SELECT UID,loginIDs FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", federatedEmail);
         GSResponse response = cdcAccountsService.search(query, "");
-        try {
-            CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-                if (cdcSearchResponse.getTotalCount() > 1) {
-                    for (CDCAccount result : cdcSearchResponse.getResults()) {
-                        if (!uid.equals(result.getUID())) {
-                            GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(result.getUID(), false);
-                                if (changeStatusResponse.getErrorCode() == SUCCESS_CODE) {
-                                    logger.info(String.format("Account status successfully changed. UID: %s", uid));
-                                } else {
-                                    logger.error(String.format("An error occurred while updating an account status. UID: %s. Error: %s", uid, changeStatusResponse.getErrorMessage()));
-                                    return UNSUCCESSFUL_UPDATE;
-                                }
-                        }
-                    }
-                    return SUCCESSFUL_UPDATE;
+        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+
+            for (CDCAccount result : cdcSearchResponse.getResults()){
+                if (!uid.equals(result.getUID()) && (result.getLoginIDs().getUsername()!= null || result.getLoginIDs().getEmails().length > 0 || result.getLoginIDs().getUnverifiedEmails().length > 0)){
+                    return result.getUID();
                 }
-                else {
-                    logger.error(String.format("Could not match an account with that email on CDC. Email: %s. Error: %s", federatedEmail, response.getErrorMessage()));
-                    return UNSUCCESSFUL_UPDATE;
-                }
+            }
+            logger.warn(String.format("Could not match an account with that email on CDC. UID: %s. Error: %s" , uid, response.getErrorMessage()));
+            return NO_RESULTS_FOUND;
+    }
+
+    public boolean disableAccount(String uid) {
+        boolean SUCCESSFULL_UPDATE = true;
+        boolean UNSUCCESSFULL_UPDATE = false;
+
+        logger.info(String.format("A process has started to change the account status for a user. UID: %s", uid));
+        GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(uid, false);
+
+        if (changeStatusResponse.getErrorCode() == 0){
+            return  SUCCESSFULL_UPDATE;
         }
-        catch(Exception e) {
-            logger.error(String.format("An error occurred while processing an account status update request. Error: %s", Utils.stackTraceToString(e)));
-            return UNSUCCESSFUL_UPDATE;
-        }
+        logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s" , uid, changeStatusResponse.getErrorMessage()));
+        return UNSUCCESSFULL_UPDATE;
     }
 }

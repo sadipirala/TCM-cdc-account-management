@@ -68,7 +68,7 @@ public class AccountRequestServiceTests {
     @Mock
     UpdateAccountService updateAccountService;
 
-    private AccountInfo federationAccount = AccountInfo.builder().username("federatedUser@OIDC.com")
+    private AccountInfo federationAccount = AccountInfo.builder().uid("0055").username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
             .localeName("en_US").loginProvider("oidc").password("Randompassword1").regAttempts(0).city("testCity")
             .department("dep").company("myCompany").build();
@@ -108,22 +108,68 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfGivenAFederatedUser_disableDuplicatedAccounts() throws JSONException {
+    public void processRequest_IfGivenAFederatedUser_searchForDuplicatedAccountsInCDC() throws JSONException, IOException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
         Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
         Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
 
         //execution
         accountRequestService.processRequest("Federated account", mockBody);
 
         //validation
-        Mockito.verify(cdcResponseHandler).disableDuplicatedAccounts(anyString(), anyString());
+        Mockito.verify(cdcResponseHandler).searchDuplicatedUid(federationAccount.getUid(),federationAccount.getEmailAddress());
+    }
+
+    @Test
+    public void processRequest_IfGivenAFederatedUser_disableDuplicatedAccounts() throws JSONException, IOException {
+        //setup
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(cdcResponseHandler.searchDuplicatedUid(anyString(), anyString())).thenReturn("0055");
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+
+        //execution
+        accountRequestService.processRequest("Federated account", mockBody);
+
+        //validation
+        Mockito.verify(cdcResponseHandler).disableAccount(anyString());
+    }
+
+    @Test
+    public void processRequest_IfGivenAFederatedUser_saveDuplicatedUidToAccount() throws JSONException, IOException {
+        //setup
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
+
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(cdcResponseHandler.searchDuplicatedUid(anyString(), anyString())).thenReturn("0055");
+        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
+        doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+
+        //execution
+        accountRequestService.processRequest("Federated account", mockBody);
+
+        //validation
+        federationAccount.setDuplicatedUid("0055");
     }
 
 
