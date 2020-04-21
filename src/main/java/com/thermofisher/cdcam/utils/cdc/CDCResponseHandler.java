@@ -76,8 +76,8 @@ public class CDCResponseHandler {
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 
-    public String searchDuplicatedUid (String uid, String federatedEmail) throws IOException {
-        String query = String.format("SELECT UID,loginIDs FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", federatedEmail);
+    public String searchDuplicatedAccountUid(String uid, String email) throws IOException {
+        String query = String.format("SELECT UID,loginIDs FROM accounts WHERE profile.username = '%1$s' OR profile.email = '%1$s'", email);
         GSResponse response = cdcAccountsService.search(query, "");
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 

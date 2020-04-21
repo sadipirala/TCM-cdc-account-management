@@ -104,11 +104,11 @@ public class AccountRequestService {
                     return;
                 }
 
-                String duplicatedAccountUid = cdcResponseHandler.searchDuplicatedUid(account.getUid(), account.getEmailAddress());
+                String duplicatedAccountUid = cdcResponseHandler.searchDuplicatedAccountUid(account.getUid(), account.getEmailAddress());
                 boolean disableAccountStatus = cdcResponseHandler.disableAccount(duplicatedAccountUid);
 
                 if (disableAccountStatus){
-                    account.setDuplicatedUid(duplicatedAccountUid);
+                    account.setDuplicatedAccountUid(duplicatedAccountUid);
                 }
 
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());

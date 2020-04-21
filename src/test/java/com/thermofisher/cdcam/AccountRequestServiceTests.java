@@ -125,7 +125,7 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Federated account", mockBody);
 
         //validation
-        Mockito.verify(cdcResponseHandler).searchDuplicatedUid(federationAccount.getUid(),federationAccount.getEmailAddress());
+        Mockito.verify(cdcResponseHandler).searchDuplicatedAccountUid(federationAccount.getUid(),federationAccount.getEmailAddress());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class AccountRequestServiceTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcResponseHandler.searchDuplicatedUid(anyString(), anyString())).thenReturn("0055");
+        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
         Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
         Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
@@ -150,7 +150,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void processRequest_IfGivenAFederatedUser_saveDuplicatedUidToAccount() throws JSONException, IOException {
+    public void processRequest_IfGivenAFederatedUser_saveDuplicatedAccountUidToAccount() throws JSONException, IOException {
         //setup
         String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
 
@@ -159,7 +159,7 @@ public class AccountRequestServiceTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcResponseHandler.searchDuplicatedUid(anyString(), anyString())).thenReturn("0055");
+        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
         Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
         doNothing().when(updateAccountService).updateLegacyDataInCDC(any(), any());
         Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
@@ -169,7 +169,7 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Federated account", mockBody);
 
         //validation
-        federationAccount.setDuplicatedUid("0055");
+        federationAccount.setDuplicatedAccountUid("0055");
     }
 
 

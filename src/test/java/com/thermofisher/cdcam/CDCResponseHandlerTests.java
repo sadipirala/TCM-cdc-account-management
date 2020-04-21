@@ -14,8 +14,6 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.model.CDCAccount;
-import com.thermofisher.cdcam.model.CDCSearchResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -136,11 +134,11 @@ public class CDCResponseHandlerTests {
     }
 
     @Test
-    public void searchDuplicatedUid_WhenAValidUidAndFederatedEmailAreProvided_ThenReturnUidMatchInCDC() throws IOException {
+    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvided_ThenReturnUidMatchInCDC() throws IOException {
         String uid = "0001";
         String fedEmail = "test@mail.com";
         int successCode = 0;
-        String duplicatedUid = "decb11cd6ed2442c99b380f56c4b47aa";
+        String duplicatedAccountUid = "decb11cd6ed2442c99b380f56c4b47aa";
         String message = "Found matching UID in CDC.";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         String mockResponseText = "{\n" +
@@ -166,14 +164,14 @@ public class CDCResponseHandlerTests {
         Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
 
         //when
-        String responseUid = cdcResponseHandler.searchDuplicatedUid(uid,fedEmail);
+        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
 
         //then
-        Assert.assertEquals(responseUid,duplicatedUid);
+        Assert.assertEquals(responseUid,duplicatedAccountUid);
     }
 
     @Test
-    public void searchDuplicatedUid_WhenAValidUidAndFederatedEmailAreProvidedAndNoEmailWasFoundInCDC_ThenReturnEmptyString() throws IOException {
+    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvidedAndNoEmailWasFoundInCDC_ThenReturnEmptyString() throws IOException {
         String uid = "0001";
         String fedEmail = "test@mail.com";
         int successCode = 0;
@@ -195,7 +193,7 @@ public class CDCResponseHandlerTests {
         Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
 
         //when
-        String responseUid = cdcResponseHandler.searchDuplicatedUid(uid,fedEmail);
+        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
 
         //then
         Assert.assertEquals(responseUid, noResultsFound);
@@ -224,7 +222,7 @@ public class CDCResponseHandlerTests {
     }
 
     @Test
-    public void disableDuplicatedAccounts_WhenGSResponseErrorCodeIsNotZero_ThenReturnUnsuccessfulUpdate() {
+    public void disableAccounts_WhenGSResponseErrorCodeIsNotZero_ThenReturnUnsuccessfulUpdate() {
         //given
         String uid = "0001";
         int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
