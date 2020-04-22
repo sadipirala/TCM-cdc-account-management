@@ -2,10 +2,10 @@ package com.thermofisher.cdcam;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.Random;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -131,5 +131,116 @@ public class CDCResponseHandlerTests {
         // then
         Assert.assertEquals(errorCode, updateResponse.get("code").asInt());
         Assert.assertEquals(message, updateResponse.get("error").asText());
+    }
+
+    @Test
+    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvided_ThenReturnUidMatchInCDC() throws IOException {
+        String uid = "0001";
+        String fedEmail = "test@mail.com";
+        int successCode = 0;
+        String duplicatedAccountUid = "decb11cd6ed2442c99b380f56c4b47aa";
+        String message = "Found matching UID in CDC.";
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String mockResponseText = "{\n" +
+                "  \"totalCount\": 1,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "{ \"UID\": \"decb11cd6ed2442c99b380f56c4b47aa\",\n" +
+                "  \"loginIDs\": {" +
+                "  \"emails\": ["+
+                "  \"mariaguadalupe.chacon@thermofisher.com\"" +
+                "]," +
+                "  \"unverifiedEmails\": []" +
+                "} " +
+                "} " +
+                " ]\n" +
+                "}";
+
+
+        Mockito.when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
+        Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
+        Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
+
+        //when
+        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
+
+        //then
+        Assert.assertEquals(responseUid,duplicatedAccountUid);
+    }
+
+    @Test
+    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvidedAndNoEmailWasFoundInCDC_ThenReturnEmptyString() throws IOException {
+        String uid = "0001";
+        String fedEmail = "test@mail.com";
+        int successCode = 0;
+        String noResultsFound = "";
+        String message = "Could not match an account with that email on CDC.";
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String mockResponseText = "{\n" +
+                "  \"totalCount\": 0,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "  ]\n" +
+                "}";
+
+
+        Mockito.when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
+        Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
+        Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
+
+        //when
+        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
+
+        //then
+        Assert.assertEquals(responseUid, noResultsFound);
+    }
+
+    @Test
+    public void disableAccounts_WhenAValidUidIsReceived_TheAccountStatusIsChanged() {
+        //given
+        String uid = "0001";
+        int successCode = 0;
+        String message = "Account status successfully changed.";
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
+
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
+        Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
+
+        Mockito.when(cdcAccountsService.changeAccountStatus(anyString(),anyBoolean())).thenReturn(mockChangeStatusResponse);
+        Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(successCode);
+
+        //when
+        boolean updateResponse = cdcResponseHandler.disableAccount(uid);
+
+        //then
+        Assert.assertTrue(updateResponse);
+    }
+
+    @Test
+    public void disableAccounts_WhenGSResponseErrorCodeIsNotZero_ThenReturnUnsuccessfulUpdate() {
+        //given
+        String uid = "0001";
+        int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
+        String message = "An error occurred while updating an account status.";
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
+
+        Mockito.when(cdcAccountsService.search(anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
+        Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
+
+        Mockito.when(cdcAccountsService.changeAccountStatus(anyString(), anyBoolean())).thenReturn(mockChangeStatusResponse);
+        Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(errorCode);
+
+        //when
+        boolean updateResponse = cdcResponseHandler.disableAccount(uid);
+
+        //then
+        Assert.assertFalse(updateResponse);
     }
 }
