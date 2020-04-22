@@ -7,7 +7,6 @@ import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,6 +78,21 @@ public class CDCAccountsService {
             return request.send();
         } catch (Exception e) {
             logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
+    public GSResponse changeAccountStatus (String uid, boolean status ) {
+        try {
+            String apiMethod = APIMethods.SETINFO.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+            GSRequest request = new GSRequest(apiKey,secretKey, apiMethod, null, true, userKey);
+            request.setParam("UID", uid);
+            request.setParam("isActive", status);
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }

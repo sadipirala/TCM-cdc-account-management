@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
+        propertiesToRemove.add("duplicatedAccountUid");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
