@@ -104,6 +104,13 @@ public class AccountRequestService {
                     return;
                 }
 
+                String duplicatedAccountUid = cdcResponseHandler.searchDuplicatedAccountUid(account.getUid(), account.getEmailAddress());
+                boolean disableAccountStatus = cdcResponseHandler.disableAccount(duplicatedAccountUid);
+
+                if (disableAccountStatus){
+                    account.setDuplicatedAccountUid(duplicatedAccountUid);
+                }
+
                 updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
                 if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
