@@ -3,15 +3,19 @@ package com.thermofisher.cdcam;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
+import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCValidationError;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.HashValidationService;
+import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountInfoUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import org.apache.http.HttpEntity;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
 import org.json.JSONException;
@@ -35,9 +39,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -64,6 +66,8 @@ public class AccountRequestServiceTests {
     @Mock
     CDCResponseHandler cdcResponseHandler;
 
+    @Mock
+    HttpService httpService;
 
     @Mock
     UpdateAccountService updateAccountService;
@@ -400,5 +404,51 @@ public class AccountRequestServiceTests {
 
         Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
         Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
+    }
+
+    @Test
+    public void sendConfirmationEmail_givenAccountWithValidFormat_thenConfirmationEmailPostRequestShouldBeMade() throws IOException {
+        StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
+        HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
+        CloseableHttpResponse mockHttpResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        when(mockStatusLine.getStatusCode()).thenReturn(500);
+        when(mockHttpResponse.getStatusLine()).thenReturn(mockStatusLine);
+        when(mockHttpResponse.getEntity()).thenReturn(mockEntity);
+        when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("1")
+                .localeName("en_US")
+                .registrationType(RegistrationType.BASIC.getValue())
+                .build();
+
+        accountRequestService.sendConfirmationEmail(accountInfo);
+
+        verify(httpService, times(1)).post(any(), any());
+    }
+
+    @Test(expected = IOException.class)
+    public void sendConfirmationEmail_givenConfirmationEmailPostRequestFails_ExceptionShouldBeThrown() throws IOException {
+        CloseableHttpResponse mockHttpResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        when(mockHttpResponse.getEntity()).thenReturn(null);
+        when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("1")
+                .localeName("en_US")
+                .registrationType(RegistrationType.BASIC.getValue())
+                .build();
+
+        accountRequestService.sendConfirmationEmail(accountInfo);
     }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
@@ -136,7 +137,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) {
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) throws IOException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
@@ -151,6 +152,12 @@ public class AccountsController {
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
         if (cdcResponseData != null) {
             logger.info(String.format("Account registration request completed. Status: %d. Status reason: %s", cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason()));
+
+            if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
+                logger.info(String.format("Basic account registered. Attempting to send confirmation email. UID: %s", accountInfo.getUid()));
+                accountRequestService.sendConfirmationEmail(accountInfo);
+            }
+
             return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);
         } else {
             logger.error(String.format("An error occurred while creating account for: %s", accountInfo.getUsername()));

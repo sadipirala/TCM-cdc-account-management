@@ -9,6 +9,8 @@ import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class AccountRequestService {
@@ -31,6 +35,12 @@ public class AccountRequestService {
 
     @Value("${aws.sns.accnt.info.topic}")
     private String snsAccountInfoTopic;
+
+    @Value("${tfrn.email-notification.url}")
+    private String emailNotificationUrl;
+
+    @Value("${tf.home}")
+    private String redirectUrl;
 
     @Autowired
     SecretsManager secretsManager;
@@ -47,9 +57,11 @@ public class AccountRequestService {
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
-
     @Autowired
     UpdateAccountService updateAccountService;
+
+    @Autowired
+    HttpService httpService;
 
     @Async
     public void processRequest(String headerValue, String rawBody) {
@@ -183,5 +195,29 @@ public class AccountRequestService {
 
     private boolean hasFederationProvider(AccountInfo account) {
         return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
+    }
+
+    @Async
+    public void sendConfirmationEmail(AccountInfo account) throws IOException {
+        RegistrationConfirmation regConfirmation = new RegistrationConfirmation().build(account, redirectUrl);
+        JSONObject body = new JSONObject(regConfirmation);
+
+        CloseableHttpResponse response = httpService.post(emailNotificationUrl, body);
+
+        HttpEntity responseEntity = response.getEntity();
+
+        if(responseEntity != null) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+
+            if (httpStatus.is2xxSuccessful()) {
+                logger.info(String.format("Confirmation email sent to: %s", account.getEmailAddress()));
+            } else {
+                logger.warn(String.format("Something went wrong while sending the confirmation email to: %s. Status: %d",
+                        account.getEmailAddress(), statusCode));
+            }
+        } else {
+            throw new IOException();
+        }
     }
 }

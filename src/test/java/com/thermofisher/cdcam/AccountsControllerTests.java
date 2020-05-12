@@ -2,8 +2,7 @@ package com.thermofisher.cdcam;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +10,7 @@ import java.util.List;
 
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
+import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
@@ -233,7 +233,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithBlankPassword_returnBadRequest() {
+    public void newAccount_givenAnAccountWithBlankPassword_returnBadRequest() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -249,7 +249,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnBackEndError_returnInternalServerError() {
+    public void newAccount_givenAnBackEndError_returnInternalServerError() throws IOException {
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -266,7 +266,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAValidAccount_returnCDCResponseData() {
+    public void newAccount_givenAValidAccount_returnCDCResponseData() throws IOException {
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -285,6 +285,51 @@ public class AccountsControllerTests {
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
 
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void newAccount_givenAValidAccount_And_RegistrationTypeIsBasic_sendConfirmationEmailShouldBeCalled() throws IOException {
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("test")
+                .registrationType(RegistrationType.BASIC.getValue())
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
+        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
+
+        accountsController.newAccount(accountInfo);
+
+        verify(accountRequestService, times(1)).sendConfirmationEmail(any());
+    }
+
+    @Test
+    public void newAccount_givenAValidAccount_And_RegistrationTypeIsNotBasic_sendConfirmationEmailShouldNotBeCalled() throws IOException {
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("test")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
+        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
+
+        accountsController.newAccount(accountInfo);
+
+        verify(accountRequestService, times(0)).sendConfirmationEmail(any());
     }
 
     @Test
