@@ -58,9 +58,6 @@ public class AccountRequestService {
     CDCResponseHandler cdcResponseHandler;
 
     @Autowired
-    UpdateAccountService updateAccountService;
-
-    @Autowired
     HttpService httpService;
 
     @Async
@@ -123,7 +120,6 @@ public class AccountRequestService {
                     account.setDuplicatedAccountUid(duplicatedAccountUid);
                 }
 
-                updateAccountService.updateLegacyDataInCDC(uid, account.getEmailAddress());
                 if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 }

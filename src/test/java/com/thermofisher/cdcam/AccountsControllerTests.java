@@ -1,8 +1,10 @@
 package com.thermofisher.cdcam;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,7 +13,8 @@ import java.util.List;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
@@ -42,7 +45,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringBootTest(classes = CdcamApplication.class)
 public class AccountsControllerTests {
     private final List<String> uids = new ArrayList<>();
-    private final List<String> emptyUIDs = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";
     private final String firstName = "first";
     private final String lastName = "last";
