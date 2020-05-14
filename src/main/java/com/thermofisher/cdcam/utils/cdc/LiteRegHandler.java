@@ -53,7 +53,7 @@ public class LiteRegHandler {
                 continue;
             }
 
-            String query = String.format("SELECT * FROM accounts WHERE profile.username Contains '%1$s' OR profile.email Contains '%1$s'", email);
+            String query = String.format("SELECT * FROM accounts WHERE profile.username CONTAINS '%1$s' OR profile.email CONTAINS '%1$s'", email);
             GSResponse response = cdcAccountsService.search(query,AccountTypes.FULL_LITE.getValue());
 
             if (response == null) {
