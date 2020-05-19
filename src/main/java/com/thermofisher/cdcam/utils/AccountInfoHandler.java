@@ -30,7 +30,6 @@ public class AccountInfoHandler {
         propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
         propertiesToRemove.add("duplicatedAccountUid");
-        propertiesToRemove.add("registrationType");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
