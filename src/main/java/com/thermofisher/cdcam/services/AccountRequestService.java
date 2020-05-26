@@ -9,6 +9,8 @@ import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class AccountRequestService {
@@ -31,6 +35,12 @@ public class AccountRequestService {
 
     @Value("${aws.sns.accnt.info.topic}")
     private String snsAccountInfoTopic;
+
+    @Value("${tfrn.email-notification.url}")
+    private String emailNotificationUrl;
+
+    @Value("${tf.home}")
+    private String redirectUrl;
 
 
     @Autowired
@@ -47,6 +57,9 @@ public class AccountRequestService {
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
+
+    @Autowired
+    HttpService httpService;
 
     @Async
     public void processRequest(String headerValue, String rawBody) {
@@ -174,6 +187,31 @@ public class AccountRequestService {
         } catch (Exception e) {
             logger.error(String.format("An error occurred while processing an account registration request. Error: %s", Utils.stackTraceToString(e)));
             return null;
+        }
+    }
+
+    @Async
+    public void sendConfirmationEmail(AccountInfo accountInfo) throws IOException {
+        RegistrationConfirmation request = new RegistrationConfirmation().build(accountInfo, redirectUrl);
+        JSONObject requestBody = new JSONObject(request);
+
+        CloseableHttpResponse response = httpService.post(emailNotificationUrl, requestBody);
+        HttpEntity responseEntity = response.getEntity();
+
+        if (responseEntity != null) {
+            int status = response.getStatusLine().getStatusCode();
+            HttpStatus httpStatus = HttpStatus.valueOf(status);
+
+            if (httpStatus.is2xxSuccessful()) {
+                logger.info(String.format("Confirmation email sent to: %s", accountInfo.getEmailAddress()));
+            } else {
+                logger.warn(String.format("Something went wrong while sending the confirmation email to: %s. Status: %d",
+                        accountInfo.getEmailAddress(), status));
+            }
+
+        } else {
+            logger.error(String.format("Something went wrong while connecting to the email notification service. UID: %s", accountInfo.getUid()));
+            throw new IOException();
         }
     }
 

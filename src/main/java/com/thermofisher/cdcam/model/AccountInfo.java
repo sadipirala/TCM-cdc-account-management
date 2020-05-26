@@ -30,4 +30,5 @@ public class AccountInfo {
     private String loginProvider;
     private int regAttempts;
     private String duplicatedAccountUid;
+    private String registrationType;
 }
