@@ -150,12 +150,20 @@ public class AccountsController {
         }
 
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
-        if (cdcResponseData != null) {
-            logger.info(String.format("Account registration request completed. Status: %d. Status reason: %s", cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason()));
 
-            if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
-                logger.info(String.format("Basic account registered. Attempting to send confirmation email. UID: %s", accountInfo.getUid()));
-                accountRequestService.sendConfirmationEmail(accountInfo);
+        if (cdcResponseData != null) {
+            int statusCode = cdcResponseData.getStatusCode();
+
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
+                logger.info(String.format("Account registration successful. Username: %s. UID: %s", accountInfo.getUsername(), accountInfo.getUid()));
+
+                if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
+                    logger.info(String.format("Attempting to send confirmation email. UID: %s", accountInfo.getUid()));
+                    accountRequestService.sendConfirmationEmail(accountInfo);
+                }
+            } else {
+                logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Status reason: %s",
+                        accountInfo.getUsername(), statusCode, cdcResponseData.getStatusReason()));
             }
 
             return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);

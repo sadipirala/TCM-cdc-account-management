@@ -265,7 +265,9 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAValidAccount_returnCDCResponseData() throws IOException {
+    public void newAccount_givenAValidAccount_returnUID() throws IOException {
+        String uid = "9f6f2133e57144d787574d49c0b9908e";
+
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -275,19 +277,21 @@ public class AccountsControllerTests {
                 .build();
 
         CDCResponseData cdcResponseData = new CDCResponseData();
-        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
-        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setUID(uid);
+        cdcResponseData.setStatusCode(200);
         cdcResponseData.setStatusReason("");
 
         Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
 
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
 
-        Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assert.assertEquals(response.getBody().getUID(), uid);
     }
 
     @Test
     public void newAccount_givenAValidAccount_And_RegistrationTypeIsBasic_sendConfirmationEmailShouldBeCalled() throws IOException {
+        String uid = "9f6f2133e57144d787574d49c0b9908e";
+
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -298,19 +302,46 @@ public class AccountsControllerTests {
                 .build();
 
         CDCResponseData cdcResponseData = new CDCResponseData();
-        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
-        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setUID(uid);
+        cdcResponseData.setStatusCode(200);
         cdcResponseData.setStatusReason("");
 
         Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
 
-        accountsController.newAccount(accountInfo);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
 
+        Assert.assertEquals(response.getBody().getUID(), uid);
         verify(accountRequestService, times(1)).sendConfirmationEmail(any());
     }
 
     @Test
     public void newAccount_givenAValidAccount_And_RegistrationTypeIsNotBasic_sendConfirmationEmailShouldNotBeCalled() throws IOException {
+        String uid = "9f6f2133e57144d787574d49c0b9908e";
+
+        AccountInfo accountInfo = AccountInfo.builder()
+                .username("test")
+                .emailAddress("email")
+                .firstName("first")
+                .lastName("last")
+                .password("test")
+                .registrationType("dummy")
+                .build();
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID(uid);
+        cdcResponseData.setStatusCode(200);
+        cdcResponseData.setStatusReason("");
+
+        Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
+
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
+
+        Assert.assertEquals(response.getBody().getUID(), uid);
+        verify(accountRequestService, times(0)).sendConfirmationEmail(any());
+    }
+
+    @Test
+    public void newAccount_givenAValidAccount_And_RegistrationFails_nullUIDisReturned() throws IOException {
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -320,15 +351,14 @@ public class AccountsControllerTests {
                 .build();
 
         CDCResponseData cdcResponseData = new CDCResponseData();
-        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
-        cdcResponseData.setStatusCode(0);
+        cdcResponseData.setStatusCode(400);
         cdcResponseData.setStatusReason("");
 
         Mockito.when(accountRequestService.processRegistrationRequest(accountInfo)).thenReturn(cdcResponseData);
 
-        accountsController.newAccount(accountInfo);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountInfo);
 
-        verify(accountRequestService, times(0)).sendConfirmationEmail(any());
+        Assert.assertNull(response.getBody().getUID());
     }
 
     @Test
