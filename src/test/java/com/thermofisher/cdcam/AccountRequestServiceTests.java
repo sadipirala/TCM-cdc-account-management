@@ -37,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -448,5 +449,66 @@ public class AccountRequestServiceTests {
                 .build();
 
         accountRequestService.sendConfirmationEmail(accountInfo);
+    }
+
+    @Test
+    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenRequestIsSuccessful_whenTriggered_ReturnResponse() throws IOException {
+        // setup
+        HttpStatus mockStatus = HttpStatus.OK;
+        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
+
+        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
+        when(cdcResponseHandler.sendVerificationEmail(any())).thenReturn(mockResponse);
+
+        // execution
+        CDCResponseData response = accountRequestService.sendVerificationEmailSync("test");
+
+        // validation
+        Assert.assertEquals(response.getStatusCode(), mockStatus.value());
+    }
+
+    @Test
+    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenRequestIsNotSuccessful_whenTriggered_ReturnResponse() throws IOException {
+        // setup
+        HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
+        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
+
+        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
+        when(cdcResponseHandler.sendVerificationEmail(any())).thenReturn(mockResponse);
+
+        // execution
+        CDCResponseData response = accountRequestService.sendVerificationEmailSync("test");
+
+        // validation
+        Assert.assertEquals(response.getStatusCode(), mockStatus.value());
+    }
+
+    @Test
+    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenExceptionOccurss_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
+        // setup
+        when(cdcResponseHandler.sendVerificationEmail(any())).thenThrow(IOException.class);
+
+        // execution
+        CDCResponseData response = accountRequestService.sendVerificationEmailSync("test");
+
+        // validation
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @Test
+    public void sendVerificationEmail_triggerEmailVerificationProcess_whenTriggered_sendVerificationProccessShouldBeCalled() throws IOException {
+        // setup
+        String uid = "abc123";
+        HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
+        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
+
+        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
+        when(cdcResponseHandler.sendVerificationEmail(uid)).thenReturn(mockResponse);
+
+        // execution
+        accountRequestService.sendVerificationEmail(uid);
+
+        // validation
+        verify(cdcResponseHandler, times(1)).sendVerificationEmail(uid);
     }
 }

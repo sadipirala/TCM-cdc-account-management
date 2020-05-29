@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -102,5 +103,19 @@ public class CDCResponseHandler {
         }
         logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s" , uid, changeStatusResponse.getErrorMessage()));
         return UNSUCCESSFULL_UPDATE;
+    }
+
+    public CDCResponseData sendVerificationEmail(String uid) throws IOException {
+        GSResponse response = cdcAccountsService.sendVerificationEmail(uid);
+        CDCResponseData cdcResponseData = new CDCResponseData();
+
+        if (response != null) {
+            ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            cdcResponseData = mapper.readValue(response.getResponseText(), CDCResponseData.class);
+        } else {
+            cdcResponseData.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return cdcResponseData;
     }
 }

@@ -155,12 +155,16 @@ public class AccountsController {
             int statusCode = cdcResponseData.getStatusCode();
 
             if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
-                logger.info(String.format("Account registration successful. Username: %s. UID: %s", accountInfo.getUsername(), accountInfo.getUid()));
+                String uid = accountInfo.getUid();
+                logger.info(String.format("Account registration successful. Username: %s. UID: %s", accountInfo.getUsername(), uid));
 
                 if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
-                    logger.info(String.format("Attempting to send confirmation email. UID: %s", accountInfo.getUid()));
+                    logger.info(String.format("Attempting to send confirmation email. UID: %s", uid));
                     accountRequestService.sendConfirmationEmail(accountInfo);
                 }
+
+                logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
+                accountRequestService.sendVerificationEmail(uid);
             } else {
                 logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Status reason: %s",
                         accountInfo.getUsername(), statusCode, cdcResponseData.getStatusReason()));
@@ -171,6 +175,23 @@ public class AccountsController {
             logger.error(String.format("An error occurred while creating account for: %s", accountInfo.getUsername()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/user/email-verification/{uid}")
+    @ApiOperation(value = "Triggers CDC email verification process.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "uid", value = "CDC user UID.", required = true, dataType = "string")
+    public ResponseEntity<CDCResponseData> sendVerificationEmail(@PathVariable String uid) {
+        logger.info(String.format("CDC email verification triggered for user with UID: %s", uid));
+
+        CDCResponseData responseData = accountRequestService.sendVerificationEmailSync(uid);
+        HttpStatus responseStatus = HttpStatus.valueOf(responseData.getStatusCode());
+
+        return new ResponseEntity<>(responseData, responseStatus);
     }
 
     @PutMapping("/user/timezone")
