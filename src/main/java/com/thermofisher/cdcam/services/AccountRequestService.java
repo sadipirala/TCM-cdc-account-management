@@ -215,6 +215,35 @@ public class AccountRequestService {
         }
     }
 
+    @Async
+    public void sendVerificationEmail(String uid) {
+        triggerVerificationEmailProcess(uid);
+    }
+
+    public CDCResponseData sendVerificationEmailSync(String uid) {
+        return triggerVerificationEmailProcess(uid);
+    }
+
+    private CDCResponseData triggerVerificationEmailProcess(String uid) {
+        CDCResponseData response = new CDCResponseData();
+
+        try {
+            response = cdcResponseHandler.sendVerificationEmail(uid);
+            HttpStatus status = HttpStatus.valueOf(response.getStatusCode());
+
+            if (status.is2xxSuccessful()) {
+                logger.info(String.format("Verification email sent successfully. UID: %s", uid));
+            } else {
+                logger.info(String.format("Something went wrong while sending the verification email. UID: %s. Status: %d. Error: %s", uid, status.value(), response.getErrorDetails()));
+            }
+        } catch (Exception e) {
+            logger.error(String.format("An exception occurred while sending the verification email to the user. UID: %s. Exception: %s", uid, Utils.stackTraceToString(e)));
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return response;
+    }
+
     private boolean hasFederationProvider(AccountInfo account) {
         return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
     }
