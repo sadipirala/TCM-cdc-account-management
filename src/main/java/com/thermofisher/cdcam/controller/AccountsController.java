@@ -177,7 +177,7 @@ public class AccountsController {
         }
     }
 
-    @PostMapping("/user/email-verification/{uid}")
+    @PostMapping("/user/verification-email/{uid}")
     @ApiOperation(value = "Triggers CDC email verification process.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
@@ -186,7 +186,7 @@ public class AccountsController {
     })
     @ApiImplicitParam(name = "uid", value = "CDC user UID.", required = true, dataType = "string")
     public ResponseEntity<CDCResponseData> sendVerificationEmail(@PathVariable String uid) {
-        logger.info(String.format("CDC email verification triggered for user with UID: %s", uid));
+        logger.info(String.format("CDC verification email process triggered for user with UID: %s", uid));
 
         CDCResponseData responseData = accountRequestService.sendVerificationEmailSync(uid);
         HttpStatus responseStatus = HttpStatus.valueOf(responseData.getStatusCode());

@@ -452,7 +452,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenRequestIsSuccessful_whenTriggered_ReturnResponse() throws IOException {
+    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenRequestIsSuccessful_whenTriggered_ReturnResponse() throws IOException {
         // setup
         HttpStatus mockStatus = HttpStatus.OK;
         CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
@@ -468,7 +468,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenRequestIsNotSuccessful_whenTriggered_ReturnResponse() throws IOException {
+    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenRequestIsNotSuccessful_whenTriggered_ReturnResponse() throws IOException {
         // setup
         HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
         CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
@@ -484,7 +484,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmailSync_triggerEmailVerificationProcess_givenExceptionOccurss_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
+    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenExceptionOccurss_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
         // setup
         when(cdcResponseHandler.sendVerificationEmail(any())).thenThrow(IOException.class);
 
@@ -496,7 +496,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmail_triggerEmailVerificationProcess_whenTriggered_sendVerificationProccessShouldBeCalled() throws IOException {
+    public void sendVerificationEmail_triggerVerificationEmailProcess_whenTriggered_sendVerificationProccessShouldBeCalled() throws IOException {
         // setup
         String uid = "abc123";
         HttpStatus mockStatus = HttpStatus.BAD_REQUEST;

@@ -217,14 +217,14 @@ public class AccountRequestService {
 
     @Async
     public void sendVerificationEmail(String uid) {
-        triggerEmailVerificationProcess(uid);
+        triggerVerificationEmailProcess(uid);
     }
 
     public CDCResponseData sendVerificationEmailSync(String uid) {
-        return triggerEmailVerificationProcess(uid);
+        return triggerVerificationEmailProcess(uid);
     }
 
-    private CDCResponseData triggerEmailVerificationProcess(String uid) {
+    private CDCResponseData triggerVerificationEmailProcess(String uid) {
         CDCResponseData response = new CDCResponseData();
 
         try {
