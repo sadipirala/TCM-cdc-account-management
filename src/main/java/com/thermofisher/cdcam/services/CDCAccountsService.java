@@ -145,6 +145,21 @@ public class CDCAccountsService {
         }
     }
 
+    public GSResponse sendVerificationEmail(String uid) {
+        try {
+            String apiMethod = APIMethods.SEND_VERIFICATION_EMAIL.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("UID", uid);
+
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while sending the verification email to the user. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
     private String getRegToken(boolean isLite) {
         try {
             String apiMethod = APIMethods.INITREG.getValue();

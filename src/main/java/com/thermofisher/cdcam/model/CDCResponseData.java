@@ -21,5 +21,7 @@ public class CDCResponseData {
 
     private int statusCode;
 
+    private String errorDetails;
+
     private List<CDCValidationError> validationErrors;
 }
