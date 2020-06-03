@@ -42,6 +42,10 @@ public class Utils {
         }
     }
 
+    public static String parseLocale(String locale) {
+        return locale.split("_")[0];
+    }
+
     public static String stackTraceToString(Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);

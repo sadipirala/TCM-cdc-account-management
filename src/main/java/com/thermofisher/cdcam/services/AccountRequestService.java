@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -143,24 +144,8 @@ public class AccountRequestService {
 
     public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
         try {
-            Data data = Data.builder()
-                    .subscribe(accountInfo.getMember())
-                    .build();
-            Work work = Work.builder()
-                    .company(accountInfo.getCompany())
-                    .location(accountInfo.getDepartment())
-                    .build();
-            Profile profile = Profile.builder()
-                    .firstName(accountInfo.getFirstName())
-                    .lastName(accountInfo.getLastName())
-                    .country(accountInfo.getCountry())
-                    .city(accountInfo.getCity())
-                    .work(work)
-                    .build();
-
-            String jsonProfile = accountHandler.prepareProfileForRegistration(profile);
-            String jsonData = accountHandler.prepareDataForRegistration(data);
-            CDCResponseData cdcResponseData = cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
+            CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);            
+            CDCResponseData cdcResponseData = cdcResponseHandler.register(newAccount);
 
             if (cdcResponseData != null) {
                 if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : HttpStatus.valueOf(cdcResponseData.getStatusCode()).is2xxSuccessful()) {

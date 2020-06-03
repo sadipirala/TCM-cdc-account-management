@@ -20,7 +20,7 @@ import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
-import com.thermofisher.cdcam.utils.AccountInfoUtils;
+import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.http.HttpEntity;
@@ -252,7 +252,7 @@ public class AccountRequestServiceTests {
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
 
         //execution
         accountRequestService.processRequest("Test", mockBody);
@@ -276,7 +276,7 @@ public class AccountRequestServiceTests {
         Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
         Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
         Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountInfoUtils.getFederatedAccount());
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
         Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
         Mockito.when(mockResponse.getEntity()).thenReturn(entity);
         Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
@@ -294,15 +294,16 @@ public class AccountRequestServiceTests {
 
     @Test
     public void processRegistrationRequest_givenANullAccount_returnNull(){
-
+        // when
         CDCResponseData responseData = accountRequestService.processRegistrationRequest(null);
 
+        // then
         Assert.assertNull(responseData);
     }
 
     @Test
     public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData() throws IOException {
-
+        // given
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -315,25 +316,26 @@ public class AccountRequestServiceTests {
         cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
         cdcResponseData.setStatusCode(0);
         cdcResponseData.setStatusReason("");
-
-        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
         Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
 
+        // when
         accountRequestService.processRegistrationRequest(accountInfo);
 
-        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        // then
+        Mockito.verify(cdcResponseHandler).register(any());
     }
 
     @Test
     public void processRegistrationRequest_givenAnInvalidAccount_returnCDCResponseData() throws IOException {
-
+        // given
         AccountInfo accountInfo = AccountInfo.builder()
-                .username("test")
-                .emailAddress("email")
-                .firstName("first")
-                .lastName("last")
-                .password("1")
-                .build();
+            .username("test")
+            .emailAddress("email")
+            .firstName("first")
+            .lastName("last")
+            .password("1")
+            .build();
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);
@@ -346,18 +348,20 @@ public class AccountRequestServiceTests {
         errors.add(error);
         cdcResponseData.setValidationErrors(errors);
 
-        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
         Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
 
+        // when
         accountRequestService.processRegistrationRequest(accountInfo);
 
-        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        // then
+        Mockito.verify(cdcResponseHandler).register(any());
         Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
     }
 
     @Test
     public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResponseData() throws IOException {
-
+        // given
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
                 .emailAddress("email")
@@ -370,12 +374,14 @@ public class AccountRequestServiceTests {
         cdcResponseData.setStatusCode(400);
         cdcResponseData.setStatusReason("");
 
-        Mockito.when(cdcResponseHandler.register(any(),any(),any(),any(),any())).thenReturn(cdcResponseData);
+        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
         Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
 
+        // when
         accountRequestService.processRegistrationRequest(accountInfo);
 
-        Mockito.verify(cdcResponseHandler).register(any(),any(),any(),any(),any());
+        // then
+        Mockito.verify(cdcResponseHandler).register(any());
         Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
     }
 
