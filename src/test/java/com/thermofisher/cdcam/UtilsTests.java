@@ -73,6 +73,19 @@ public class UtilsTests {
     }
 
     @Test
+    public void parseLocale_givenChinaComesAsTheLocale_ThenTheLocaleShouldBeParsedAsCDCNeeds() {
+        // given
+        String locale = "zh_CN";
+        String expectedLocale = "zh-cn";
+
+        // when
+        String result = Utils.parseLocale(locale);
+
+        // then
+        assertEquals(expectedLocale, result);
+    }
+
+    @Test
     public void convertJavaToJsonString_ifValidString_returnObject() throws IOException {
         List<String> list = new ArrayList<>();
         EmailList data = EmailList.builder().emails(list).build();
