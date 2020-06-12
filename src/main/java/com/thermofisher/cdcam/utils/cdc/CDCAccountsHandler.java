@@ -27,6 +27,7 @@ public class CDCAccountsHandler {
             .city(accountInfo.getCity())
             .locale(locale)
             .work(work)
+            .timezone(accountInfo.getTimezone())
             .build();
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())

@@ -96,6 +96,7 @@ public class AccountUtils {
             .city(accountInfo.getCity())
             .locale(Utils.parseLocale(accountInfo.getLocaleName()))
             .work(work)
+            .timezone(accountInfo.getTimezone())
             .build();
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())
