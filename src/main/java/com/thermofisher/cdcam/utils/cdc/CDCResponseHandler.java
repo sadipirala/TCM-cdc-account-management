@@ -8,6 +8,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.CDCAccount;
+import com.thermofisher.cdcam.model.CDCNewAccount;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCSearchResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
@@ -72,8 +73,8 @@ public class CDCResponseHandler {
         return response;
     }
 
-    public CDCResponseData register(String username,String email,String password,String data,String profile)throws IOException {
-        GSResponse response = cdcAccountsService.register( username, email, password, data, profile);
+    public CDCResponseData register(CDCNewAccount newAccount)throws IOException {
+        GSResponse response = cdcAccountsService.register(newAccount);
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 

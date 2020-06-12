@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,17 +46,43 @@ public class UtilsTests {
     }
 
     @Test
-    public void getValueFromJSON_ifValidData_returnObject() throws JSONException {
+    public void getStringFromJSON_ifValidData_returnObject() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
         Assert.assertEquals(Utils.getStringFromJSON(object, "message"), "test");
     }
 
     @Test
-    public void getValueFromJSON_ifInvalidData_returnEmptyString() throws JSONException {
+    public void getStringFromJSON_ifInvalidData_returnEmptyString() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
         Assert.assertEquals(Utils.getStringFromJSON(object, "notValid"), "");
+    }
+
+    @Test
+    public void parseLocale_ShouldReturnOnlyTheLanguageFromALocaleString() {
+        // given
+        String locale = "es_MX";
+        String expectedLocale = "es";
+
+        // when
+        String result = Utils.parseLocale(locale);
+
+        // then
+        assertEquals(expectedLocale, result);
+    }
+
+    @Test
+    public void parseLocale_givenChinaComesAsTheLocale_ThenTheLocaleShouldBeParsedAsCDCNeeds() {
+        // given
+        String locale = "zh_CN";
+        String expectedLocale = "zh-cn";
+
+        // when
+        String result = Utils.parseLocale(locale);
+
+        // then
+        assertEquals(expectedLocale, result);
     }
 
     @Test

@@ -31,6 +31,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("password");
         propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
+        propertiesToRemove.add("timezone");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
@@ -45,6 +46,7 @@ public class AccountInfoHandler {
 
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("timezone");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);

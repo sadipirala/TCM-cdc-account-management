@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.utils.AccountInfoUtils;
+import com.thermofisher.cdcam.utils.AccountUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -29,9 +29,9 @@ public class AccountBuilderTests {
     private Logger logger = LogManager.getLogger(AccountBuilder.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private String federatedObj = AccountInfoUtils.federatedCdcResponse;
-    private String siteObj = AccountInfoUtils.siteUserCdcResponse;
-    private String invalidObj = AccountInfoUtils.invalidCDCResponse;
+    private String federatedObj = AccountUtils.federatedCdcResponse;
+    private String siteObj = AccountUtils.siteUserCdcResponse;
+    private String invalidObj = AccountUtils.invalidCDCResponse;
     private AccountInfo federatedAccount;
     private AccountInfo siteAccount;
 
@@ -40,8 +40,8 @@ public class AccountBuilderTests {
 
     @Before
     public void setup() {
-        federatedAccount = AccountInfoUtils.getFederatedAccount();
-        siteAccount = AccountInfoUtils.getSiteAccount();
+        federatedAccount = AccountUtils.getFederatedAccount();
+        siteAccount = AccountUtils.getSiteAccount();
         ReflectionTestUtils.setField(accountBuilder, "logger", logger);
     }
 
