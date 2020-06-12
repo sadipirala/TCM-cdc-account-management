@@ -31,5 +31,5 @@ public class AccountInfo {
     private int regAttempts;
     private String duplicatedAccountUid;
     private String registrationType;
-    private String userTimezone;
+    private String timezone;
 }
