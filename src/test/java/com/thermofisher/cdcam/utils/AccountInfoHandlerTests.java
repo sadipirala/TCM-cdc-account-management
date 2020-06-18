@@ -57,10 +57,10 @@ public class AccountInfoHandlerTests {
     public void prepareForProfileInfoNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        AccountInfo mockAccount = AccountInfoUtils.getFederatedAccount();
+        AccountInfo mockAccount = AccountUtils.getFederatedAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
         String expectedAccountToNotify = prepareJsonForNotification(jsonAccount);
-        AccountInfo account = AccountInfoUtils.getFederatedAccount();
+        AccountInfo account = AccountUtils.getFederatedAccount();
 
         // when
         String parsedAccount = accountHandler.prepareForProfileInfoNotification(account);
@@ -74,10 +74,10 @@ public class AccountInfoHandlerTests {
     public void prepareForGRPNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        AccountInfo mockAccount = AccountInfoUtils.getFederatedAccount();
+        AccountInfo mockAccount = AccountUtils.getFederatedAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
         String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
-        AccountInfo account = AccountInfoUtils.getFederatedAccount();
+        AccountInfo account = AccountUtils.getFederatedAccount();
 
         // when
         String parsedAccount = accountHandler.prepareForGRPNotification(account);

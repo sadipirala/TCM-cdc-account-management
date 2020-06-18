@@ -14,6 +14,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -242,5 +243,37 @@ public class CDCResponseHandlerTests {
 
         //then
         Assert.assertFalse(updateResponse);
+    }
+
+    @Test
+    public void sendVerificationEmail_whenGSResponseIsNotNull_returnResponseAsItIs() throws IOException {
+        // given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+
+        String mockResponseText = "{\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\"" +
+                "}";
+
+        when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
+        when(cdcAccountsService.sendVerificationEmail(any())).thenReturn(mockCdcResponse);
+
+        // when
+        CDCResponseData response = cdcResponseHandler.sendVerificationEmail("test");
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.OK.value());
+    }
+
+    @Test
+    public void sendVerificationEmail_whenGSResponseIsNull_returnResponseAsWithInternalServerErrorStatus() throws IOException {
+        // given
+        when(cdcAccountsService.sendVerificationEmail(any())).thenReturn(null);
+
+        // when
+        CDCResponseData response = cdcResponseHandler.sendVerificationEmail("test");
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 }

@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -7,6 +8,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.CDCAccount;
+import com.thermofisher.cdcam.model.CDCNewAccount;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCSearchResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
@@ -71,8 +73,8 @@ public class CDCResponseHandler {
         return response;
     }
 
-    public CDCResponseData register(String username,String email,String password,String data,String profile)throws IOException {
-        GSResponse response = cdcAccountsService.register( username, email, password, data, profile);
+    public CDCResponseData register(CDCNewAccount newAccount)throws IOException {
+        GSResponse response = cdcAccountsService.register(newAccount);
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 
@@ -102,5 +104,19 @@ public class CDCResponseHandler {
         }
         logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s" , uid, changeStatusResponse.getErrorMessage()));
         return UNSUCCESSFULL_UPDATE;
+    }
+
+    public CDCResponseData sendVerificationEmail(String uid) throws IOException {
+        GSResponse response = cdcAccountsService.sendVerificationEmail(uid);
+        CDCResponseData cdcResponseData = new CDCResponseData();
+
+        if (response != null) {
+            ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            cdcResponseData = mapper.readValue(response.getResponseText(), CDCResponseData.class);
+        } else {
+            cdcResponseData.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return cdcResponseData;
     }
 }

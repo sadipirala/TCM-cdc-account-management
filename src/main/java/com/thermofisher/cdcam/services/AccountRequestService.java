@@ -8,7 +8,10 @@ import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -18,6 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class AccountRequestService {
@@ -31,6 +36,12 @@ public class AccountRequestService {
 
     @Value("${aws.sns.accnt.info.topic}")
     private String snsAccountInfoTopic;
+
+    @Value("${tfrn.email-notification.url}")
+    private String emailNotificationUrl;
+
+    @Value("${tf.home}")
+    private String redirectUrl;
 
 
     @Autowired
@@ -47,6 +58,9 @@ public class AccountRequestService {
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
+
+    @Autowired
+    HttpService httpService;
 
     @Async
     public void processRequest(String headerValue, String rawBody) {
@@ -130,24 +144,8 @@ public class AccountRequestService {
 
     public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
         try {
-            Data data = Data.builder()
-                    .subscribe(accountInfo.getMember())
-                    .build();
-            Work work = Work.builder()
-                    .company(accountInfo.getCompany())
-                    .location(accountInfo.getDepartment())
-                    .build();
-            Profile profile = Profile.builder()
-                    .firstName(accountInfo.getFirstName())
-                    .lastName(accountInfo.getLastName())
-                    .country(accountInfo.getCountry())
-                    .city(accountInfo.getCity())
-                    .work(work)
-                    .build();
-
-            String jsonProfile = accountHandler.prepareProfileForRegistration(profile);
-            String jsonData = accountHandler.prepareDataForRegistration(data);
-            CDCResponseData cdcResponseData = cdcResponseHandler.register(accountInfo.getUsername(), accountInfo.getEmailAddress(), accountInfo.getPassword(), jsonData, jsonProfile);
+            CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);            
+            CDCResponseData cdcResponseData = cdcResponseHandler.register(newAccount);
 
             if (cdcResponseData != null) {
                 if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : HttpStatus.valueOf(cdcResponseData.getStatusCode()).is2xxSuccessful()) {
@@ -175,6 +173,60 @@ public class AccountRequestService {
             logger.error(String.format("An error occurred while processing an account registration request. Error: %s", Utils.stackTraceToString(e)));
             return null;
         }
+    }
+
+    @Async
+    public void sendConfirmationEmail(AccountInfo accountInfo) throws IOException {
+        RegistrationConfirmation request = new RegistrationConfirmation().build(accountInfo, redirectUrl);
+        JSONObject requestBody = new JSONObject(request);
+
+        CloseableHttpResponse response = httpService.post(emailNotificationUrl, requestBody);
+        HttpEntity responseEntity = response.getEntity();
+
+        if (responseEntity != null) {
+            int status = response.getStatusLine().getStatusCode();
+            HttpStatus httpStatus = HttpStatus.valueOf(status);
+
+            if (httpStatus.is2xxSuccessful()) {
+                logger.info(String.format("Confirmation email sent to: %s", accountInfo.getEmailAddress()));
+            } else {
+                logger.warn(String.format("Something went wrong while sending the confirmation email to: %s. Status: %d",
+                        accountInfo.getEmailAddress(), status));
+            }
+
+        } else {
+            logger.error(String.format("Something went wrong while connecting to the email notification service. UID: %s", accountInfo.getUid()));
+            throw new IOException();
+        }
+    }
+
+    @Async
+    public void sendVerificationEmail(String uid) {
+        triggerVerificationEmailProcess(uid);
+    }
+
+    public CDCResponseData sendVerificationEmailSync(String uid) {
+        return triggerVerificationEmailProcess(uid);
+    }
+
+    private CDCResponseData triggerVerificationEmailProcess(String uid) {
+        CDCResponseData response = new CDCResponseData();
+
+        try {
+            response = cdcResponseHandler.sendVerificationEmail(uid);
+            HttpStatus status = HttpStatus.valueOf(response.getStatusCode());
+
+            if (status.is2xxSuccessful()) {
+                logger.info(String.format("Verification email sent successfully. UID: %s", uid));
+            } else {
+                logger.info(String.format("Something went wrong while sending the verification email. UID: %s. Status: %d. Error: %s", uid, status.value(), response.getErrorDetails()));
+            }
+        } catch (Exception e) {
+            logger.error(String.format("An exception occurred while sending the verification email to the user. UID: %s. Exception: %s", uid, Utils.stackTraceToString(e)));
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return response;
     }
 
     private boolean hasFederationProvider(AccountInfo account) {
