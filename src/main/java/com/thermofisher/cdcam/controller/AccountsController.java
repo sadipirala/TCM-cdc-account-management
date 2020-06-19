@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
@@ -136,7 +137,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) {
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) throws IOException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
@@ -149,14 +150,48 @@ public class AccountsController {
         }
 
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
+
         if (cdcResponseData != null) {
-            logger.info(String.format("Account registration request completed. Status: %d. Status reason: %s", cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason()));
+            int statusCode = cdcResponseData.getStatusCode();
+
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
+                String uid = accountInfo.getUid();
+                logger.info(String.format("Account registration successful. Username: %s. UID: %s", accountInfo.getUsername(), uid));
+
+                if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
+                    logger.info(String.format("Attempting to send confirmation email. UID: %s", uid));
+                    accountRequestService.sendConfirmationEmail(accountInfo);
+                }
+
+                logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
+                accountRequestService.sendVerificationEmail(uid);
+            } else {
+                logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Status reason: %s",
+                        accountInfo.getUsername(), statusCode, cdcResponseData.getStatusReason()));
+            }
 
             return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);
         } else {
             logger.error(String.format("An error occurred while creating account for: %s", accountInfo.getUsername()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/user/verification-email/{uid}")
+    @ApiOperation(value = "Triggers CDC email verification process.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "uid", value = "CDC user UID.", required = true, dataType = "string")
+    public ResponseEntity<CDCResponseData> sendVerificationEmail(@PathVariable String uid) {
+        logger.info(String.format("CDC verification email process triggered for user with UID: %s", uid));
+
+        CDCResponseData responseData = accountRequestService.sendVerificationEmailSync(uid);
+        HttpStatus responseStatus = HttpStatus.valueOf(responseData.getStatusCode());
+
+        return new ResponseEntity<>(responseData, responseStatus);
     }
 
     @PutMapping("/user/timezone")

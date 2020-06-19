@@ -5,7 +5,8 @@ public enum APIMethods {
     INITREG("accounts.initRegistration"),
     SEARCH("accounts.search"),
     SETINFO("accounts.setAccountInfo"),
-    REGISTER("accounts.register");
+    REGISTER("accounts.register"),
+    SEND_VERIFICATION_EMAIL("accounts.resendVerificationCode");
 
     private String value;
 

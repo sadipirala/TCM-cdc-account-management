@@ -5,6 +5,8 @@ import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
+import com.thermofisher.cdcam.model.CDCNewAccount;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -126,21 +128,36 @@ public class CDCAccountsService {
         return request.send();
     }
 
-    public GSResponse register(String username, String email, String password, String data, String profile) {
+    public GSResponse register(CDCNewAccount newAccount) {
         try {
             String apiMethod = APIMethods.REGISTER.getValue();
-            logger.info(String.format("%s triggered. Username: %s", apiMethod, username));
+            logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-            request.setParam("username", username);
-            request.setParam("email", email);
-            request.setParam("password", password);
-            request.setParam("data", data);
-            request.setParam("profile", profile);
+            request.setParam("username", newAccount.getUsername());
+            request.setParam("email", newAccount.getEmail());
+            request.setParam("password", newAccount.getPassword());
+            request.setParam("data", newAccount.getData());
+            request.setParam("profile", newAccount.getProfile());
             request.setParam("finalizeRegistration", "true");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", username, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
+    public GSResponse sendVerificationEmail(String uid) {
+        try {
+            String apiMethod = APIMethods.SEND_VERIFICATION_EMAIL.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("UID", uid);
+
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while sending the verification email to the user. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }

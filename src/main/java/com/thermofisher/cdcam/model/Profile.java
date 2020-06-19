@@ -17,6 +17,7 @@ public class Profile {
     private String lastName;
     private String country;
     private String city;
+    private String locale;
     private Work work;
     private String timezone;
 

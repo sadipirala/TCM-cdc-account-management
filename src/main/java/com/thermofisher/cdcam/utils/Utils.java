@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class Utils {
+    private final static String CHINA_LOCALE = "zh-cn";
+
     public static String getAlphaNumericString(int length) {
         final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
         StringBuilder sb = new StringBuilder(length);
@@ -40,6 +42,15 @@ public class Utils {
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    public static String parseLocale(String locale) {
+        String _locale = locale.split("_")[0];
+        return isChinaLocale(_locale) ? CHINA_LOCALE : _locale;
+    }
+
+    private static boolean isChinaLocale(String locale) {
+        return locale.toLowerCase().equals("zh");
     }
 
     public static String stackTraceToString(Exception e) {
