@@ -24,7 +24,6 @@ import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
-import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.http.HttpEntity;

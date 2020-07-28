@@ -1,5 +1,7 @@
 package com.thermofisher.cdcam.services;
 
+import com.gigya.socialize.GSObject;
+import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
@@ -224,8 +226,12 @@ public class AccountRequestService {
             String awsQuickSightRole = secretsManager.getProperty(secretProperties, "awsQuickSightRole");
             Data data = Data.builder().awsQuickSightRole(awsQuickSightRole).build();
             JSONObject jsonData = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
-            cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
-            logger.info("update aws quick sight role finished.");
+            GSResponse response = cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
+            if (response.getErrorCode() == 0) {
+                logger.info("update aws quick sight role finished.");
+            } else {
+                logger.error(String.format("An error occurred while updating aws quick sight role finished. UID: %s. Error: %s", uid, response.getErrorDetails()));
+            }
         }
         catch (Exception ex)
         {
