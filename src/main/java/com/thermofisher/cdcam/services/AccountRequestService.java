@@ -220,10 +220,11 @@ public class AccountRequestService {
     @Async
     public void setAwsQuickSightRole(String uid){
         String EMPTY_PROFILE = "";
+        String QUICK_SIGHT_ROLE_PROERTY = "awsQuickSightRole";
         logger.info("Async process for update aws quick sight role.");
         try {
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(awsQuickSightRoleSecret));
-            String awsQuickSightRole = secretsManager.getProperty(secretProperties, "awsQuickSightRole");
+            String awsQuickSightRole = secretsManager.getProperty(secretProperties, QUICK_SIGHT_ROLE_PROERTY);
             Data data = Data.builder().awsQuickSightRole(awsQuickSightRole).build();
             JSONObject jsonData = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
             GSResponse response = cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
