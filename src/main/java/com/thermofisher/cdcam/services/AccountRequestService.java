@@ -1,6 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -220,11 +219,11 @@ public class AccountRequestService {
     @Async
     public void setAwsQuickSightRole(String uid){
         String EMPTY_PROFILE = "";
-        String QUICK_SIGHT_ROLE_PROERTY = "awsQuickSightRole";
+        String QUICK_SIGHT_ROLE_PROPERTY = "awsQuickSightRole";
         logger.info("Async process for update aws quick sight role.");
         try {
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(awsQuickSightRoleSecret));
-            String awsQuickSightRole = secretsManager.getProperty(secretProperties, QUICK_SIGHT_ROLE_PROERTY);
+            String awsQuickSightRole = secretsManager.getProperty(secretProperties, QUICK_SIGHT_ROLE_PROPERTY);
             Data data = Data.builder().awsQuickSightRole(awsQuickSightRole).build();
             JSONObject jsonData = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
             GSResponse response = cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
