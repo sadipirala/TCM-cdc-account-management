@@ -8,7 +8,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
@@ -17,6 +19,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCValidationError;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
@@ -70,6 +73,8 @@ public class AccountRequestServiceTests {
     @Mock
     HttpService httpService;
 
+    @Mock
+    CDCAccountsService cdcAccountsService;
 
     private AccountInfo federationAccount = AccountInfo.builder().uid("0055").username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
@@ -107,6 +112,27 @@ public class AccountRequestServiceTests {
 
         //validation
         Mockito.verify(cdcResponseHandler).getAccountInfo(any());
+    }
+
+    @Test
+    public void processRequest_IfGivenAUID_setAwsQuickSightRole() throws JSONException, IOException{
+        //setup
+        AccountRequestService accountRequestServiceMock = Mockito.spy(accountRequestService);
+        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
+        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
+        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
+        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+        Mockito.doNothing().when(accountRequestServiceMock).setAwsQuickSightRole(any());
+
+        //execution
+        accountRequestServiceMock.processRequest("Test", mockBody);
+
+        //validation
+        Mockito.verify(accountRequestServiceMock).setAwsQuickSightRole(any());
     }
 
     @Test
@@ -516,5 +542,23 @@ public class AccountRequestServiceTests {
 
         // validation
         verify(cdcResponseHandler, times(1)).sendVerificationEmail(uid);
+    }
+
+    @Test
+    public void setAwsQuickSightRole_givenAUID_should_setUserInfo() throws JSONException {
+        //setup
+        String uid = UUID.randomUUID().toString();
+        String mockData = "{\"awsQuickSightRole\":\"Test\"}";
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        Mockito.when(cdcAccountsService.setUserInfo(any(),any(),any())).thenReturn(mockCdcResponse);
+
+        //execution
+        accountRequestService.setAwsQuickSightRole(uid);
+
+        //validation
+        Mockito.verify(cdcAccountsService).setUserInfo(uid,mockData,"");
+
     }
 }
