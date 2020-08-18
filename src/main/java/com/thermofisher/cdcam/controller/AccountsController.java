@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
@@ -62,6 +63,9 @@ public class AccountsController {
 
     @Autowired
     UpdateAccountService updateAccountService;
+
+    @Autowired
+    ReCaptchaService reCaptchaService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -212,6 +216,21 @@ public class AccountsController {
             logger.error(message);
             return new ResponseEntity<>(message, updateUserTimezoneStatus);
         }
+    }
+
+    @PutMapping("/reset-password/email")
+    @ApiOperation(value = "sends the request to reset a password.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
+
+        if(reCaptchaService.isTokenValid(body.getCaptchaToken()))
+            return new ResponseEntity<String>("",HttpStatus.OK);
+        else
+            return new ResponseEntity<String>("",HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

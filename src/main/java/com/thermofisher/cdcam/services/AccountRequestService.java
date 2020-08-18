@@ -12,6 +12,7 @@ import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -191,7 +192,7 @@ public class AccountRequestService {
         RegistrationConfirmation request = new RegistrationConfirmation().build(accountInfo, redirectUrl);
         JSONObject requestBody = new JSONObject(request);
 
-        CloseableHttpResponse response = httpService.post(emailNotificationUrl, requestBody);
+        CloseableHttpResponse response = (httpService.post(emailNotificationUrl, requestBody)).getCloseableHttpResponse();
         HttpEntity responseEntity = response.getEntity();
 
         if (responseEntity != null) {
