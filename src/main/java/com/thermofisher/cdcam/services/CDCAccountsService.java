@@ -162,6 +162,21 @@ public class CDCAccountsService {
         }
     }
 
+    public GSResponse resetPasswordRequest(String username) {
+        try {
+            String apiMethod = APIMethods.RESET_PASSWORD.getValue();
+            logger.info(String.format("%s triggered. username: %s", apiMethod, username));
+
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setParam("loginID", username);
+
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while sending the reset password email to the user. username: %s. Error: %s", username, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
     private String getRegToken(boolean isLite) {
         try {
             String apiMethod = APIMethods.INITREG.getValue();

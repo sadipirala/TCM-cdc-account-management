@@ -119,4 +119,26 @@ public class CDCResponseHandler {
 
         return cdcResponseData;
     }
+
+    public String getEmailByUsername(String userName) throws IOException {
+        String query = String.format("SELECT emails,loginIDs FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
+        GSResponse response = cdcAccountsService.search(query, "");
+        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+
+        for (CDCAccount result : cdcSearchResponse.getResults()){
+            if(result.getEmails().getVerified().length > 0)
+                return  result.getEmails().getVerified()[0];
+            else if(result.getEmails().getUnverified().length > 0)
+                return  result.getEmails().getUnverified()[0];
+            else
+                return NO_RESULTS_FOUND;
+        }
+        logger.warn(String.format("Could not match an account with that username on CDC. username: %s. Error: %s" , userName, response.getErrorMessage()));
+        return NO_RESULTS_FOUND;
+    }
+
+    public boolean resetPasswordRequest(String username) {
+        GSResponse response = cdcAccountsService.resetPasswordRequest(username);
+        return response.getErrorCode() == 0;
+    }
 }

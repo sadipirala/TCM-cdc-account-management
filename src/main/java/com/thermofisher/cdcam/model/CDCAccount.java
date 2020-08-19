@@ -18,6 +18,7 @@ public class CDCAccount {
     @JsonProperty("isRegistered")
     private Object isRegistered;
 
+    private Emails emails;
     private LoginIDs loginIDs;
     private Profile profile;
     private Data data;

@@ -38,10 +38,22 @@ public class HttpService {
                     .responseBody(new JSONObject(responseBody))
                     .closeableHttpResponse(closeableResponse).build();
             httpClient.close();
-            
+
             return response;
         } catch (Exception e) {
             logger.error(String.format("An error occurred while executing a POST Request. Url: %s. Error: %s", url, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
+    public HttpServiceResponse post(String url) {
+        try {
+            JSONObject EMPTY_JSON = new JSONObject("{}");
+            return post(url, EMPTY_JSON);
+        }
+        catch (Exception e)
+        {
+            logger.error(Utils.stackTraceToString(e));
             return null;
         }
     }
