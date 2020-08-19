@@ -126,10 +126,10 @@ public class CDCResponseHandler {
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()){
-            if(result.getEmails().getVerified().length > 0)
-                return  result.getEmails().getVerified()[0];
-            else if(result.getEmails().getUnverified().length > 0)
-                return  result.getEmails().getUnverified()[0];
+            if(result.getEmails().getVerified().size() > 0)
+                return  result.getEmails().getVerified().get(0);
+            else if(result.getEmails().getUnverified().size() > 0)
+                return  result.getEmails().getUnverified().get(0);
             else
                 return NO_RESULTS_FOUND;
         }
