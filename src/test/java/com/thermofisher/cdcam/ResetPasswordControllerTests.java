@@ -5,6 +5,7 @@ import com.thermofisher.cdcam.controller.ResetPasswordController;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -57,7 +58,7 @@ public class ResetPasswordControllerTests {
         when(reCaptchaService.verifyToken(invalidToken)).thenReturn(mockResponseJson);
 
         //when
-        ResponseEntity<JSONObject> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
         //then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -79,14 +80,14 @@ public class ResetPasswordControllerTests {
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn("");
 
         //when
-        ResponseEntity<JSONObject> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
-        JSONObject errors = result.getBody();
-        String[] stringArray = (String[])errors.get("error-codes");
+        JSONObject errors = new JSONObject(result.getBody());
+        JSONArray stringArray = (JSONArray)errors.get("error-codes");
 
         //then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
-        Assert.assertTrue( stringArray.length > 0);
+        Assert.assertTrue( stringArray.length() > 0);
     }
 
     @Test
@@ -107,7 +108,7 @@ public class ResetPasswordControllerTests {
         when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn(true);
 
         //when
-        ResponseEntity<JSONObject> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
         //then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
