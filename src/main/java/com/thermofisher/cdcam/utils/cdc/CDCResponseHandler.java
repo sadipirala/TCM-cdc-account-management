@@ -139,6 +139,11 @@ public class CDCResponseHandler {
 
     public boolean resetPasswordRequest(String username) {
         GSResponse response = cdcAccountsService.resetPasswordRequest(username);
-        return response.getErrorCode() == 0;
+        if(response.getErrorCode() == 0)
+            return true;
+        else {
+            logger.error(response.getErrorMessage());
+            return false;
+        }
     }
 }
