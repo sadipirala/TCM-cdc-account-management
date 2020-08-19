@@ -30,14 +30,14 @@ public class ResetPasswordController {
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
-    @PutMapping("/reset-password/email")
+    @PutMapping("/email")
     @ApiOperation(value = "sends the request to reset a password.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
+    public ResponseEntity<JSONObject> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
         JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken());
         if(verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
@@ -47,16 +47,16 @@ public class ResetPasswordController {
             if(!email.isEmpty())
             {
                 if(cdcResponseHandler.resetPasswordRequest(body.getUsername())) {
-                    return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.OK);
+                    return new ResponseEntity<>(verifyResponse, HttpStatus.OK);
                 }
             }
             verifyResponse.put("error-codes",new String[]{CaptchaErrors.CDC_EMAIL_NOT_FOUND.getValue()});
-            return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(verifyResponse, HttpStatus.BAD_REQUEST);
         }
         else {
             verifyResponse.put("loginID",body.getUsername());
             verifyResponse.put("email","");
-            return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(verifyResponse, HttpStatus.BAD_REQUEST);
         }
     }
 }

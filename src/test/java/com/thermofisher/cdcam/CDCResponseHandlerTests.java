@@ -276,4 +276,34 @@ public class CDCResponseHandlerTests {
         // then
         Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
+
+    @Test
+    public void resetPasswordRequest_whenAValidUsername_returnTrue() {
+        //given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String username = "armvalidtest@mail.com";
+        when(cdcAccountsService.resetPasswordRequest(username)).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(0);
+
+        //when
+        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+
+        //then
+        Assert.assertTrue(response);
+    }
+
+    @Test
+    public void resetPasswordRequest_whenAnInValidUsername_returnFalse() {
+        //given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String username = "arminvalidtest@mail.com";
+        when(cdcAccountsService.resetPasswordRequest(username)).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(40016);
+
+        //when
+        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+
+        //then
+        Assert.assertFalse(response);
+    }
 }
