@@ -18,6 +18,7 @@ import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.CDCResponseData;
 import com.thermofisher.cdcam.model.CDCValidationError;
+import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
@@ -415,11 +416,13 @@ public class AccountRequestServiceTests {
     public void sendConfirmationEmail_givenAccountWithValidFormat_thenConfirmationEmailPostRequestShouldBeMade() throws IOException {
         StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
         HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
-        CloseableHttpResponse mockHttpResponse = Mockito.mock(CloseableHttpResponse.class);
-
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
         Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
-        Mockito.when(mockHttpResponse.getStatusLine()).thenReturn(mockStatusLine);
-        Mockito.when(mockHttpResponse.getEntity()).thenReturn(mockEntity);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
@@ -441,11 +444,13 @@ public class AccountRequestServiceTests {
     public void sendConfirmationEmail_givenConfirmationEmailPostRequestReturnsDifferentThan200_noExceptionShouldOccur() throws IOException {
         StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
         HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
-        CloseableHttpResponse mockHttpResponse = Mockito.mock(CloseableHttpResponse.class);
-
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
         Mockito.when(mockStatusLine.getStatusCode()).thenReturn(500);
-        Mockito.when(mockHttpResponse.getStatusLine()).thenReturn(mockStatusLine);
-        Mockito.when(mockHttpResponse.getEntity()).thenReturn(mockEntity);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
@@ -465,9 +470,12 @@ public class AccountRequestServiceTests {
 
     @Test(expected = IOException.class)
     public void sendConfirmationEmail_givenConfirmationEmailPostRequestFails_ExceptionShouldBeThrown() throws IOException {
-        CloseableHttpResponse mockHttpResponse = Mockito.mock(CloseableHttpResponse.class);
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
 
-        Mockito.when(mockHttpResponse.getEntity()).thenReturn(null);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(null);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
