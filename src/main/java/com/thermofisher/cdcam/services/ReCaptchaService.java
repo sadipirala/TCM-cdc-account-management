@@ -1,7 +1,7 @@
 package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.enums.CaptchaErrors;
+import com.thermofisher.cdcam.enums.ResetPasswordErrors;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +20,7 @@ public class ReCaptchaService {
     private String siteVerifyUrl;
 
     @Value("${recaptcha.secret.key}")
-    private String capcthaSecret;
+    private String captchaSecret;
 
     @Autowired
     SecretsManager secretsManager;
@@ -32,7 +32,7 @@ public class ReCaptchaService {
         try {
             final String CAPTCHA_SECRET_PROPERTY = "secret-key";
 
-            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(capcthaSecret));
+            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(captchaSecret));
             String captchaSecretKeyValue = secretsManager.getProperty(secretProperties, CAPTCHA_SECRET_PROPERTY);
 
             String url = String.format("%s?secret=%s&response=%s", siteVerifyUrl, captchaSecretKeyValue, captchaToken);
@@ -47,7 +47,7 @@ public class ReCaptchaService {
             logger.error(ex.getMessage());
             JSONObject errorResponse = new JSONObject();
             errorResponse.put("success",false);
-            errorResponse.put("error-codes",new String[]{CaptchaErrors.VERIFY_TOKEN_EXCEPTION.getValue()});
+            errorResponse.put("error-codes",new String[]{ResetPasswordErrors.VERIFY_TOKEN_EXCEPTION.getValue()});
             return errorResponse;
         }
     }

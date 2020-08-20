@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.controller;
 
-import com.thermofisher.cdcam.enums.CaptchaErrors;
+import com.thermofisher.cdcam.enums.ResetPasswordErrors;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -40,9 +40,9 @@ public class ResetPasswordController {
     public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
         JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken());
+        verifyResponse.put("loginID",body.getUsername());
         if(verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
             String email = cdcResponseHandler.getEmailByUsername(body.getUsername());
-            verifyResponse.put("loginID",body.getUsername());
             verifyResponse.put("email",email);
             if(!email.isEmpty())
             {
@@ -50,11 +50,10 @@ public class ResetPasswordController {
                     return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.OK);
                 }
             }
-            verifyResponse.put("error-codes",new String[]{CaptchaErrors.CDC_EMAIL_NOT_FOUND.getValue()});
+            verifyResponse.put("error-codes",new String[]{ResetPasswordErrors.CDC_EMAIL_NOT_FOUND.getValue()});
             return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
         }
         else {
-            verifyResponse.put("loginID",body.getUsername());
             verifyResponse.put("email","");
             return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
         }

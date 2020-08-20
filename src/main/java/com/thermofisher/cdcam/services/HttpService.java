@@ -48,7 +48,7 @@ public class HttpService {
 
     public HttpServiceResponse post(String url) {
         try {
-            JSONObject EMPTY_JSON = new JSONObject("{}");
+            JSONObject EMPTY_JSON = new JSONObject();
             return post(url, EMPTY_JSON);
         }
         catch (Exception e)
