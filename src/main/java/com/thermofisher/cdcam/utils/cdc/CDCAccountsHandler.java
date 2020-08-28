@@ -12,7 +12,6 @@ public class CDCAccountsHandler {
 
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
-            .legacyEmail(accountInfo.getEmailAddress())
             .build();
 
         Data data = Data.builder()

@@ -84,7 +84,6 @@ public class AccountUtils {
     public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
-            .legacyEmail(accountInfo.getEmailAddress())
             .build();
 
         Data data = Data.builder()
