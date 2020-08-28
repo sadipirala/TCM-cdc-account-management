@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.services;
 
+import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
@@ -30,6 +31,9 @@ public class AccountRequestService {
 
     @Value("${federation.aws.secret}")
     private String federationSecret;
+
+    @Value("${aws.quick.sight.role}")
+    String awsQuickSightRoleSecret;
 
     @Value("${aws.sns.reg.topic}")
     private String snsRegistrationTopic;
@@ -62,6 +66,10 @@ public class AccountRequestService {
     @Autowired
     HttpService httpService;
 
+    @Autowired
+    CDCAccountsService cdcAccountsService;
+
+
     @Async
     public void processRequest(String headerValue, String rawBody) {
         final int FED_PASSWORD_LENGTH = 10;
@@ -90,6 +98,9 @@ public class AccountRequestService {
                 }
 
                 String uid = data.get("uid").toString();
+
+                setAwsQuickSightRole(uid);
+
                 logger.info(String.format("Account UID: %s", uid));
 
                 AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
@@ -203,6 +214,29 @@ public class AccountRequestService {
     @Async
     public void sendVerificationEmail(String uid) {
         triggerVerificationEmailProcess(uid);
+    }
+
+    @Async
+    public void setAwsQuickSightRole(String uid){
+        String EMPTY_PROFILE = "";
+        String QUICK_SIGHT_ROLE_PROPERTY = "awsQuickSightRole";
+        logger.info("Async process for update aws quick sight role.");
+        try {
+            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(awsQuickSightRoleSecret));
+            String awsQuickSightRole = secretsManager.getProperty(secretProperties, QUICK_SIGHT_ROLE_PROPERTY);
+            Data data = Data.builder().awsQuickSightRole(awsQuickSightRole).build();
+            JSONObject jsonData = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
+            GSResponse response = cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
+            if (response.getErrorCode() == 0) {
+                logger.info("update aws quick sight role finished.");
+            } else {
+                logger.error(String.format("An error occurred while updating aws quick sight role finished. UID: %s. Error: %s", uid, response.getErrorDetails()));
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.error(Utils.stackTraceToString(ex));
+        }
     }
 
     public CDCResponseData sendVerificationEmailSync(String uid) {

@@ -82,13 +82,20 @@ public class AccountUtils {
     }
 
     public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {
+        Thermofisher thermofisher = Thermofisher.builder()
+            .legacyUsername(accountInfo.getUsername())
+            .build();
+
         Data data = Data.builder()
             .subscribe(accountInfo.getMember())
+            .thermofisher(thermofisher)
             .build();
+
         Work work = Work.builder()
             .company(accountInfo.getCompany())
             .location(accountInfo.getDepartment())
             .build();
+
         Profile profile = Profile.builder()
             .firstName(accountInfo.getFirstName())
             .lastName(accountInfo.getLastName())
@@ -98,6 +105,7 @@ public class AccountUtils {
             .work(work)
             .timezone(accountInfo.getTimezone())
             .build();
+
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())
             .email(accountInfo.getEmailAddress())
@@ -105,6 +113,7 @@ public class AccountUtils {
             .profile(profile)
             .data(data)
             .build();
+
         return newAccount;
     }
 

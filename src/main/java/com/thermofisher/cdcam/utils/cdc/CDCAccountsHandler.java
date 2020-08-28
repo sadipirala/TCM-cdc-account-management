@@ -1,10 +1,6 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CDCNewAccount;
-import com.thermofisher.cdcam.model.Data;
-import com.thermofisher.cdcam.model.Profile;
-import com.thermofisher.cdcam.model.Work;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.json.JSONException;
@@ -13,13 +9,21 @@ public class CDCAccountsHandler {
 
     public static CDCNewAccount buildCDCNewAccount(AccountInfo accountInfo) throws JSONException {
         String locale = (accountInfo.getLocaleName() == null) ? null : Utils.parseLocale(accountInfo.getLocaleName());
+
+        Thermofisher thermofisher = Thermofisher.builder()
+            .legacyUsername(accountInfo.getUsername())
+            .build();
+
         Data data = Data.builder()
             .subscribe(accountInfo.getMember())
+            .thermofisher(thermofisher)
             .build();
+
         Work work = Work.builder()
             .company(accountInfo.getCompany())
             .location(accountInfo.getDepartment())
             .build();
+
         Profile profile = Profile.builder()
             .firstName(accountInfo.getFirstName())
             .lastName(accountInfo.getLastName())
@@ -29,6 +33,7 @@ public class CDCAccountsHandler {
             .work(work)
             .timezone(accountInfo.getTimezone())
             .build();
+
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())
             .email(accountInfo.getEmailAddress())
