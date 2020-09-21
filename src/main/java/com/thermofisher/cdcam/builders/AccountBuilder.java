@@ -2,6 +2,8 @@ package com.thermofisher.cdcam.builders;
 
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,5 +58,23 @@ public class AccountBuilder {
             logger.error(String.format("Error building account info object: %s", e.getMessage()));
             return null;
         }
+    }
+
+    public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
+        return AccountInfo.builder()
+            .firstName(accountInfoDTO.getFirstName())
+            .lastName(accountInfoDTO.getLastName())
+            .username(accountInfoDTO.getUsername())
+            .emailAddress(accountInfoDTO.getEmailAddress())
+            .password(accountInfoDTO.getPassword())
+            .localeName(accountInfoDTO.getLocaleName())
+            .company(accountInfoDTO.getCompany())
+            .department(accountInfoDTO.getDepartment())
+            .city(accountInfoDTO.getCity())
+            .country(accountInfoDTO.getCountry())
+            .member(accountInfoDTO.getMember())
+            .registrationType(accountInfoDTO.getRegistrationType())
+            .timezone(accountInfoDTO.getTimezone())
+            .build();
     }
 }

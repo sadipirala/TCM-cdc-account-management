@@ -10,6 +10,7 @@ import com.thermofisher.cdcam.model.Data;
 import com.thermofisher.cdcam.model.Profile;
 import com.thermofisher.cdcam.model.Thermofisher;
 import com.thermofisher.cdcam.model.Work;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import org.json.JSONException;
 
@@ -28,6 +29,7 @@ public class AccountUtils {
     public static final String password = "Xh9s8Jml0";
     public static final String hash = "CXG+ERQHMHMOU/NQ0A/UKA==";
     public static final String algorithm = "MD5";
+    public static final String reCaptchaToken = "c1c691f4556b4ad1ab75841fc4e94dcd";
     public static final String firstName = "first";
     public static final String lastName = "last";
     public static final String country = "United States";
@@ -62,7 +64,7 @@ public class AccountUtils {
                 .build();
     }
 
-    public static AccountInfo getSiteAccount(){
+    public static AccountInfo getSiteAccount() {
         return AccountInfo.builder()
                 .uid(uid)
                 .username(username)
@@ -79,6 +81,23 @@ public class AccountUtils {
                 .loginProvider(loginProvider)
                 .regAttempts(0)
                 .build();
+    }
+
+    public static AccountInfoDTO getAccountInfoDTO() {
+        return AccountInfoDTO.builder()
+        .username(username)
+        .emailAddress(email)
+        .password(password)
+        .firstName(firstName)
+        .lastName(lastName)
+        .localeName(localeName)
+        .company(company)
+        .country(country)
+        .city(city)
+        .department(department)
+        .member(member)
+        .reCaptchaToken(reCaptchaToken)
+        .build();
     }
 
     public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {

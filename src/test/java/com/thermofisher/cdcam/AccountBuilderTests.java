@@ -1,10 +1,16 @@
 package com.thermofisher.cdcam;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountUtils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -12,15 +18,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -48,7 +49,7 @@ public class AccountBuilderTests {
     @Test
     public void getAccountInfo_ifGivenFederatedUserInfoAndObj_returnAccountInfo() throws Exception {
         // setup
-        Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         
         // execution
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(federatedObj));
@@ -60,9 +61,9 @@ public class AccountBuilderTests {
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserInfoAndObj_returnAccountInfo() throws Exception{
+    public void getAccountInfo_ifGivenSiteUserInfoAndObj_returnAccountInfo() throws Exception {
         //setup
-        Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         //execution
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
@@ -76,7 +77,7 @@ public class AccountBuilderTests {
     @Test
     public void getAccountInfo_ifGivenAInvalidObj_returnNull() throws Exception {
         // setup
-        Mockito.when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         GSObject jsonObj = new GSObject(invalidObj);
 
         // execution

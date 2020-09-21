@@ -49,6 +49,7 @@ public class AccountInfoHandlerTests {
     private String prepareJsonForGRP(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("timezone");
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
@@ -74,10 +75,10 @@ public class AccountInfoHandlerTests {
     public void prepareForGRPNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        AccountInfo mockAccount = AccountUtils.getFederatedAccount();
+        AccountInfo mockAccount = AccountUtils.getSiteAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
         String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
-        AccountInfo account = AccountUtils.getFederatedAccount();
+        AccountInfo account = AccountUtils.getSiteAccount();
 
         // when
         String parsedAccount = accountHandler.prepareForGRPNotification(account);
