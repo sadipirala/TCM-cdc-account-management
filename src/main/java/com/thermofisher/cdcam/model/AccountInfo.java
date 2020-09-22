@@ -32,4 +32,5 @@ public class AccountInfo {
     private String duplicatedAccountUid;
     private String registrationType;
     private String timezone;
+    private String hiraganaName;
 }

@@ -7,12 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.model.CDCAccount;
-import com.thermofisher.cdcam.model.CDCNewAccount;
-import com.thermofisher.cdcam.model.CDCResponseData;
-import com.thermofisher.cdcam.model.CDCSearchResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.logging.log4j.LogManager;

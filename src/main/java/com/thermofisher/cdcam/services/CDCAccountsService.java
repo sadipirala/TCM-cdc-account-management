@@ -5,7 +5,7 @@ import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
-import com.thermofisher.cdcam.model.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,17 +38,18 @@ public class CDCAccountsService {
     @Autowired
     SecretsManager secretsManager;
 
-
     @PostConstruct
     public void setCredentials() {
         try {
-            if (env.equals("local") || env.equals("test")) return;
+            if (env.equals("local") || env.equals("test"))
+                return;
             logger.info("Setting up CDC credentials.");
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
             secretKey = secretsManager.getProperty(secretProperties, "secretKey");
             userKey = secretsManager.getProperty(secretProperties, "userKey");
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s",
+                    Utils.stackTraceToString(e)));
         }
     }
 
@@ -63,7 +64,8 @@ public class CDCAccountsService {
             request.setParam("extraProfileFields", "username, locale, work");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -79,22 +81,24 @@ public class CDCAccountsService {
             request.setParam("profile", profile);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
 
-    public GSResponse changeAccountStatus (String uid, boolean status ) {
+    public GSResponse changeAccountStatus(String uid, boolean status) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
-            GSRequest request = new GSRequest(apiKey,secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
             request.setParam("UID", uid);
             request.setParam("isActive", status);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -109,7 +113,8 @@ public class CDCAccountsService {
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s", email, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s",
+                    email, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -120,7 +125,8 @@ public class CDCAccountsService {
         String apiMethod = APIMethods.SEARCH.getValue();
         logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
 
-        if (query == null) return null;
+        if (query == null)
+            return null;
 
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setParam("accountTypes", accountTypes);

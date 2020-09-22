@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.cdc;
 
 import com.thermofisher.cdcam.utils.Utils;
 

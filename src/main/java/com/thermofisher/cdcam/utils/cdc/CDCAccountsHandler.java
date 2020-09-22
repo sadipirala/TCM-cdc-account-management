@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.json.JSONException;
@@ -18,6 +19,8 @@ public class CDCAccountsHandler {
             .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
             .build();
+
+        setHiraganaName(accountInfo, data);
 
         Work work = Work.builder()
             .company(accountInfo.getCompany())
@@ -43,5 +46,23 @@ public class CDCAccountsHandler {
             .build();
 
         return newAccount;
+    }
+
+    private static void setHiraganaName(AccountInfo accountInfo, Data data) {
+        if(hiraganaNameHasValue(accountInfo)) {
+            Japan japan = Japan.builder()
+                .hiraganaName(accountInfo.getHiraganaName())
+                .build();
+
+            Registration registration = Registration.builder()
+                .japan(japan)
+                .build();
+
+            data.setRegistration(registration);
+        }
+    }
+
+    private static boolean hiraganaNameHasValue(AccountInfo accountInfo) {
+        return accountInfo.getHiraganaName() != null && !accountInfo.getHiraganaName().isEmpty();
     }
 }
