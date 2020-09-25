@@ -37,4 +37,5 @@ public class AccountInfoDTO {
     private String member;
     private String registrationType;
     private String timezone;
+    private String hiraganaName;
 }

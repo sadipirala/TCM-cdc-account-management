@@ -14,7 +14,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.model.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;

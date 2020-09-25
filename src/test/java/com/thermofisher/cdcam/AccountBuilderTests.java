@@ -48,13 +48,13 @@ public class AccountBuilderTests {
 
     @Test
     public void getAccountInfo_ifGivenFederatedUserInfoAndObj_returnAccountInfo() throws Exception {
-        // setup
+        // given
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         
-        // execution
+        // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(federatedObj));
 
-        // validation
+        // then
         String expectedAccount = mapper.writeValueAsString(federatedAccount);
         String resAccount = mapper.writeValueAsString(res);
         assertEquals(expectedAccount, resAccount);
@@ -65,25 +65,38 @@ public class AccountBuilderTests {
         //setup
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
-        //execution
+        // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
 
-        //validation
+        // then
         String expectedAccount = mapper.writeValueAsString(siteAccount);
         String resAccount = mapper.writeValueAsString(res);
         assertTrue(expectedAccount.equals(resAccount));
     }
 
     @Test
+    public void getAccountInfo_ifGivenSiteUserWithHiraganaName_returnAccountInfoWithHiraganaName() throws Exception {
+        // given
+        String hiraganaName = AccountUtils.hiraganaName;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
+
+        // then
+        assertTrue(res.getHiraganaName().equals(hiraganaName));
+    }
+
+    @Test
     public void getAccountInfo_ifGivenAInvalidObj_returnNull() throws Exception {
-        // setup
+        // given
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         GSObject jsonObj = new GSObject(invalidObj);
 
-        // execution
+        // when
         AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
 
-        // validation
+        // then
         Assert.assertNull(res);
     }
 }

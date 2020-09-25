@@ -1,7 +1,11 @@
 package com.thermofisher.cdcam.builders;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import org.apache.logging.log4j.LogManager;
@@ -51,6 +55,7 @@ public class AccountBuilder {
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
+                    .hiraganaName(getHiraganaNameFromGSObject(data))
                     .regAttempts(0)
                     .build();
 
@@ -58,6 +63,18 @@ public class AccountBuilder {
             logger.error(String.format("Error building account info object: %s", e.getMessage()));
             return null;
         }
+    }
+
+    private static String getHiraganaNameFromGSObject(GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
+        Gson gson = new Gson();
+        String hiraganaName = null;
+
+        if (data.containsKey("registration")) {
+            Registration registration = gson.fromJson(data.getString("registration"), Registration.class);
+            hiraganaName = registration.getJapan() != null ? registration.getJapan().getHiraganaName() : null;
+        }
+
+        return hiraganaName;
     }
 
     public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
@@ -75,6 +92,7 @@ public class AccountBuilder {
             .member(accountInfoDTO.getMember())
             .registrationType(accountInfoDTO.getRegistrationType())
             .timezone(accountInfoDTO.getTimezone())
+            .hiraganaName(accountInfoDTO.getHiraganaName())
             .build();
     }
 }

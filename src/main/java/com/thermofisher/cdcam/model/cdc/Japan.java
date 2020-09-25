@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.cdc;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -11,13 +11,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-@JsonDeserialize(builder = Thermofisher.ThermofisherBuilder.class)
-public class Thermofisher {
-    private String legacyEmail;
-    private String legacyUsername;
+@JsonDeserialize(builder = Japan.JapanBuilder.class)
+public class Japan {
+    private String hiraganaName;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
-    public static class ThermofisherBuilder{ 
+    public static class JapanBuilder {
     }
 }

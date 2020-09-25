@@ -1,5 +1,4 @@
-package com.thermofisher.cdcam.model;
-
+package com.thermofisher.cdcam.model.cdc;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,7 +12,6 @@ import lombok.Setter;
 @Builder(builderClassName = "LoginIDsBuilder", toBuilder = true)
 @JsonDeserialize(builder = LoginIDs.LoginIDsBuilder.class)
 public class LoginIDs {
-
     private String username;
     private String[] emails;
     private String[] unverifiedEmails;

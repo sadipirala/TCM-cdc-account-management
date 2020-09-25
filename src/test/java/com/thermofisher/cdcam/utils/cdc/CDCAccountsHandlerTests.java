@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -45,5 +45,18 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertTrue(expectedAccount.getProfile().contains(String.format("\"locale\":\"%s\"", expectedLocale)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoContainsHiraganaName_ThenCDCAccountShouldContainHiraganaName() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        String hiraganaName = accountInfo.getHiraganaName();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"hiraganaName\":\"%s\"", hiraganaName)));
     }
 }

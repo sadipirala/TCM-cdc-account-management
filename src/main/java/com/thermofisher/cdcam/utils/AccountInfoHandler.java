@@ -5,13 +5,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.Data;
-import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.cdc.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * AccountInfoHandler
@@ -32,6 +31,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("timezone");
+        propertiesToRemove.add("hiraganaName");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
