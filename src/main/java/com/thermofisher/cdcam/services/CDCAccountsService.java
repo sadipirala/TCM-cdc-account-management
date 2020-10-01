@@ -7,6 +7,7 @@ import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.model.CDCNewAccount;
 
+import com.thermofisher.cdcam.model.ResetPassword;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -162,17 +163,23 @@ public class CDCAccountsService {
         }
     }
 
-    public GSResponse resetPasswordRequest(String username) {
+    public GSResponse resetPasswordRequest(ResetPassword resetPassword) {
         try {
             String apiMethod = APIMethods.RESET_PASSWORD.getValue();
-            logger.info(String.format("%s triggered. username: %s", apiMethod, username));
+            logger.info(String.format("%s triggered. value: %s", apiMethod, (resetPassword.getUsername() == null || resetPassword.getUsername().isEmpty()) ? resetPassword.getResetPasswordToken() :resetPassword.getUsername()));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-            request.setParam("loginID", username);
+
+            if(resetPassword.getResetPasswordToken() == null || resetPassword.getResetPasswordToken().isEmpty())
+                request.setParam("loginID", resetPassword.getUsername());
+            else {
+                request.setParam("passwordResetToken",resetPassword.getResetPasswordToken());
+                request.setParam("newPassword",resetPassword.getNewPassword());
+            }
 
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while sending the reset password email to the user. username: %s. Error: %s", username, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while calling the reset password endpoint . Error: %s",  Utils.stackTraceToString(e)));
             return null;
         }
     }

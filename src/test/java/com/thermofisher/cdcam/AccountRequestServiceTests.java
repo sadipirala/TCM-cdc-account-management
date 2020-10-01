@@ -420,6 +420,7 @@ public class AccountRequestServiceTests {
         HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
                 .closeableHttpResponse(mockHttpCloseableResponse)
                 .build();
+
         Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
@@ -448,6 +449,7 @@ public class AccountRequestServiceTests {
         HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
                 .closeableHttpResponse(mockHttpCloseableResponse)
                 .build();
+
         Mockito.when(mockStatusLine.getStatusCode()).thenReturn(500);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);

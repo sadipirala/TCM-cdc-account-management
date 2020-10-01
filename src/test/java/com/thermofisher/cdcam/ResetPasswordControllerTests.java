@@ -1,9 +1,14 @@
 package com.thermofisher.cdcam;
 
 import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
+import com.thermofisher.cdcam.model.ResetPassword;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
+import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.ResetPasswordService;
+import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +29,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
@@ -40,6 +47,12 @@ public class ResetPasswordControllerTests {
     @Mock
     CDCResponseHandler cdcResponseHandler;
 
+    @Mock
+    SNSHandler snsHandler;
+
+    @Mock
+    ResetPasswordService resetPasswordService;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -55,7 +68,7 @@ public class ResetPasswordControllerTests {
         mockResponseJson.put("success", false);
         when(mockInvalidBody.getUsername()).thenReturn(username);
         when(mockInvalidBody.getCaptchaToken()).thenReturn(invalidToken);
-        when(reCaptchaService.verifyToken(invalidToken)).thenReturn(mockResponseJson);
+        when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
 
         //when
         ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
@@ -76,7 +89,7 @@ public class ResetPasswordControllerTests {
 
         when(mockInvalidBody.getUsername()).thenReturn(username);
         when(mockInvalidBody.getCaptchaToken()).thenReturn(validToken);
-        when(reCaptchaService.verifyToken(validToken)).thenReturn(mockResponseJson);
+        when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn("");
 
         //when
@@ -103,7 +116,7 @@ public class ResetPasswordControllerTests {
 
         when(mockInvalidBody.getUsername()).thenReturn(username);
         when(mockInvalidBody.getCaptchaToken()).thenReturn(validToken);
-        when(reCaptchaService.verifyToken(validToken)).thenReturn(mockResponseJson);
+        when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
         when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn(true);
 
@@ -112,5 +125,108 @@ public class ResetPasswordControllerTests {
 
         //then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws IOException {
+        //given
+        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .username("test@tes.com").build();
+        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
+        when(mockResponse.getResponseCode()).thenReturn(0);
+        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
+        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
+        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        when(snsHandler.sendSNSNotification(any(),any())).thenReturn(true);
+
+        doNothing().when(resetPasswordService).sendResetPasswordConfirmation(any());
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Mockito.verify(resetPasswordService).sendResetPasswordConfirmation(any());
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.OK);
+    }
+
+    @Test
+    public void resetPassword_WhenTheSNSHandlerFails_returnINTERNAL_SERVER_ERROR() throws IOException {
+
+        //given
+        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .username("test@tes.com").build();
+        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
+        when(mockResponse.getResponseCode()).thenReturn(0);
+        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
+        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
+        when(snsHandler.sendSNSNotification(any(),any())).thenReturn(false);
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void resetPassword_WhenAnExceptionIsThrown_returnINTERNAL_SERVER_ERROR() throws IOException {
+        //given
+        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .username("test@tes.com").build();
+        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
+        when(mockResponse.getResponseCode()).thenReturn(0);
+        when(cdcResponseHandler.resetPassword(any())).thenReturn(mockResponse);
+        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn(null);
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void resetPassword_WhenTheResetPasswordOnCDCFails_returnBAD_REQUEST() throws IOException {
+        //given
+        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .username("test@tes.com").build();
+        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
+        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
+        when(mockResponse.getResponseCode()).thenReturn(40001);
+        when(cdcResponseHandler.resetPassword(any())).thenReturn(mockResponse);
+
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void resetPassword_WhenNoAccountIsFoundByUsername_returnBAD_REQUEST() throws IOException {
+        //given
+        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .username("test@tes.com").build();
+        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
+        when(mockResponse.getResponseCode()).thenReturn(0);
+        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
+        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("");
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.BAD_REQUEST);
     }
 }

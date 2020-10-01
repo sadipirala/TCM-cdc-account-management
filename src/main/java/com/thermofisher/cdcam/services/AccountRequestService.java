@@ -192,6 +192,7 @@ public class AccountRequestService {
         JSONObject requestBody = new JSONObject(request);
 
         CloseableHttpResponse response = (httpService.post(emailNotificationUrl, requestBody)).getCloseableHttpResponse();
+
         HttpEntity responseEntity = response.getEntity();
 
         if (responseEntity != null) {

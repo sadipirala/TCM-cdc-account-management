@@ -4,23 +4,34 @@ import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.builders.EmailRequestBuilder;
+import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
+
+import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.EmailService;
+
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -51,6 +62,9 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
+    @Value("${registration.recaptcha.secret.key}")
+    private String registrationReCaptchaSecret;
+
     @Autowired
     LiteRegHandler handler;
 
@@ -62,6 +76,16 @@ public class AccountsController {
 
     @Autowired
     UpdateAccountService updateAccountService;
+
+    @Autowired
+    CDCResponseHandler cdcResponseHandler;
+
+    @Autowired
+    EmailService emailService;
+
+    @Autowired
+    ReCaptchaService reCaptchaService;
+
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -130,6 +154,11 @@ public class AccountsController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    private boolean isReCaptchaResponseInvalid(JSONObject reCaptchaResponse) throws JSONException {
+        final String SUCCESS = "success";
+        return reCaptchaResponse.has(SUCCESS) && !reCaptchaResponse.getBoolean(SUCCESS);
+    }
+
     @PostMapping("/")
     @ApiOperation(value = "Inserts a new Account")
     @ApiResponses({
@@ -137,43 +166,80 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfo accountInfo) throws IOException {
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfo) throws IOException,
+            JSONException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
-        Set<ConstraintViolation<AccountInfo>> violations = validator.validate(accountInfo);
+        Set<ConstraintViolation<AccountInfoDTO>> violations = validator.validate(accountInfo);
 
         if (violations.size() > 0) {
             logger.error(String.format("One or more errors occurred while creating the account. %s", violations.toArray()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(accountInfo);
+        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), registrationReCaptchaSecret);
+        if (isReCaptchaResponseInvalid(reCaptchaResponse)) {
+            String errorCodes = reCaptchaResponse.get("error-codes").toString();
+            logger.warn(String.format("reCaptcha token verification error codes: %s. Username: %s", errorCodes, accountInfo.getUsername()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, errorCodes).body(null);
+        }
+
+        AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);
+        CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(account);
 
         if (cdcResponseData != null) {
             int statusCode = cdcResponseData.getStatusCode();
 
             if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
-                String uid = accountInfo.getUid();
-                logger.info(String.format("Account registration successful. Username: %s. UID: %s", accountInfo.getUsername(), uid));
+                String uid = account.getUid();
+                logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), uid));
 
-                if (accountInfo.getRegistrationType() != null && accountInfo.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
+                if (account.getRegistrationType() != null && account.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
                     logger.info(String.format("Attempting to send confirmation email. UID: %s", uid));
-                    accountRequestService.sendConfirmationEmail(accountInfo);
+                    accountRequestService.sendConfirmationEmail(account);
                 }
 
                 logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
                 accountRequestService.sendVerificationEmail(uid);
             } else {
-                logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Status reason: %s",
-                        accountInfo.getUsername(), statusCode, cdcResponseData.getStatusReason()));
+                logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Details: %s",
+                        account.getUsername(), statusCode, cdcResponseData.getErrorDetails()));
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
             return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);
         } else {
-            logger.error(String.format("An error occurred while creating account for: %s", accountInfo.getUsername()));
+            logger.error(String.format("An error occurred while creating account for: %s", account.getUsername()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/username/recovery")
+    @ApiOperation(value = "Sends Username Recovery email.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> sendRecoverUsernameEmail(@RequestBody @Valid UsernameRecoveryDTO usernameRecoveryDTO) {
+        try {
+            AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(usernameRecoveryDTO.getUserInfo().getEmail());
+
+            if (account == null) {
+                return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+            }
+
+            UsernameRecoveryEmailRequest usernameRecoveryEmailRequest = EmailRequestBuilder.buildUsernameRecoveryEmailRequest(usernameRecoveryDTO, account);
+            EmailSentResponse response = emailService.sendUsernameRecoveryEmail(usernameRecoveryEmailRequest);
+            
+            if (!response.isSuccess()) {
+                return new ResponseEntity<>("There was an error sending username recovery email.", HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>("OK", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
