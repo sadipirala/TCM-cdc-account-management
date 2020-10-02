@@ -5,6 +5,8 @@ import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.China;
+import com.thermofisher.cdcam.model.cdc.Japan;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
@@ -26,6 +28,9 @@ public class AccountBuilder {
             String company = "";
             String department = "";
             String finalPassword = "";
+            Registration registration = getRegistration(data);
+            China china = registration != null ? registration.getChina() : null;
+            Japan japan = registration != null ? registration.getJapan() : null;
 
             if (password != null) {
                 String hash = password.containsKey("hash") ? password.getString("hash") : "";
@@ -55,7 +60,10 @@ public class AccountBuilder {
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
-                    .hiraganaName(getHiraganaNameFromGSObject(data))
+                    .hiraganaName(getHiraganaName(japan))
+                    .jobRole(getJobRole(china))
+                    .interest(getInterest(china))
+                    .phoneNumber(getPhoneNumber(china))
                     .regAttempts(0)
                     .build();
 
@@ -65,16 +73,25 @@ public class AccountBuilder {
         }
     }
 
-    private static String getHiraganaNameFromGSObject(GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
+    private static Registration getRegistration (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
-        String hiraganaName = null;
+        return data.containsKey("registration") ? gson.fromJson(data.getString("registration"), Registration.class) : null;
+    }
 
-        if (data.containsKey("registration")) {
-            Registration registration = gson.fromJson(data.getString("registration"), Registration.class);
-            hiraganaName = registration.getJapan() != null ? registration.getJapan().getHiraganaName() : null;
-        }
+    private static String getHiraganaName (Japan japan) {
+        return japan != null ? japan.getHiraganaName() : null;
+    }
 
-        return hiraganaName;
+    private static String getJobRole (China china) {
+        return china != null ? china.getJobRole() : null;
+    }
+
+    private static String getInterest (China china) {
+        return china != null ? china.getInterest() : null;
+    }
+
+    private static String getPhoneNumber (China china) {
+        return china != null ? china.getPhoneNumber() : null;
     }
 
     public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
@@ -93,6 +110,9 @@ public class AccountBuilder {
             .registrationType(accountInfoDTO.getRegistrationType())
             .timezone(accountInfoDTO.getTimezone())
             .hiraganaName(accountInfoDTO.getHiraganaName())
+            .jobRole(accountInfoDTO.getJobRole())
+            .interest(accountInfoDTO.getInterest())
+            .phoneNumber(accountInfoDTO.getPhoneNumber())
             .build();
     }
 }

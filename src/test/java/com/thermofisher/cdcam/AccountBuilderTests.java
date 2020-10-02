@@ -62,7 +62,7 @@ public class AccountBuilderTests {
 
     @Test
     public void getAccountInfo_ifGivenSiteUserInfoAndObj_returnAccountInfo() throws Exception {
-        //setup
+        // given
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
@@ -85,6 +85,45 @@ public class AccountBuilderTests {
 
         // then
         assertTrue(res.getHiraganaName().equals(hiraganaName));
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserWithJobRole_returnAccountInfoWithJobRole() throws Exception {
+        // given
+        String jobRole = AccountUtils.jobRole;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
+
+        // then
+        assertEquals(res.getJobRole(), jobRole);
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserWithInterest_returnAccountInfoWithInterest() throws Exception {
+        // given
+        String interest = AccountUtils.interest;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
+
+        // then
+        assertEquals(res.getInterest(), interest);
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserWithPhoneNumber_returnAccountInfoWithPhoneNumber() throws Exception {
+        // given
+        String phoneNumber = AccountUtils.phoneNumber;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteObj));
+
+        // then
+        assertEquals(res.getPhoneNumber(), phoneNumber);
     }
 
     @Test

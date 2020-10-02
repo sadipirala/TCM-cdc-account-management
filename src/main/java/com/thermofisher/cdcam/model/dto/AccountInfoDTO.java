@@ -25,6 +25,8 @@ public class AccountInfoDTO {
     @NotBlank
     @Size(max = 20)
     private String password;
+    private String jobRole;
+    private String interest;
     private String reCaptchaToken;
     private String localeName;
     @Size(max = 50)
@@ -34,6 +36,8 @@ public class AccountInfoDTO {
     @Size(max = 30)
     private String city;
     private String country;
+    @Size(max = 13)
+    private String phoneNumber;
     private String member;
     private String registrationType;
     private String timezone;

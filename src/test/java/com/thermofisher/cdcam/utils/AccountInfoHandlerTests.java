@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -41,6 +42,10 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
+        propertiesToRemove.add("duplicatedAccountUid");
+        propertiesToRemove.add("registrationType");
+        propertiesToRemove.add("timezone");
+        propertiesToRemove.add("hiraganaName");
         json.put("uuid", json.get("uid").asText());
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
@@ -57,7 +62,6 @@ public class AccountInfoHandlerTests {
     @Test
     public void prepareForProfileInfoNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountUtils.getFederatedAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
         String expectedAccountToNotify = prepareJsonForNotification(jsonAccount);
@@ -67,8 +71,8 @@ public class AccountInfoHandlerTests {
         String parsedAccount = accountHandler.prepareForProfileInfoNotification(account);
         
         // then
-        assertTrue(parsedAccount.indexOf("\"password\"") == -1);
-        assertTrue(expectedAccountToNotify.equals(parsedAccount));
+        assertEquals(parsedAccount.indexOf("\"password\""), -1);
+        assertEquals(expectedAccountToNotify, parsedAccount);
     }
 
     @Test

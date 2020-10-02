@@ -21,11 +21,14 @@ public class AccountInfo {
     private String emailAddress;
     @NotBlank
     private String password;
+    private String jobRole;
+    private String interest;
     private String localeName;
     private String company;
     private String department;
     private String city;
     private String country;
+    private String phoneNumber;
     private String member;
     private String loginProvider;
     private int regAttempts;

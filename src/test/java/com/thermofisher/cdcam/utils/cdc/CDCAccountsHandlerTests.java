@@ -59,4 +59,43 @@ public class CDCAccountsHandlerTests {
         // then
         assertTrue(result.getData().contains(String.format("\"hiraganaName\":\"%s\"", hiraganaName)));
     }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoContainsJobRole_ThenCDCAccountShouldContainJobRole() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        String jobRole = accountInfo.getJobRole();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"jobRole\":\"%s\"", jobRole)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoContainsInterest_ThenCDCAccountShouldContainInterest() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        String interest = accountInfo.getInterest();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"interest\":\"%s\"", interest)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoContainsPhoneNumber_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        String phoneNumber = accountInfo.getPhoneNumber();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
+    }
 }

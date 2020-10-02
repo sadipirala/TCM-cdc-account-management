@@ -11,13 +11,14 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-@JsonDeserialize(builder = Registration.RegistrationBuilder.class)
-public class Registration {
-    private Japan japan;
-    private China china;
+@JsonDeserialize(builder = China.ChinaBuilder.class)
+public class China {
+    private String interest;
+    private String jobRole;
+    private String phoneNumber;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
-    public static class RegistrationBuilder {
+    public static class ChinaBuilder {
     }
 }

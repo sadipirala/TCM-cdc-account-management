@@ -18,9 +18,8 @@ public class CDCAccountsHandler {
         Data data = Data.builder()
             .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
+            .registration(buildRegistrationObject(accountInfo))
             .build();
-
-        setHiraganaName(accountInfo, data);
 
         Work work = Work.builder()
             .company(accountInfo.getCompany())
@@ -48,21 +47,21 @@ public class CDCAccountsHandler {
         return newAccount;
     }
 
-    private static void setHiraganaName(AccountInfo accountInfo, Data data) {
-        if(hiraganaNameHasValue(accountInfo)) {
-            Japan japan = Japan.builder()
+
+    private static Registration buildRegistrationObject(AccountInfo accountInfo){
+        Japan japan = Japan.builder()
                 .hiraganaName(accountInfo.getHiraganaName())
                 .build();
 
-            Registration registration = Registration.builder()
-                .japan(japan)
+        China china = China.builder()
+                .interest(accountInfo.getInterest())
+                .jobRole(accountInfo.getJobRole())
+                .phoneNumber(accountInfo.getPhoneNumber())
                 .build();
 
-            data.setRegistration(registration);
-        }
-    }
-
-    private static boolean hiraganaNameHasValue(AccountInfo accountInfo) {
-        return accountInfo.getHiraganaName() != null && !accountInfo.getHiraganaName().isEmpty();
+        return Registration.builder()
+                .japan(japan)
+                .china(china)
+                .build();
     }
 }
