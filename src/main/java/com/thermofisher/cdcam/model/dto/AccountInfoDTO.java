@@ -38,6 +38,13 @@ public class AccountInfoDTO {
     private String country;
     @Size(max = 13)
     private String phoneNumber;
+    private Boolean eCommerceTransaction;
+    private Boolean personalInfoMandatory;
+    private Boolean personalInfoOptional;
+    private Boolean privateInfoMandatory;
+    private Boolean privateInfoOptional;
+    private Boolean processingConsignment;
+    private Boolean termsOfUse;
     private String member;
     private String registrationType;
     private String timezone;

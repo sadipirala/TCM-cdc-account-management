@@ -45,6 +45,13 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("timezone");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
         propertiesToRemove.add("hiraganaName");
         json.put("uuid", json.get("uid").asText());
         json.remove(propertiesToRemove);
@@ -55,6 +62,16 @@ public class AccountInfoHandlerTests {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("timezone");
+        propertiesToRemove.add("jobRole");
+        propertiesToRemove.add("phoneNumber");
+        propertiesToRemove.add("interest");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
@@ -62,10 +79,9 @@ public class AccountInfoHandlerTests {
     @Test
     public void prepareForProfileInfoNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
-        AccountInfo mockAccount = AccountUtils.getFederatedAccount();
-        ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
+        AccountInfo account = AccountUtils.getSiteAccount();
+        ObjectNode jsonAccount = mapper.valueToTree(account);
         String expectedAccountToNotify = prepareJsonForNotification(jsonAccount);
-        AccountInfo account = AccountUtils.getFederatedAccount();
 
         // when
         String parsedAccount = accountHandler.prepareForProfileInfoNotification(account);
@@ -82,10 +98,9 @@ public class AccountInfoHandlerTests {
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
         String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
-        AccountInfo account = AccountUtils.getSiteAccount();
 
         // when
-        String parsedAccount = accountHandler.prepareForGRPNotification(account);
+        String parsedAccount = accountHandler.prepareForGRPNotification(mockAccount);
 
         // then
         assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);

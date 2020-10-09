@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import org.springframework.stereotype.Component;
 
@@ -20,24 +19,10 @@ public class AccountInfoHandler {
 
     public String prepareForProfileInfoNotification(AccountInfo account) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-
-        List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("member");
-        propertiesToRemove.add("localeName");
-        propertiesToRemove.add("loginProvider");
-        propertiesToRemove.add("regAttempts");
-        propertiesToRemove.add("uid");
-        propertiesToRemove.add("password");
-        propertiesToRemove.add("duplicatedAccountUid");
-        propertiesToRemove.add("registrationType");
-        propertiesToRemove.add("timezone");
-        propertiesToRemove.add("hiraganaName");
-
         ObjectNode json = mapper.valueToTree(account);
-        json.remove(propertiesToRemove);
-        json.put("uuid", account.getUid());
-
-        return mapper.writeValueAsString(json);
+        ObjectNode cleanJson = removePropertiesForNotification(json);
+        cleanJson.put("uuid", account.getUid());
+        return mapper.writeValueAsString(cleanJson);
     }
 
     public String prepareForGRPNotification(AccountInfo account) throws JsonProcessingException {
@@ -47,6 +32,17 @@ public class AccountInfoHandler {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("timezone");
+        propertiesToRemove.add("jobRole");
+        propertiesToRemove.add("phoneNumber");
+        propertiesToRemove.add("interest");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
+
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
@@ -66,14 +62,26 @@ public class AccountInfoHandler {
         return mapper.writeValueAsString(json);
     }
 
-    public String prepareDataForRegistration(Data data) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+    private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("thermofisher");
+        propertiesToRemove.add("member");
+        propertiesToRemove.add("localeName");
+        propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("regAttempts");
+        propertiesToRemove.add("uid");
+        propertiesToRemove.add("password");
+        propertiesToRemove.add("duplicatedAccountUid");
+        propertiesToRemove.add("registrationType");
+        propertiesToRemove.add("timezone");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("hiraganaName");
 
-        ObjectNode json = mapper.valueToTree(data);
-        json.remove(propertiesToRemove);
-
-        return mapper.writeValueAsString(json);
+        return objectNode.remove(propertiesToRemove);
     }
 }

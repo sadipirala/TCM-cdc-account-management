@@ -29,6 +29,13 @@ public class AccountInfo {
     private String city;
     private String country;
     private String phoneNumber;
+    private Boolean eCommerceTransaction;
+    private Boolean personalInfoMandatory;
+    private Boolean personalInfoOptional;
+    private Boolean privateInfoMandatory;
+    private Boolean privateInfoOptional;
+    private Boolean processingConsignment;
+    private Boolean termsOfUse;
     private String member;
     private String loginProvider;
     private int regAttempts;

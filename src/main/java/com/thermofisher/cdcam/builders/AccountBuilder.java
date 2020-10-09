@@ -5,11 +5,10 @@ import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.China;
-import com.thermofisher.cdcam.model.cdc.Japan;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
+import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,13 +28,12 @@ public class AccountBuilder {
             String department = "";
             String finalPassword = "";
             Registration registration = getRegistration(data);
-            China china = registration != null ? registration.getChina() : null;
-            Japan japan = registration != null ? registration.getJapan() : null;
+            RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
             if (password != null) {
                 String hash = password.containsKey("hash") ? password.getString("hash") : "";
                 GSObject hashSettings = password.containsKey("hashSettings") ? (GSObject) password.get("hashSettings") : null;
-                if(hashSettings != null){
+                if (hashSettings != null) {
                     String algorithm = hashSettings.containsKey("algorithm") ? hashSettings.getString("algorithm") : "";
                     finalPassword = (algorithm + ":" + hash).toUpperCase();
                 }
@@ -44,7 +42,7 @@ public class AccountBuilder {
             if (work != null) {
                 company = work.containsKey("company") ? work.getString("company") : "";
                 department = work.containsKey("location") ? work.getString("location") : "";
-            } 
+            }
 
             return AccountInfo.builder()
                     .uid(uid)
@@ -60,10 +58,17 @@ public class AccountBuilder {
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
-                    .hiraganaName(getHiraganaName(japan))
-                    .jobRole(getJobRole(china))
-                    .interest(getInterest(china))
-                    .phoneNumber(getPhoneNumber(china))
+                    .hiraganaName(registrationAttributesHandler.getHiraganaName())
+                    .jobRole(registrationAttributesHandler.getJobRole())
+                    .interest(registrationAttributesHandler.getInterest())
+                    .phoneNumber(registrationAttributesHandler.getPhoneNumber())
+                    .eCommerceTransaction(registrationAttributesHandler.getEcomerceTransaction())
+                    .personalInfoMandatory(registrationAttributesHandler.getPersonalInfoMandatory())
+                    .personalInfoOptional(registrationAttributesHandler.getPersonalInfoOptional())
+                    .privateInfoMandatory(registrationAttributesHandler.getPrivateInfoMandatory())
+                    .privateInfoOptional(registrationAttributesHandler.getPrivateInfoOptional())
+                    .processingConsignment(registrationAttributesHandler.getProcessingConsignment())
+                    .termsOfUse(registrationAttributesHandler.getTermsOfUse())
                     .regAttempts(0)
                     .build();
 
@@ -76,22 +81,6 @@ public class AccountBuilder {
     private static Registration getRegistration (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
         return data.containsKey("registration") ? gson.fromJson(data.getString("registration"), Registration.class) : null;
-    }
-
-    private static String getHiraganaName (Japan japan) {
-        return japan != null ? japan.getHiraganaName() : null;
-    }
-
-    private static String getJobRole (China china) {
-        return china != null ? china.getJobRole() : null;
-    }
-
-    private static String getInterest (China china) {
-        return china != null ? china.getInterest() : null;
-    }
-
-    private static String getPhoneNumber (China china) {
-        return china != null ? china.getPhoneNumber() : null;
     }
 
     public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
@@ -113,6 +102,13 @@ public class AccountBuilder {
             .jobRole(accountInfoDTO.getJobRole())
             .interest(accountInfoDTO.getInterest())
             .phoneNumber(accountInfoDTO.getPhoneNumber())
+            .eCommerceTransaction(accountInfoDTO.getECommerceTransaction())
+            .personalInfoMandatory(accountInfoDTO.getPersonalInfoMandatory())
+            .personalInfoOptional(accountInfoDTO.getPersonalInfoOptional())
+            .privateInfoMandatory(accountInfoDTO.getPrivateInfoMandatory())
+            .privateInfoOptional(accountInfoDTO.getPrivateInfoOptional())
+            .processingConsignment(accountInfoDTO.getProcessingConsignment())
+            .termsOfUse(accountInfoDTO.getTermsOfUse())
             .build();
     }
 }

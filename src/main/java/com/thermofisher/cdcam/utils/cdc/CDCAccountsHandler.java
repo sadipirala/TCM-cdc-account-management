@@ -59,9 +59,20 @@ public class CDCAccountsHandler {
                 .phoneNumber(accountInfo.getPhoneNumber())
                 .build();
 
+        Korea korea = Korea.builder()
+                .eComerceTransaction(accountInfo.getECommerceTransaction())
+                .personalInfoMandatory(accountInfo.getPersonalInfoMandatory())
+                .personalInfoOptional(accountInfo.getPersonalInfoOptional())
+                .privateInfoMandatory(accountInfo.getPrivateInfoMandatory())
+                .privateInfoOptional(accountInfo.getPrivateInfoOptional())
+                .processingConsignment(accountInfo.getProcessingConsignment())
+                .termsOfUse(accountInfo.getTermsOfUse())
+                .build();
+
         return Registration.builder()
                 .japan(japan)
                 .china(china)
+                .korea(korea)
                 .build();
     }
 }
