@@ -191,7 +191,8 @@ public class AccountRequestService {
         RegistrationConfirmation request = new RegistrationConfirmation().build(accountInfo, redirectUrl);
         JSONObject requestBody = new JSONObject(request);
 
-        CloseableHttpResponse response = httpService.post(emailNotificationUrl, requestBody).getCloseableHttpResponse();
+        CloseableHttpResponse response = (httpService.post(emailNotificationUrl, requestBody)).getCloseableHttpResponse();
+
         HttpEntity responseEntity = response.getEntity();
 
         if (responseEntity != null) {

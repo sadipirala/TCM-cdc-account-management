@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
@@ -11,11 +12,16 @@ import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+
+import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.EmailService;
+
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
@@ -72,7 +78,14 @@ public class AccountsController {
     UpdateAccountService updateAccountService;
 
     @Autowired
+    CDCResponseHandler cdcResponseHandler;
+
+    @Autowired
+    EmailService emailService;
+
+    @Autowired
     ReCaptchaService reCaptchaService;
+
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -170,7 +183,7 @@ public class AccountsController {
         if (isReCaptchaResponseInvalid(reCaptchaResponse)) {
             String errorCodes = reCaptchaResponse.get("error-codes").toString();
             logger.warn(String.format("reCaptcha token verification error codes: %s. Username: %s", errorCodes, accountInfo.getUsername()));
-            // return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, errorCodes).body(null);
         }
 
         AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);
@@ -200,6 +213,36 @@ public class AccountsController {
         } else {
             logger.error(String.format("An error occurred while creating account for: %s", account.getUsername()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/username/recovery")
+    @ApiOperation(value = "Sends Username Recovery email.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> sendRecoverUsernameEmail(@RequestBody @Valid UsernameRecoveryDTO usernameRecoveryDTO) {
+        try {
+            AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(usernameRecoveryDTO.getUserInfo().getEmail());
+
+            if (account == null) {
+                logger.warn("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+            }
+
+            UsernameRecoveryEmailRequest usernameRecoveryEmailRequest = EmailRequestBuilder.buildUsernameRecoveryEmailRequest(usernameRecoveryDTO, account);
+            EmailSentResponse response = emailService.sendUsernameRecoveryEmail(usernameRecoveryEmailRequest);
+            
+            if (!response.isSuccess()) {
+                logger.error("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                return new ResponseEntity<>("There was an error sending username recovery email.", HttpStatus.BAD_REQUEST);
+            }
+            logger.info("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+            return new ResponseEntity<>("OK", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

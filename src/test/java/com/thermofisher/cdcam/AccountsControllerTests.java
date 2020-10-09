@@ -14,16 +14,16 @@ import java.util.List;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.model.CDCResponseData;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.services.AccountRequestService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountUtils;
+import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
@@ -58,9 +58,16 @@ public class AccountsControllerTests {
             .build();
     private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890").timezone(null).build();
     private final int assoiciatedAccounts = 1;
+    private final UsernameRecoveryDTO usernameRecoveryDTO = EmailRequestBuilderUtils.buildUsernameRecoveryDTO();
 
     @InjectMocks
     AccountsController accountsController;
+
+    @Mock
+    CDCResponseHandler cdcResponseHandler;
+
+    @Mock
+    EmailService emailService;
 
     @Mock
     LiteRegHandler mockLiteRegHandler;
@@ -270,23 +277,23 @@ public class AccountsControllerTests {
         Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
     }
 
-    // @Test
-    // public void newAccount_givenAValidAccountIsReceived_WhenTheReCaptchaTokenIsNotValid_ThenABadRequestResponseShouldBeReturned()
-    //         throws JSONException, IOException {
-    //     // given 
-    //     String[] errorCodes = new String[] {"error", "error2"};
-    //     AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-    //     JSONObject mockResponseJson = new JSONObject();
-    //     mockResponseJson.put("success", false);
-    //     mockResponseJson.put("error-codes", errorCodes);
-    //     when(reCaptchaService.verifyToken(anyString(), any())).thenReturn(mockResponseJson); 
+     @Test
+     public void newAccount_givenAValidAccountIsReceived_WhenTheReCaptchaTokenIsNotValid_ThenABadRequestResponseShouldBeReturned()
+             throws JSONException, IOException {
+         // given
+         String[] errorCodes = new String[] {"error", "error2"};
+         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+         JSONObject mockResponseJson = new JSONObject();
+         mockResponseJson.put("success", false);
+         mockResponseJson.put("error-codes", errorCodes);
+         when(reCaptchaService.verifyToken(anyString(), any())).thenReturn(mockResponseJson);
 
-    //     // then
-    //     ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+         // then
+         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
 
-    //     // then
-    //     Assert.assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
-    // }
+         // then
+         Assert.assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
+     }
 
     @Test
     public void newAccount_givenAnAccountWithBlankPassword_returnBadRequest() throws IOException, JSONException {
@@ -467,6 +474,34 @@ public class AccountsControllerTests {
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    public void sendVerificationEmail_shouldSearchForAccountInfoByEmail() throws IOException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+
+        // when
+        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        verify(cdcResponseHandler).getAccountInfoByEmail(anyString());
+    }
+
+    @Test
+    public void sendVerificationEmail_shouldSendUsernameRecoveryEmail() throws IOException {
+        // given
+        EmailSentResponse response = EmailSentResponse.builder().statusCode(200).build();
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+        when(emailService.sendUsernameRecoveryEmail(any())).thenReturn(response);
+
+        // when
+        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        verify(emailService).sendUsernameRecoveryEmail(any());
+    }
+    
     @Test
     public void sendVerificationEmail_WhenResponseReceived_ReturnSameStatus() {
         // setup

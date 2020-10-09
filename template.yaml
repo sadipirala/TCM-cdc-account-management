@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "SNS topic to post to GRP SQS for password reset."
+Resources:
+  PasswordResetTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      Subscription:
+        - Endpoint:
+            Fn::Sub: arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:tfgrp-pwd-reset-${Environments}
+          Protocol: 'sqs'
+      Tags:
+        - Key: application owner
+          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: team name
+          Value: Armadillos
+      TopicName:
+        Fn::Sub: cdcam-password-reset-${Environments}
+Parameters:
+  Environments:
+    Type: String
+    Default: dev3
+    AllowedValues:
+      - dev3
+      - qa1
+      - qa4
+      - qa3
+      - qa5
+      - stage
+      - prod
+    Description: Supported environments are dev3, qa1, qa4, qa3, qa5, stage and prod. Default is dev3.
