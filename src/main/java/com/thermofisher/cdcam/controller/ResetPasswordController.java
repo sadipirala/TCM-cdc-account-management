@@ -60,21 +60,23 @@ public class ResetPasswordController {
     public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
         JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
+        logger.info(String.format("Requested reset password for user: %s",  body.getUsername()));
         verifyResponse.put("loginID", body.getUsername());
         if (verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
             String email = cdcResponseHandler.getEmailByUsername(body.getUsername());
             verifyResponse.put("email", email);
             if (!email.isEmpty()) {
                 if (cdcResponseHandler.resetPasswordRequest(body.getUsername())) {
+                    logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
                     return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.OK);
                 }
             }
             verifyResponse.put("error-codes", new String[]{ResetPasswordErrors.CDC_EMAIL_NOT_FOUND.getValue()});
-            return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
         } else {
             verifyResponse.put("email", "");
-            return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
         }
+        logger.error(String.format("Request failed for: %s. message: %s", body.getUsername(), verifyResponse.toString()));
+        return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
     }
 
     @PutMapping("/")
@@ -98,12 +100,14 @@ public class ResetPasswordController {
             String accountUID = cdcResponseHandler.getUIDByUsername(body.getUsername());
 
             if (accountUID.isEmpty()) {
-                return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.BAD_REQUEST.value(),ResetPasswordErrors.ACCOUNT_NOT_FOUND.getValue()), HttpStatus.BAD_REQUEST);
+                logger.warn(String.format("Account not found: %s.", body.getUsername()));
+                return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.BAD_REQUEST.value(), ResetPasswordErrors.ACCOUNT_NOT_FOUND.getValue()), HttpStatus.BAD_REQUEST);
             }
 
             ResetPasswordResponse response = cdcResponseHandler.resetPassword(body);
 
             if (response.getResponseCode() != 0) {
+                logger.warn(String.format("Failed to reset password for: %s. message: %s", body.getUsername(), response.getResponseMessage()));
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
             }
 
@@ -117,6 +121,7 @@ public class ResetPasswordController {
             String message = (new JSONObject(resetPasswordNotification)).toString();
 
             if (!snsHandler.sendSNSNotification(message, resetPasswordTopic)) {
+                logger.warn(String.format("Failed to send SNS notification. topic: %s", resetPasswordTopic));
                 return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ResetPasswordErrors.SNS_NOT_SEND.getValue()), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
