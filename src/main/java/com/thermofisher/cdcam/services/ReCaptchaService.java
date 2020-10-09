@@ -28,7 +28,6 @@ public class ReCaptchaService {
             final String CAPTCHA_SECRET_PROPERTY = "secret-key";
 
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(reCaptchaSecret));
-
             String captchaSecretKeyValue = secretsManager.getProperty(secretProperties, CAPTCHA_SECRET_PROPERTY);
 
             String url = String.format("%s?secret=%s&response=%s", siteVerifyUrl, captchaSecretKeyValue, captchaToken);
