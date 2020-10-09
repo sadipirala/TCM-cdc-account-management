@@ -35,8 +35,8 @@ public class ResetPasswordController {
     @Value("${aws.sns.reset.password}")
     private String resetPasswordTopic;
 
-    @Value("${registration.recaptcha.secret.key}")
-    private String registrationReCaptchaSecret;
+    @Value("${reset-password.recaptcha.secret.key}")
+    private String reCaptchaSecret;
 
     @Autowired
     ReCaptchaService reCaptchaService;
@@ -59,7 +59,7 @@ public class ResetPasswordController {
     })
     public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
-        JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(),registrationReCaptchaSecret);
+        JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
         verifyResponse.put("loginID", body.getUsername());
         if (verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
             String email = cdcResponseHandler.getEmailByUsername(body.getUsername());
