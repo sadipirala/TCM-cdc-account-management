@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +13,8 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.model.ResetPassword;
+import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -276,4 +277,143 @@ public class CDCResponseHandlerTests {
         // then
         Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
+
+    @Test
+    public void resetPasswordRequest_whenAValidUsername_returnTrue() {
+        //given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String username = "armvalidtest@mail.com";
+        when(cdcAccountsService.resetPasswordRequest(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(0);
+
+        //when
+        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+
+        //then
+        Assert.assertTrue(response);
+    }
+
+    @Test
+    public void resetPasswordRequest_whenAnInValidUsername_returnFalse() {
+        //given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String username = "arminvalidtest@mail.com";
+        when(cdcAccountsService.resetPasswordRequest(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(40016);
+
+        //when
+        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+
+        //then
+        Assert.assertFalse(response);
+    }
+
+    @Test
+    public void resetPassword_whenANotValidtoken_returnResponseWithError() {
+        //given
+        GSResponse mockErrorCdcResponse = Mockito.mock(GSResponse.class);
+        String token = "testerrortoken";
+        String newPassword = "testPassword1";
+        int errorResponseCode = 40016;
+        ResetPassword request = ResetPassword.builder().resetPasswordToken(token).newPassword(newPassword).build();
+        when(cdcAccountsService.resetPasswordRequest(request)).thenReturn(mockErrorCdcResponse);
+        when(mockErrorCdcResponse.getErrorCode()).thenReturn(errorResponseCode);
+
+        //when
+        ResetPasswordResponse response = cdcResponseHandler.resetPassword(request);
+
+        //then
+        Assert.assertEquals(response.getResponseCode(),errorResponseCode);
+    }
+
+    @Test
+    public void resetPassword_whenAnValidtoken_returnResponseWithResponseCode_0() {
+        //given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        String token = "testValidtoken";
+        String newPassword = "testPassword1";
+        int successResponseCode = 0;
+        ResetPassword request = ResetPassword.builder().resetPasswordToken(token).newPassword(newPassword).build();
+
+        when(cdcAccountsService.resetPasswordRequest(request)).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(successResponseCode);
+
+        //when
+        ResetPasswordResponse response = cdcResponseHandler.resetPassword(request);
+
+        //then
+        Assert.assertEquals(response.getResponseCode(),successResponseCode);
+    }
+
+    @Test
+    public void getEmailByUsername_whenNoResultsAreFound_returnEmptyUsername() throws Exception {
+        //given
+        GSObject jsonResponse = new GSObject("{\n" +
+                "  \"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\n" +
+                "  \"errorCode\": 0,\n" +
+                "  \"apiVersion\": 2,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"time\": \"2020-08-26T18:13:18.021Z\",\n" +
+                "  \"results\": [],\n" +
+                "  \"objectsCount\": 0,\n" +
+                "  \"totalCount\": 0\n" +
+                "}");
+        GSResponse mockResponse = Mockito.mock(GSResponse.class);
+        when(cdcAccountsService.search(any(),any())).thenReturn(mockResponse);
+        when(mockResponse.getErrorCode()).thenReturn(0);
+        when(mockResponse.getData()).thenReturn(jsonResponse);
+
+        //when
+        String username = cdcResponseHandler.getUsernameByEmail("test");
+
+        //then
+        assertTrue(username.isEmpty());
+    }
+
+    @Test
+    public void getEmailByUsername_whenResultsAreFound_returnFirstyUsername() throws Exception {
+        //given
+        String testEmail = "this-is-a-test-88@mail.com";
+        GSObject jsonResponse = new GSObject("{\n" +
+                "  \"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\n" +
+                "  \"errorCode\": 0,\n" +
+                "  \"apiVersion\": 2,\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"time\": \"2020-08-26T18:13:18.021Z\",\n" +
+                "  \"results\": [{\n" +
+                "      \"profile\": {\n" +
+                "        \"username\":\""+testEmail+"\"\n" +
+                "      }\n" +
+                "    }],\n" +
+                "  \"objectsCount\": 0,\n" +
+                "  \"totalCount\": 0\n" +
+                "}");
+        GSResponse mockResponse = Mockito.mock(GSResponse.class);
+        when(cdcAccountsService.search(any(),any())).thenReturn(mockResponse);
+        when(mockResponse.getErrorCode()).thenReturn(0);
+        when(mockResponse.getData()).thenReturn(jsonResponse);
+
+        //when
+        String username = cdcResponseHandler.getUsernameByEmail("test");
+
+        //then
+        assertEquals(username, testEmail);
+    }
+
+    @Test
+    public void getEmailByUsername_whenAnExceptionIsThrown_returnEmptyUsername() throws Exception {
+        //given
+        GSResponse mockResponse = Mockito.mock(GSResponse.class);
+        when(cdcAccountsService.search(any(),any())).thenReturn(mockResponse);
+        when(mockResponse.getErrorCode()).thenThrow(Exception.class);
+
+        //when
+        String username = cdcResponseHandler.getUsernameByEmail("test");
+
+        //then
+        assertTrue(username.isEmpty());
+    }
+
 }

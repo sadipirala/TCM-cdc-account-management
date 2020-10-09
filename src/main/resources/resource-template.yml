@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Stack for CDCAM Resource creation.
+
+Resources:
+  CdcCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cdcam-cdc-credentials
+      Description: 'CDC Credentials'
+      Tags:
+        - Key: application owner
+          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: team name
+          Value: Armadillos
+  RegistrationRecaptchaSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cdcam-registration-recaptcha-secret
+      Description: 'TF.com Registration ReCaptcha Secret'
+      Tags:
+        - Key: application owner
+          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: team name
+          Value: Armadillos
+  CdcWebhookHashKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cdcam-secret-key
+      Description: 'CDC Registration Webhook Hash Key'
+      Tags:
+        - Key: application owner
+          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: team name
+          Value: Armadillos
+  AwsQuickSightRole:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cdcam-quick-sight-role
+      Description: 'AWS Quick Sight Role'
+      Tags:
+        - Key: application owner
+          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: team name
+          Value: Armadillos
