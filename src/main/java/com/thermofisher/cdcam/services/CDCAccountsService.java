@@ -47,6 +47,7 @@ public class CDCAccountsService {
     public void setCredentials() {
         try {
             if (env.equals("local") || env.equals("test")) return;
+
             logger.info("Setting up CDC credentials.");
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
             secretKey = secretsManager.getProperty(secretProperties, "secretKey");
