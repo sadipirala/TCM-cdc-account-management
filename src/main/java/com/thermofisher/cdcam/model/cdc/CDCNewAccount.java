@@ -1,5 +1,6 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.cdc;
 
+import com.google.gson.Gson;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.json.JSONException;
@@ -20,8 +21,8 @@ public class CDCNewAccount {
     private String profile;
 
     public static class CDCNewAccountBuilder {
-        public CDCNewAccountBuilder data(Data data) throws JSONException {
-            this.data = prepareData(data);
+        public CDCNewAccountBuilder data(Data data) {
+            this.data = new Gson().toJson(data);
             return this;
         }
 
@@ -29,11 +30,6 @@ public class CDCNewAccount {
             this.profile = prepareProfile(profile);
             return this;
         }
-    }
-
-    private static String prepareData(Data data) throws JSONException {
-        JSONObject dataJson = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
-        return dataJson.toString();
     }
 
     private static String prepareProfile(Profile profile) throws JSONException {

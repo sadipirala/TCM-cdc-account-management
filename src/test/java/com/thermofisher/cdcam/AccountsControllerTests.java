@@ -15,6 +15,7 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.EmailService;

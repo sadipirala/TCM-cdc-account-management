@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.enums.cdc.AccountTypes;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.utils.Utils;
 import org.apache.logging.log4j.LogManager;
