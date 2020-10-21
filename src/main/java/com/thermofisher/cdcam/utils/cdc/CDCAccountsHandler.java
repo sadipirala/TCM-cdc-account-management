@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.json.JSONException;
@@ -17,6 +18,7 @@ public class CDCAccountsHandler {
         Data data = Data.builder()
             .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
+            .registration(buildRegistrationObject(accountInfo))
             .build();
 
         Work work = Work.builder()
@@ -43,5 +45,34 @@ public class CDCAccountsHandler {
             .build();
 
         return newAccount;
+    }
+
+
+    private static Registration buildRegistrationObject(AccountInfo accountInfo){
+        Japan japan = Japan.builder()
+                .hiraganaName(accountInfo.getHiraganaName())
+                .build();
+
+        China china = China.builder()
+                .interest(accountInfo.getInterest())
+                .jobRole(accountInfo.getJobRole())
+                .phoneNumber(accountInfo.getPhoneNumber())
+                .build();
+
+        Korea korea = Korea.builder()
+                .eComerceTransaction(accountInfo.getECommerceTransaction())
+                .personalInfoMandatory(accountInfo.getPersonalInfoMandatory())
+                .personalInfoOptional(accountInfo.getPersonalInfoOptional())
+                .privateInfoMandatory(accountInfo.getPrivateInfoMandatory())
+                .privateInfoOptional(accountInfo.getPrivateInfoOptional())
+                .processingConsignment(accountInfo.getProcessingConsignment())
+                .termsOfUse(accountInfo.getTermsOfUse())
+                .build();
+
+        return Registration.builder()
+                .japan(japan)
+                .china(china)
+                .korea(korea)
+                .build();
     }
 }
