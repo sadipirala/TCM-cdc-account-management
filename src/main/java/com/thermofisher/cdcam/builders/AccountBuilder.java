@@ -18,6 +18,9 @@ public class AccountBuilder {
 
     public AccountInfo getAccountInfo(GSObject obj) {
         try {
+            logger.info("Received account object: ");
+            logger.info(obj.toJsonString());
+
             String uid = (String) obj.get("UID");
             GSObject data = (GSObject) obj.get("data");
             GSObject profile = (GSObject) obj.get("profile");

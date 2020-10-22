@@ -229,7 +229,7 @@ public class AccountsController {
             AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(usernameRecoveryDTO.getUserInfo().getEmail());
 
             if (account == null) {
-                logger.warn("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                logger.warn(String.format("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
@@ -237,10 +237,10 @@ public class AccountsController {
             EmailSentResponse response = emailService.sendUsernameRecoveryEmail(usernameRecoveryEmailRequest);
             
             if (!response.isSuccess()) {
-                logger.error("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                logger.error(String.format("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
                 return new ResponseEntity<>("There was an error sending username recovery email.", HttpStatus.BAD_REQUEST);
             }
-            logger.info("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+            logger.info(String.format("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
             return new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
