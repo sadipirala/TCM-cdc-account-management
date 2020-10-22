@@ -17,8 +17,9 @@ public class AccountBuilder {
     private Logger logger = LogManager.getLogger(this.getClass());
 
     public AccountInfo getAccountInfo(GSObject obj) {
+        String uid = null;
         try {
-            String uid = (String) obj.get("UID");
+            uid = (String) obj.get("UID");
             GSObject data = (GSObject) obj.get("data");
             GSObject profile = (GSObject) obj.get("profile");
             GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
@@ -73,7 +74,7 @@ public class AccountBuilder {
                     .build();
 
         } catch (Exception e) {
-            logger.error(String.format("Error building account info object: %s", e.getMessage()));
+            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, e.getMessage()));
             return null;
         }
     }
