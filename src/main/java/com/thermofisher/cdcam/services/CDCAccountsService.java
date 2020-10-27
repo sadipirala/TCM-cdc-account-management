@@ -226,5 +226,11 @@ public class CDCAccountsService {
         }
     }
 
-
+    public GSResponse isAvailableLoginID(String loginID) {
+        String apiMethod = APIMethods.IS_AVAILABLE_LOGINID.getValue();
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        request.setParam("loginID", loginID);
+        
+        return request.send();
+    }
 }

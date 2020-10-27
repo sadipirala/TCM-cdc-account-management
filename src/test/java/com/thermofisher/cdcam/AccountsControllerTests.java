@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -103,32 +104,32 @@ public class AccountsControllerTests {
 
     @Test
     public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
-        // setup
+        // given
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest() {
-        // setup
+        // given
         EmailList emailList = EmailList.builder().emails(null).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException {
-        // setup
+        // given
         List<EECUser> mockResult = new ArrayList<>();
         mockResult.add(Mockito.mock(EECUser.class));
         Mockito.when(mockLiteRegHandler.process(any())).thenReturn(mockResult);
@@ -137,32 +138,32 @@ public class AccountsControllerTests {
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
-        // setup
+        // given
         when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
         mockLiteRegHandler.requestLimit = 1000;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
-        // setup
+        // given
         Mockito.when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
 
         mockLiteRegHandler.requestLimit = 1;
@@ -171,28 +172,28 @@ public class AccountsControllerTests {
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() {
-        // setup
+        // given
         EmailList emailList = EmailList.builder().emails(null).build();
 
-        // execution
+        // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
 
-        // validation
+        // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void getUsers_GivenAValidListOfUID_ShouldReturnUserDetails() throws IOException {
-        // setup
+        // given
         List<UserDetails> userDetailsList = new ArrayList<>();
         userDetailsList.add(UserDetails.builder().uid(uids.get(0)).email(username).firstName(firstName)
                 .lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
@@ -202,60 +203,60 @@ public class AccountsControllerTests {
                 .lastName(lastName).associatedAccounts(assoiciatedAccounts).build());
         Mockito.when(usersHandler.getUsers(uids)).thenReturn(userDetailsList);
 
-        // execution
+        // when
         ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
-        // validation
+        // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
 
     }
 
     @Test
     public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException {
-        // setup
+        // given
         Mockito.when(usersHandler.getUsers(uids)).thenThrow(Exception.class);
 
-        // execution
+        // when
         ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
-        // validation
+        // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
 
     }
 
     @Test
     public void handleHttpMessageNotReadableExceptions_givenHttpMessageNotReadableException_ReturnErrorMessage() {
-        // setup
+        // given
         HttpMessageNotReadableException ex = new HttpMessageNotReadableException("");
 
-        // execution
+        // when
         String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
 
-        // validation
+        // then
         Assert.assertEquals(resp, "Invalid input format. Message not readable.");
     }
 
     @Test
     public void handleHttpMessageNotReadableExceptions_givenParseException_ReturnErrorMessage() {
-        // setup
+        // given
         ParseException ex = new ParseException(1);
 
-        // execution
+        // when
         String resp = accountsController.handleHttpMessageNotReadableExceptions(ex);
 
-        // validation
+        // then
         Assert.assertEquals(resp, "Invalid input format. Message not readable.");
     }
 
     @Test
     public void notifyRegistration_givenMethodCalled_returnOk() {
-        // setup
+        // given
         doNothing().when(accountRequestService).processRequest(any(), any());
 
-        // execution
+        // when
         ResponseEntity<String> response = accountsController.notifyRegistration("test", "test");
 
-        // validation
+        // then
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
@@ -441,37 +442,37 @@ public class AccountsControllerTests {
 
     @Test
     public void updateTimezone_GivenEmptyUserUIDOrTimezoneShouldReturnBadRequest() throws Exception {
-        // setup
+        // given
         Mockito.when(updateAccountService.updateTimezoneInCDC(emptyUserTimezone.getUid(), emptyUserTimezone.getTimezone())).thenReturn(HttpStatus.BAD_REQUEST);
 
-        // execution
+        // when
         ResponseEntity<String> resp = accountsController.setTimezone(emptyUserTimezone);
 
-        // validation
+        // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void updateTimezone_GivenAValidUserUIDAndTimezoneShouldReturnOK() throws Exception {
-        // setup
+        // given
         Mockito.when(updateAccountService.updateTimezoneInCDC(any(String.class), any(String.class))).thenReturn(HttpStatus.OK);
 
-        // execution
+        // when
         ResponseEntity<String> resp = accountsController.setTimezone(validUserTimezone);
 
-        // validation
+        // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void updateTimezone_MissingRequestBodyParamShouldReturnBadRequest() throws Exception {
-        // setup
+        // given
         Mockito.when(updateAccountService.updateTimezoneInCDC(invalidUserTimezone.getUid(), null)).thenReturn(HttpStatus.BAD_REQUEST);
 
-        // execution
+        // when
         ResponseEntity<String> resp = accountsController.setTimezone(invalidUserTimezone);
 
-        // validation
+        // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
@@ -505,7 +506,7 @@ public class AccountsControllerTests {
     
     @Test
     public void sendVerificationEmail_WhenResponseReceived_ReturnSameStatus() {
-        // setup
+        // given
         HttpStatus mockStatus = HttpStatus.OK;
 
         CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
@@ -513,10 +514,10 @@ public class AccountsControllerTests {
 
         when(accountRequestService.sendVerificationEmailSync(any())).thenReturn(mockResponse);
 
-        // execution
+        // when
         ResponseEntity<CDCResponseData> response = accountsController.sendVerificationEmail("test");
 
-        // validation
+        // then
         Assert.assertEquals(response.getStatusCode(), mockStatus);
     }
 
@@ -616,5 +617,31 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    public void isAvailableLoginID_GivenIdIsAvailable_ItShouldReturn404Response() throws Exception {
+        // given
+        String loginID = "test@mail.com";
+        when(cdcResponseHandler.isAvailableLoginID(any())).thenReturn(true);
+
+        // when
+        ResponseEntity<?> response = accountsController.isAvailableLoginID(loginID);
+
+        // then
+        assertTrue(response.getStatusCode().value() == HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    public void isAvailableLoginID_GivenIdIsNotAvailable_ItShouldReturn200Response() throws Exception {
+        // given
+        String loginID = "test@mail.com";
+        when(cdcResponseHandler.isAvailableLoginID(any())).thenReturn(false);
+
+        // when
+        ResponseEntity<?> response = accountsController.isAvailableLoginID(loginID);
+
+        // then
+        assertTrue(response.getStatusCode().is2xxSuccessful());
     }
 }

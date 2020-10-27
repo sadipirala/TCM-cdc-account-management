@@ -49,6 +49,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.*;
+import javax.validation.constraints.NotBlank;
+
 import java.util.Set;
 
 import io.swagger.annotations.ApiImplicitParam;
@@ -281,6 +283,31 @@ public class AccountsController {
             String message = String.format("An error occurred during the user's timezone update. UID: %s", userTimezone.getUid());
             logger.error(message);
             return new ResponseEntity<>(message, updateUserTimezoneStatus);
+        }
+    }
+
+    @GetMapping("/{loginID}")
+    @ApiOperation(value = "Checks whether a loginID is available in CDC.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK."),
+            @ApiResponse(code = 404, message = "Not found."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "loginID", value = "LoginID to be checked in CDC.", required = true)
+    public ResponseEntity<?> isAvailableLoginID(@PathVariable @NotBlank String loginID) {
+        try {
+            logger.info(String.format("Check for loginID availability started. Login ID: %s", loginID));
+            boolean isAvailableLoginID = cdcResponseHandler.isAvailableLoginID(loginID);
+            logger.info(String.format("Is %s available: %b", loginID, isAvailableLoginID));
+            
+            if (isAvailableLoginID) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error(String.format("Error checking %s availability: %s", loginID, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
         }
     }
 

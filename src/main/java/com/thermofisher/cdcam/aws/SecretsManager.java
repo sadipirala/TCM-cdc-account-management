@@ -1,18 +1,22 @@
 package com.thermofisher.cdcam.aws;
 
+import java.util.Base64;
+
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
-import com.amazonaws.services.secretsmanager.model.*;
-import com.thermofisher.cdcam.utils.Utils;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
+import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
+import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Base64;
 
 @Configuration
 public class SecretsManager {
