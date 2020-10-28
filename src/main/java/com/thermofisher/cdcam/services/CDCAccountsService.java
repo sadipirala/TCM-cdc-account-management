@@ -7,7 +7,6 @@ import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 
-import com.thermofisher.cdcam.model.ResetPassword;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -179,20 +178,13 @@ public class CDCAccountsService {
         }
     }
 
-    public GSResponse resetPasswordRequest(ResetPassword resetPassword) {
+    public GSResponse resetPassword(GSObject params) {
         try {
             String apiMethod = APIMethods.RESET_PASSWORD.getValue();
-            logger.info(String.format("%s triggered. value: %s", apiMethod, (resetPassword.getUsername() == null || resetPassword.getUsername().isEmpty()) ? resetPassword.getResetPasswordToken() :resetPassword.getUsername()));
+            logger.info(String.format("%s triggered.", apiMethod));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, params, true, userKey);
             request.setAPIDomain(cdcDataCenter);
-
-            if(resetPassword.getResetPasswordToken() == null || resetPassword.getResetPasswordToken().isEmpty())
-                request.setParam("loginID", resetPassword.getUsername());
-            else {
-                request.setParam("passwordResetToken",resetPassword.getResetPasswordToken());
-                request.setParam("newPassword",resetPassword.getNewPassword());
-            }
 
             return request.send();
         } catch (Exception e) {

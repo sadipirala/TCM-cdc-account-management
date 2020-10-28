@@ -181,21 +181,11 @@ public class CDCResponseHandler {
         return NO_RESULTS_FOUND;
     }
 
-    public String getUIDByUsername(String userName) throws IOException {
-        String query = String.format("SELECT UID FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
-        GSResponse response = cdcAccountsService.search(query, "");
-        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-
-        for (CDCAccount result : cdcSearchResponse.getResults()) {
-            return result.getUID();
-        }
-        logger.warn(String.format("Could not match an account with that username on CDC. username: %s. Error: %s", userName, response.getErrorMessage()));
-        return NO_RESULTS_FOUND;
-    }
-
     public boolean resetPasswordRequest(String username) {
-        ResetPassword resetPasswordRequest = ResetPassword.builder().username(username).build();
-        GSResponse response = cdcAccountsService.resetPasswordRequest(resetPasswordRequest);
+        logger.info(String.format("Reset password request triggered for username: %s.", username));
+        GSObject requestParams = new GSObject();
+        requestParams.put("loginID", username);
+        GSResponse response = cdcAccountsService.resetPassword(requestParams);
         if (response.getErrorCode() == 0)
             return true;
         else {
@@ -204,8 +194,13 @@ public class CDCResponseHandler {
         }
     }
 
-    public ResetPasswordResponse resetPassword(ResetPassword resetPassword) {
-        GSResponse gsResponse = cdcAccountsService.resetPasswordRequest(resetPassword);
+    public ResetPasswordResponse resetPasswordSubmit(ResetPasswordSubmit resetPassword) {
+        logger.info(String.format("Reset password submit triggered for UID: %s.", resetPassword.getUid()));
+        GSObject resetParams = new GSObject();
+        resetParams.put("passwordResetToken", resetPassword.getResetPasswordToken());
+        resetParams.put("newPassword", resetPassword.getNewPassword());
+
+        GSResponse gsResponse = cdcAccountsService.resetPassword(resetParams);
 
         return ResetPasswordResponse
             .builder()

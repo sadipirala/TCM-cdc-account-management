@@ -13,8 +13,8 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.model.ResetPassword;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
+import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -292,7 +292,7 @@ public class CDCResponseHandlerTests {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         String username = "armvalidtest@mail.com";
-        when(cdcAccountsService.resetPasswordRequest(any())).thenReturn(mockCdcResponse);
+        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
 
         // when
@@ -307,7 +307,7 @@ public class CDCResponseHandlerTests {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         String username = "arminvalidtest@mail.com";
-        when(cdcAccountsService.resetPasswordRequest(any())).thenReturn(mockCdcResponse);
+        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(40016);
 
         // when
@@ -318,37 +318,37 @@ public class CDCResponseHandlerTests {
     }
 
     @Test
-    public void resetPassword_whenANotValidtoken_returnResponseWithError() {
+    public void resetPasswordSubmit_whenANotValidToken_returnResponseWithError() {
         // given
         GSResponse mockErrorCdcResponse = Mockito.mock(GSResponse.class);
         String token = "testerrortoken";
         String newPassword = "testPassword1";
         int errorResponseCode = 40016;
-        ResetPassword request = ResetPassword.builder().resetPasswordToken(token).newPassword(newPassword).build();
-        when(cdcAccountsService.resetPasswordRequest(request)).thenReturn(mockErrorCdcResponse);
+        ResetPasswordSubmit request = ResetPasswordSubmit.builder().resetPasswordToken(token).newPassword(newPassword).build();
+        when(cdcAccountsService.resetPassword(any())).thenReturn(mockErrorCdcResponse);
         when(mockErrorCdcResponse.getErrorCode()).thenReturn(errorResponseCode);
 
         // when
-        ResetPasswordResponse response = cdcResponseHandler.resetPassword(request);
+        ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(request);
 
         // then
         Assert.assertEquals(response.getResponseCode(),errorResponseCode);
     }
 
     @Test
-    public void resetPassword_whenAnValidtoken_returnResponseWithResponseCode_0() {
+    public void resetPasswordSubmit_whenAnValidToken_returnResponseWithResponseCode_0() {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         String token = "testValidtoken";
         String newPassword = "testPassword1";
         int successResponseCode = 0;
-        ResetPassword request = ResetPassword.builder().resetPasswordToken(token).newPassword(newPassword).build();
+        ResetPasswordSubmit request = ResetPasswordSubmit.builder().resetPasswordToken(token).newPassword(newPassword).build();
 
-        when(cdcAccountsService.resetPasswordRequest(request)).thenReturn(mockCdcResponse);
+        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(successResponseCode);
 
         // when
-        ResetPasswordResponse response = cdcResponseHandler.resetPassword(request);
+        ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(request);
 
         // then
         Assert.assertEquals(response.getResponseCode(),successResponseCode);

@@ -3,9 +3,9 @@ package com.thermofisher.cdcam;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
-import com.thermofisher.cdcam.model.ResetPassword;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
+import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -78,7 +78,7 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountDoesNotExistinCDC_returnBadRequest() throws JSONException, IOException {
+    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountDoesNotExistInCDC_returnBadRequest() throws JSONException, IOException {
         //given
         String validToken = "test";
         String username = "arminvalidtest@mail.com";
@@ -104,7 +104,7 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistinCDC_returnOK() throws JSONException, IOException {
+    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistInCDC_returnOK() throws JSONException, IOException {
         //given
         String validToken = "test";
         String username = "armvalidtest@mail.com";
@@ -130,14 +130,13 @@ public class ResetPasswordControllerTests {
     @Test
     public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws IOException {
         //given
-        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+        ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
                 .newPassword("testPassword1")
                 .resetPasswordToken("testTkn")
-                .username("test@tes.com").build();
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
         when(mockResponse.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
-        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
+        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(mockResponse);
         when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
         when(snsHandler.sendSNSNotification(any(),any())).thenReturn(true);
 
@@ -152,17 +151,16 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void resetPassword_WhenTheSNSHandlerFails_returnINTERNAL_SERVER_ERROR() throws IOException {
+    public void resetPassword_WhenTheSNSHandlerFails_returnINTERNAL_SERVER_ERROR() {
 
         //given
-        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+        ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
                 .newPassword("testPassword1")
                 .resetPasswordToken("testTkn")
-                .username("test@tes.com").build();
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
         when(mockResponse.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
-        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
+        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(mockResponse);
         when(snsHandler.sendSNSNotification(any(),any())).thenReturn(false);
 
         //when
@@ -173,16 +171,15 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void resetPassword_WhenAnExceptionIsThrown_returnINTERNAL_SERVER_ERROR() throws IOException {
+    public void resetPassword_WhenAnExceptionIsThrown_returnINTERNAL_SERVER_ERROR() {
         //given
-        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+        ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
                 .newPassword("testPassword1")
                 .resetPasswordToken("testTkn")
-                .username("test@tes.com").build();
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
         when(mockResponse.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPassword(any())).thenReturn(mockResponse);
-        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn(null);
+        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(mockResponse);
 
         //when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
@@ -192,36 +189,16 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void resetPassword_WhenTheResetPasswordOnCDCFails_returnBAD_REQUEST() throws IOException {
+    public void resetPassword_WhenTheResetPasswordOnCDCFails_returnBAD_REQUEST() {
         //given
-        ResetPassword mockResetPasswordBody = ResetPassword.builder()
+        ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
                 .newPassword("testPassword1")
                 .resetPasswordToken("testTkn")
-                .username("test@tes.com").build();
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
-        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("testUID");
         when(mockResponse.getResponseCode()).thenReturn(40001);
-        when(cdcResponseHandler.resetPassword(any())).thenReturn(mockResponse);
+        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(mockResponse);
 
-
-        //when
-        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
-
-        //then
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void resetPassword_WhenNoAccountIsFoundByUsername_returnBAD_REQUEST() throws IOException {
-        //given
-        ResetPassword mockResetPasswordBody = ResetPassword.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .username("test@tes.com").build();
-        ResetPasswordResponse mockResponse = Mockito.mock(ResetPasswordResponse.class);
-        when(mockResponse.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPassword(mockResetPasswordBody)).thenReturn(mockResponse);
-        when(cdcResponseHandler.getUIDByUsername(any())).thenReturn("");
 
         //when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
