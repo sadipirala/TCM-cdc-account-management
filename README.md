@@ -1,4 +1,4 @@
-https://github.com/thermofisher/TCM-cdc-account-management/workflows/java_ci_maven/badge.svg
+![](https://github.com/thermofisher/TCM-cdc-account-management/workflows/java_ci_maven/badge.svg)
 
 # CDC Account Management API (CDCAM)
 
