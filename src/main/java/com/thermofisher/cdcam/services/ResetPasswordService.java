@@ -30,6 +30,7 @@ public class ResetPasswordService {
 
     @Async
     public void sendResetPasswordConfirmation(AccountInfo accountInfo) throws IOException {
+        updateLocale(accountInfo);
         ResetPasswordConfirmation request = new ResetPasswordConfirmation().build(accountInfo, redirectUrl);
         JSONObject requestBody = new JSONObject(request);
 
@@ -50,6 +51,25 @@ public class ResetPasswordService {
         } else {
             logger.error(String.format("Something went wrong while connecting to the email notification service. UID: %s", accountInfo.getUid()));
             throw new IOException();
+        }
+    }
+
+    private void updateLocale(AccountInfo account) {
+        final String chinaLocale = "zh-cn";
+        final String chineseTemplateMapping = "zh_CN";
+
+        String locale = account.getLocaleName();
+        String country = account.getCountry();
+
+        if (locale == null) return;
+
+        if (locale.equals(chinaLocale)) {
+            account.setLocaleName(chineseTemplateMapping);
+            return;
+        }
+
+        if (country != null) {
+            account.setLocaleName(String.format("%s_%s", locale, country.toUpperCase()));
         }
     }
 }
