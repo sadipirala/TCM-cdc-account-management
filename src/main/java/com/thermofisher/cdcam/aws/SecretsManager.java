@@ -26,9 +26,7 @@ public class SecretsManager {
 
     private Logger logger = LogManager.getLogger(this.getClass());
 
-    public String getSecret(String secretName){
-        logger.info(String.format("Secret requested: %s", secretName));
-
+    public String getSecret(String secretName) {
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
                 .withRegion(region)
                 .withCredentials(new InstanceProfileCredentialsProvider(false))

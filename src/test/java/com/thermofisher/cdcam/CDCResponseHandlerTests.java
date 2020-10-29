@@ -2,6 +2,7 @@ package com.thermofisher.cdcam;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -13,12 +14,14 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.logging.log4j.LogManager;
@@ -288,33 +291,42 @@ public class CDCResponseHandlerTests {
     }
 
     @Test
-    public void resetPasswordRequest_whenAValidUsername_returnTrue() {
+    public void resetPasswordRequest_shouldRequestPasswordReset()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        String username = "armvalidtest@mail.com";
         when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
 
         // when
-        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+        cdcResponseHandler.resetPasswordRequest("armvalidtest@mail.com");
 
         // then
-        Assert.assertTrue(response);
+        verify(cdcAccountsService).resetPassword(any());
     }
 
-    @Test
-    public void resetPasswordRequest_whenAnInValidUsername_returnFalse() {
+    @Test(expected = LoginIdDoesNotExistException.class)
+    public void resetPasswordRequest_whenAnInValidUsername_throwLoginIdDoesNotExistException()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        String username = "arminvalidtest@mail.com";
         when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
-        when(mockCdcResponse.getErrorCode()).thenReturn(40016);
+        when(mockCdcResponse.getErrorCode()).thenReturn(GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue());
 
         // when
-        boolean response = cdcResponseHandler.resetPasswordRequest(username);
+        cdcResponseHandler.resetPasswordRequest("arminvalidtest@mail.com");
+    }
 
-        // then
-        Assert.assertFalse(response);
+    @Test(expected = CustomGigyaErrorException.class)
+    public void resetPasswordRequest_whenAnUnhandledErrorOccurs_throwCustomGigyaErrorException()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+        // given
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(1);
+
+        // when
+        cdcResponseHandler.resetPasswordRequest("arminvalidtest@mail.com");
     }
 
     @Test

@@ -1,18 +1,27 @@
 package com.thermofisher.cdcam;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
-import org.json.JSONArray;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,18 +29,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.junit.Assert;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.io.IOException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -60,7 +62,7 @@ public class ResetPasswordControllerTests {
 
     @Test
     public void sendResetPasswordEmail_WhenATokenIsInvalid_returnBadRequest() throws JSONException, IOException {
-        //given
+        // given
         String invalidToken = "test";
         String username = "arminvalidtest@mail.com";
         ResetPasswordRequest mockInvalidBody = Mockito.mock(ResetPasswordRequest.class);
@@ -68,43 +70,37 @@ public class ResetPasswordControllerTests {
         mockResponseJson.put("success", false);
         when(mockInvalidBody.getUsername()).thenReturn(username);
         when(mockInvalidBody.getCaptchaToken()).thenReturn(invalidToken);
-        when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(mockResponseJson);
 
-        //when
-        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        // when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
-        //then
+        // then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountDoesNotExistInCDC_returnBadRequest() throws JSONException, IOException {
-        //given
+    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountDoesNotExistsInCDC_returnOk()
+            throws JSONException, IOException {
+        // given
         String validToken = "test";
-        String username = "arminvalidtest@mail.com";
-
         ResetPasswordRequest mockInvalidBody = Mockito.mock(ResetPasswordRequest.class);
         JSONObject mockResponseJson = new JSONObject();
         mockResponseJson.put("success", true);
 
-        when(mockInvalidBody.getUsername()).thenReturn(username);
         when(mockInvalidBody.getCaptchaToken()).thenReturn(validToken);
-        when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn("");
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(mockResponseJson);
 
-        //when
-        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        // when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
-        JSONObject errors = new JSONObject(result.getBody());
-        JSONArray stringArray = (JSONArray)errors.get("error-codes");
-
-        //then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
-        Assert.assertTrue( stringArray.length() > 0);
+        // then
+        Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistInCDC_returnOK() throws JSONException, IOException {
+    public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistinCDC_returnOK()
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException {
         //given
         String validToken = "test";
         String username = "armvalidtest@mail.com";
@@ -118,10 +114,10 @@ public class ResetPasswordControllerTests {
         when(mockInvalidBody.getCaptchaToken()).thenReturn(validToken);
         when(reCaptchaService.verifyToken(any(),any())).thenReturn(mockResponseJson);
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn(true);
+        doNothing().when(cdcResponseHandler).resetPasswordRequest(username);
 
         //when
-        ResponseEntity<String> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(mockInvalidBody);
 
         //then
         Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);

@@ -9,6 +9,7 @@ import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.*;
@@ -181,16 +182,18 @@ public class CDCResponseHandler {
         return NO_RESULTS_FOUND;
     }
 
-    public boolean resetPasswordRequest(String username) {
+    public void resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException {
         logger.info(String.format("Reset password request triggered for username: %s.", username));
         GSObject requestParams = new GSObject();
         requestParams.put("loginID", username);
         GSResponse response = cdcAccountsService.resetPassword(requestParams);
-        if (response.getErrorCode() == 0)
-            return true;
-        else {
-            logger.error(response.getErrorMessage());
-            return false;
+
+        if (response.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
+            String message = String.format("LoginID: %s does not exist.", username);
+            throw new LoginIdDoesNotExistException(message);
+        } else if (response.getErrorCode() != GigyaCodes.SUCCESS.getValue()) {
+            String errorMessage = String.format("Failed to send a reset password request for %s. CDC error code: %s", username, response.getErrorCode());
+            throw new CustomGigyaErrorException(errorMessage);
         }
     }
 

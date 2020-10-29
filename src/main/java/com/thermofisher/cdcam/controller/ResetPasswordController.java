@@ -3,6 +3,8 @@ package com.thermofisher.cdcam.controller;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.enums.ResetPasswordErrors;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
@@ -53,27 +55,31 @@ public class ResetPasswordController {
     @PostMapping("/email")
     @ApiOperation(value = "sends the request to reset a password.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Bad request."),
+        @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
+    public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
+        logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
+
         JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
-        logger.info(String.format("Requested reset password for user: %s",  body.getUsername()));
-        verifyResponse.put("loginID", body.getUsername());
-        if (verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
-            String email = cdcResponseHandler.getEmailByUsername(body.getUsername());
-            if (!email.isEmpty()) {
-                if (cdcResponseHandler.resetPasswordRequest(body.getUsername())) {
-                    logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
-                    return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.OK);
-                }
-            }
-            verifyResponse.put("error-codes", new String[]{ResetPasswordErrors.CDC_EMAIL_NOT_FOUND.getValue()});
+        if (verifyResponse.has(SUCCESS) && !verifyResponse.getBoolean(SUCCESS)) {
+            logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), verifyResponse.toString()));
+            return ResponseEntity.badRequest().build();
         }
-        logger.error(String.format("Request failed for: %s. message: %s", body.getUsername(), verifyResponse.toString()));
-        return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
+
+        try {
+            cdcResponseHandler.resetPasswordRequest(body.getUsername());
+            logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
+            return ResponseEntity.ok().build();
+        } catch (LoginIdDoesNotExistException e) {
+            logger.info(e.getMessage());
+            return ResponseEntity.ok().build();
+        } catch (CustomGigyaErrorException e) {
+            logger.error(e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/")
