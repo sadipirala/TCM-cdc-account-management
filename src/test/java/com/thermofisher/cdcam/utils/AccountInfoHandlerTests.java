@@ -5,7 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,5 +107,18 @@ public class AccountInfoHandlerTests {
         // then
         assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);
         assertTrue(expectedAccountToNotify.equals(parsedAccount));
+    }
+
+    @Test
+    public void buildMessageAttributesForAccountInfoSNS_ShouldSetMessageAttributes(){
+        // given
+        AccountInfo mockAccount = AccountUtils.getSiteAccount();
+        MessageAttributeValue mockMessageAttributeValue = new MessageAttributeValue();
+
+        // when
+        Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
+
+        // then
+        assertTrue(messageAttributes.containsValue(mockMessageAttributeValue.withDataType("String").withStringValue(mockAccount.getCountry())));
     }
 }

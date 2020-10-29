@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +10,9 @@ import com.thermofisher.cdcam.model.cdc.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * AccountInfoHandler
@@ -60,6 +63,18 @@ public class AccountInfoHandler {
         json.remove(propertiesToRemove);
 
         return mapper.writeValueAsString(json);
+    }
+
+    public Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
+        String country = account.getCountry();
+        Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+
+        MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
+                .withDataType("String")
+                .withStringValue(country);
+        messageAttributes.put("country", messageAttributeValue);
+
+        return messageAttributes;
     }
 
     private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {

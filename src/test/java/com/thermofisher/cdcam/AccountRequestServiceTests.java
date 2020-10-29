@@ -285,7 +285,7 @@ public class AccountRequestServiceTests {
         accountRequestService.processRequest("Test", mockBody);
 
         //validation
-        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(any(), any());
+        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(any(), any(), any());
     }
 
     @Test
@@ -526,7 +526,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenExceptionOccurss_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
+    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenExceptionOccurs_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
         // setup
         when(cdcResponseHandler.sendVerificationEmail(any())).thenThrow(IOException.class);
 
@@ -538,7 +538,7 @@ public class AccountRequestServiceTests {
     }
 
     @Test
-    public void sendVerificationEmail_triggerVerificationEmailProcess_whenTriggered_sendVerificationProccessShouldBeCalled() throws IOException {
+    public void sendVerificationEmail_triggerVerificationEmailProcess_whenTriggered_sendVerificationProcessShouldBeCalled() throws IOException {
         // setup
         String uid = "abc123";
         HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
