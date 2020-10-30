@@ -100,7 +100,7 @@ public class ResetPasswordServiceTests {
         // given
         String localeName = "es";
         String country = "mx";
-        String expectedLocale = String.format("%s_%s", localeName, country.toUpperCase());
+        String expectedLocale = "es_MX";
 
         StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
         HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
