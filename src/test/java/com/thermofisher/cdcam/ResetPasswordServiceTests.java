@@ -9,11 +9,12 @@ import com.thermofisher.cdcam.utils.AccountUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -92,5 +93,75 @@ public class ResetPasswordServiceTests {
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
 
         resetPasswordService.sendResetPasswordConfirmation(accountInfo);
+    }
+
+    @Test
+    public void sendResetPasswordConfirmation_givenUserLocaleIsNotChinese_ItShouldFormatLocaleWithCountry() throws IOException, JSONException {
+        // given
+        String localeName = "es";
+        String country = "mx";
+        String expectedLocale = "es_MX";
+
+        StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
+        HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
+
+        Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
+        Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+
+        accountInfo.setLocaleName(localeName);
+        accountInfo.setCountry(country);
+
+        ArgumentCaptor<JSONObject> requestObjectCaptor = ArgumentCaptor.forClass(JSONObject.class);
+
+        // when
+        resetPasswordService.sendResetPasswordConfirmation(accountInfo);
+        verify(httpService).post(any(), requestObjectCaptor.capture());
+        JSONObject requestBody = requestObjectCaptor.getValue();
+
+        // then
+        Assert.assertEquals(requestBody.getString("locale"), expectedLocale);
+    }
+
+    @Test
+    public void sendResetPasswordConfirmation_givenUserLocaleIsChinese_ItShouldUseDefaultChineseLocale() throws IOException, JSONException {
+        // given
+        String localeName = "zh-cn";
+        String expectedLocale = "zh_CN";
+
+        StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
+        HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
+
+        Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
+        Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+
+        accountInfo.setLocaleName(localeName);
+
+        ArgumentCaptor<JSONObject> requestObjectCaptor = ArgumentCaptor.forClass(JSONObject.class);
+
+        // when
+        resetPasswordService.sendResetPasswordConfirmation(accountInfo);
+        verify(httpService).post(any(), requestObjectCaptor.capture());
+        JSONObject requestBody = requestObjectCaptor.getValue();
+
+        // then
+        Assert.assertEquals(requestBody.getString("locale"), expectedLocale);
     }
 }
