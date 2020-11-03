@@ -1,17 +1,18 @@
 package com.thermofisher.cdcam.utils;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.Data;
-import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.cdc.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 
 /**
  * AccountInfoHandler
@@ -21,23 +22,10 @@ public class AccountInfoHandler {
 
     public String prepareForProfileInfoNotification(AccountInfo account) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-
-        List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("member");
-        propertiesToRemove.add("localeName");
-        propertiesToRemove.add("loginProvider");
-        propertiesToRemove.add("regAttempts");
-        propertiesToRemove.add("uid");
-        propertiesToRemove.add("password");
-        propertiesToRemove.add("duplicatedAccountUid");
-        propertiesToRemove.add("registrationType");
-        propertiesToRemove.add("timezone");
-
         ObjectNode json = mapper.valueToTree(account);
-        json.remove(propertiesToRemove);
-        json.put("uuid", account.getUid());
-
-        return mapper.writeValueAsString(json);
+        ObjectNode cleanJson = removePropertiesForNotification(json);
+        cleanJson.put("uuid", account.getUid());
+        return mapper.writeValueAsString(cleanJson);
     }
 
     public String prepareForGRPNotification(AccountInfo account) throws JsonProcessingException {
@@ -47,6 +35,17 @@ public class AccountInfoHandler {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("timezone");
+        propertiesToRemove.add("jobRole");
+        propertiesToRemove.add("phoneNumber");
+        propertiesToRemove.add("interest");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
+
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
@@ -66,14 +65,38 @@ public class AccountInfoHandler {
         return mapper.writeValueAsString(json);
     }
 
-    public String prepareDataForRegistration(Data data) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+    public Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
+        String country = account.getCountry();
+        Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+
+        MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
+                .withDataType("String")
+                .withStringValue(country);
+        messageAttributes.put("country", messageAttributeValue);
+
+        return messageAttributes;
+    }
+
+    private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("thermofisher");
+        propertiesToRemove.add("member");
+        propertiesToRemove.add("localeName");
+        propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("regAttempts");
+        propertiesToRemove.add("uid");
+        propertiesToRemove.add("password");
+        propertiesToRemove.add("duplicatedAccountUid");
+        propertiesToRemove.add("registrationType");
+        propertiesToRemove.add("timezone");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("hiraganaName");
 
-        ObjectNode json = mapper.valueToTree(data);
-        json.remove(propertiesToRemove);
-
-        return mapper.writeValueAsString(json);
+        return objectNode.remove(propertiesToRemove);
     }
 }

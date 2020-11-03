@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.cdc;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

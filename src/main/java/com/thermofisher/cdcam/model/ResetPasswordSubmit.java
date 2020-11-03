@@ -9,9 +9,9 @@ import javax.validation.constraints.NotBlank;
 @Builder
 @Getter
 @Setter
-public class ResetPassword {
+public class ResetPasswordSubmit {
     @NotBlank
-    private String username;
+    private String uid;
     @NotBlank
     private String newPassword;
     @NotBlank

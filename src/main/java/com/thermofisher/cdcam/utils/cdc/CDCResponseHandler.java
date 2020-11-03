@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gigya.socialize.GSArray;
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.services.CDCAccountsService;
+import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
+import java.io.InvalidClassException;
 
 /**
  * CDCAccountsService
@@ -48,10 +52,10 @@ public class CDCResponseHandler {
 
     public AccountInfo getAccountInfoByEmail(String email) throws IOException {
         String uid = this.getUIDByEmail(email);
-        
+
         if (uid.isEmpty()) {
             return null;
-        };
+        }
 
         return this.getAccountInfo(uid);
     }
@@ -161,7 +165,7 @@ public class CDCResponseHandler {
             }
             logger.warn(String.format("Could not match an account with the email on CDC. email: %s. Error: %s", email, response.getErrorMessage()));
         } catch (Exception e) {
-           logger.error(Utils.stackTraceToString(e));
+            logger.error(Utils.stackTraceToString(e));
         }
         return username;
     }
@@ -172,40 +176,52 @@ public class CDCResponseHandler {
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()) {
-            return  result.getUID();
+            return result.getUID();
         }
         logger.warn(String.format("Could not match an account with that email on CDC. email: %s. Error: %s", email, response.getErrorMessage()));
         return NO_RESULTS_FOUND;
     }
 
-    public String getUIDByUsername(String userName) throws IOException {
-        String query = String.format("SELECT UID FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
-        GSResponse response = cdcAccountsService.search(query, "");
-        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+    public void resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+        logger.info(String.format("Reset password request triggered for username: %s.", username));
+        GSObject requestParams = new GSObject();
+        requestParams.put("loginID", username);
+        GSResponse response = cdcAccountsService.resetPassword(requestParams);
 
-        for (CDCAccount result : cdcSearchResponse.getResults()) {
-            return  result.getUID();
-        }
-        logger.warn(String.format("Could not match an account with that username on CDC. username: %s. Error: %s", userName, response.getErrorMessage()));
-        return NO_RESULTS_FOUND;
-    }
-
-    public boolean resetPasswordRequest(String username) {
-        ResetPassword resetPasswordRequest = ResetPassword.builder().username(username).build();
-        GSResponse response = cdcAccountsService.resetPasswordRequest(resetPasswordRequest);
-        if (response.getErrorCode() == 0)
-            return true;
-        else {
-            logger.error(response.getErrorMessage());
-            return false;
+        if (response.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
+            String message = String.format("LoginID: %s does not exist.", username);
+            throw new LoginIdDoesNotExistException(message);
+        } else if (response.getErrorCode() != GigyaCodes.SUCCESS.getValue()) {
+            String errorMessage = String.format("Failed to send a reset password request for %s. CDC error code: %s", username, response.getErrorCode());
+            throw new CustomGigyaErrorException(errorMessage);
         }
     }
 
-    public ResetPasswordResponse resetPassword(ResetPassword resetPassword) {
-        GSResponse gsResponse = cdcAccountsService.resetPasswordRequest(resetPassword);
+    public ResetPasswordResponse resetPasswordSubmit(ResetPasswordSubmit resetPassword) {
+        logger.info(String.format("Reset password submit triggered for UID: %s.", resetPassword.getUid()));
+        GSObject resetParams = new GSObject();
+        resetParams.put("passwordResetToken", resetPassword.getResetPasswordToken());
+        resetParams.put("newPassword", resetPassword.getNewPassword());
 
-        return ResetPasswordResponse.builder()
-                .responseCode(gsResponse.getErrorCode())
-                .responseMessage(gsResponse.getErrorMessage()).build();
+        GSResponse gsResponse = cdcAccountsService.resetPassword(resetParams);
+
+        return ResetPasswordResponse
+            .builder()
+            .responseCode(gsResponse.getErrorCode())
+            .responseMessage(gsResponse.getErrorMessage())
+            .build();
+    }
+
+    public boolean isAvailableLoginID(String loginID) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
+        final String IS_AVAILABLE_PARAM = "isAvailable";
+        GSResponse gsResponse = cdcAccountsService.isAvailableLoginID(loginID);
+
+        if (gsResponse.getErrorCode() != 0) {
+            String errorMessage = String.format("Error on %s: %s - %s", "isAvailableLoginID", gsResponse.getErrorCode(), gsResponse.getErrorMessage());
+            throw new CustomGigyaErrorException(errorMessage);
+        }
+
+        GSObject gsObject = gsResponse.getData();
+        return gsObject.getBool(IS_AVAILABLE_PARAM);
     }
 }

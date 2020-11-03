@@ -5,9 +5,8 @@ import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
-import com.thermofisher.cdcam.model.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 
-import com.thermofisher.cdcam.model.ResetPassword;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -33,23 +32,27 @@ public class CDCAccountsService {
     @Value("${env.name}")
     private String env;
 
+    @Value("${cdc.datacenter}")
+    private String cdcDataCenter;
+
     private String userKey;
     private String secretKey;
 
     @Autowired
     SecretsManager secretsManager;
 
-
     @PostConstruct
     public void setCredentials() {
         try {
             if (env.equals("local") || env.equals("test")) return;
+
             logger.info("Setting up CDC credentials.");
             JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
             secretKey = secretsManager.getProperty(secretProperties, "secretKey");
             userKey = secretsManager.getProperty(secretProperties, "userKey");
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s",
+                    Utils.stackTraceToString(e)));
         }
     }
 
@@ -59,12 +62,14 @@ public class CDCAccountsService {
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("UID", uid);
             request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
             request.setParam("extraProfileFields", "username, locale, work");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -75,27 +80,31 @@ public class CDCAccountsService {
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("UID", uid);
             request.setParam("data", data);
             request.setParam("profile", profile);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while updating an account. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
 
-    public GSResponse changeAccountStatus (String uid, boolean status ) {
+    public GSResponse changeAccountStatus(String uid, boolean status) {
         try {
             String apiMethod = APIMethods.SETINFO.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = new GSRequest(apiKey,secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("UID", uid);
             request.setParam("isActive", status);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid,
+                    Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -106,11 +115,13 @@ public class CDCAccountsService {
             logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("regToken", getRegToken(true));
             request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s", email, Utils.stackTraceToString(e)));
+            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s",
+                    email, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -121,9 +132,11 @@ public class CDCAccountsService {
         String apiMethod = APIMethods.SEARCH.getValue();
         logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
 
-        if (query == null) return null;
+        if (query == null)
+            return null;
 
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
+        request.setAPIDomain(cdcDataCenter);
         request.setParam("accountTypes", accountTypes);
         request.setParam("query", query);
         return request.send();
@@ -135,6 +148,7 @@ public class CDCAccountsService {
             logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("username", newAccount.getUsername());
             request.setParam("email", newAccount.getEmail());
             request.setParam("password", newAccount.getPassword());
@@ -154,6 +168,7 @@ public class CDCAccountsService {
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("UID", uid);
 
             return request.send();
@@ -163,19 +178,13 @@ public class CDCAccountsService {
         }
     }
 
-    public GSResponse resetPasswordRequest(ResetPassword resetPassword) {
+    public GSResponse resetPassword(GSObject params) {
         try {
             String apiMethod = APIMethods.RESET_PASSWORD.getValue();
-            logger.info(String.format("%s triggered. value: %s", apiMethod, (resetPassword.getUsername() == null || resetPassword.getUsername().isEmpty()) ? resetPassword.getResetPasswordToken() :resetPassword.getUsername()));
+            logger.info(String.format("%s triggered.", apiMethod));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-
-            if(resetPassword.getResetPasswordToken() == null || resetPassword.getResetPasswordToken().isEmpty())
-                request.setParam("loginID", resetPassword.getUsername());
-            else {
-                request.setParam("passwordResetToken",resetPassword.getResetPasswordToken());
-                request.setParam("newPassword",resetPassword.getNewPassword());
-            }
+            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, params, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
 
             return request.send();
         } catch (Exception e) {
@@ -190,6 +199,7 @@ public class CDCAccountsService {
             logger.info(String.format("%s triggered. Email-only: %s", apiMethod, Boolean.toString(isLite)));
 
             GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request.setAPIDomain(cdcDataCenter);
             request.setParam("isLite", isLite);
 
             GSResponse response = request.send();
@@ -208,5 +218,11 @@ public class CDCAccountsService {
         }
     }
 
-
+    public GSResponse isAvailableLoginID(String loginID) {
+        String apiMethod = APIMethods.IS_AVAILABLE_LOGINID.getValue();
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        request.setParam("loginID", loginID);
+        
+        return request.send();
+    }
 }

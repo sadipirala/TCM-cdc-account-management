@@ -3,6 +3,8 @@ package com.thermofisher.cdcam.controller;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.enums.ResetPasswordErrors;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
@@ -53,30 +55,31 @@ public class ResetPasswordController {
     @PostMapping("/email")
     @ApiOperation(value = "sends the request to reset a password.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Bad request."),
+        @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
+    public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         final String SUCCESS = "success";
+        logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
+
         JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
-        logger.info(String.format("Requested reset password for user: %s",  body.getUsername()));
-        verifyResponse.put("loginID", body.getUsername());
-        if (verifyResponse.has(SUCCESS) && verifyResponse.getBoolean(SUCCESS)) {
-            String email = cdcResponseHandler.getEmailByUsername(body.getUsername());
-            verifyResponse.put("email", email);
-            if (!email.isEmpty()) {
-                if (cdcResponseHandler.resetPasswordRequest(body.getUsername())) {
-                    logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
-                    return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.OK);
-                }
-            }
-            verifyResponse.put("error-codes", new String[]{ResetPasswordErrors.CDC_EMAIL_NOT_FOUND.getValue()});
-        } else {
-            verifyResponse.put("email", "");
+        if (verifyResponse.has(SUCCESS) && !verifyResponse.getBoolean(SUCCESS)) {
+            logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), verifyResponse.toString()));
+            return ResponseEntity.badRequest().build();
         }
-        logger.error(String.format("Request failed for: %s. message: %s", body.getUsername(), verifyResponse.toString()));
-        return new ResponseEntity<>(verifyResponse.toString(), HttpStatus.BAD_REQUEST);
+
+        try {
+            cdcResponseHandler.resetPasswordRequest(body.getUsername());
+            logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
+            return ResponseEntity.ok().build();
+        } catch (LoginIdDoesNotExistException e) {
+            logger.info(e.getMessage());
+            return ResponseEntity.ok().build();
+        } catch (CustomGigyaErrorException e) {
+            logger.error(e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/")
@@ -86,10 +89,10 @@ public class ResetPasswordController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPassword body) {
+    public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordSubmit body) {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
-        Set<ConstraintViolation<ResetPassword>> violations = validator.validate(body);
+        Set<ConstraintViolation<ResetPasswordSubmit>> violations = validator.validate(body);
 
         if (violations.size() > 0) {
             logger.error(String.format("One or more errors occurred while creating the reset password object. %s", violations.toArray()));
@@ -97,17 +100,10 @@ public class ResetPasswordController {
         }
 
         try {
-            String accountUID = cdcResponseHandler.getUIDByUsername(body.getUsername());
-
-            if (accountUID.isEmpty()) {
-                logger.warn(String.format("Account not found: %s.", body.getUsername()));
-                return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.BAD_REQUEST.value(), ResetPasswordErrors.ACCOUNT_NOT_FOUND.getValue()), HttpStatus.BAD_REQUEST);
-            }
-
-            ResetPasswordResponse response = cdcResponseHandler.resetPassword(body);
+            ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(body);
 
             if (response.getResponseCode() != 0) {
-                logger.warn(String.format("Failed to reset password for: %s. message: %s", body.getUsername(), response.getResponseMessage()));
+                logger.warn(String.format("Failed to reset password for user with UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
             }
 
@@ -115,7 +111,7 @@ public class ResetPasswordController {
 
             ResetPasswordNotification resetPasswordNotification = ResetPasswordNotification.builder()
                     .newPassword(hashedPassword)
-                    .uid(accountUID)
+                    .uid(body.getUid())
                     .build();
 
             String message = (new JSONObject(resetPasswordNotification)).toString();
@@ -125,7 +121,7 @@ public class ResetPasswordController {
                 return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ResetPasswordErrors.SNS_NOT_SEND.getValue()), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            sendResetPasswordConfirmationEmail(accountUID);
+            sendResetPasswordConfirmationEmail(body.getUid());
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
