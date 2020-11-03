@@ -1,23 +1,24 @@
-package com.thermofisher.cdcam.model;
+package com.thermofisher.cdcam.model.cdc;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
 @Setter
 @Builder
-@Getter
-@JsonDeserialize(builder = Work.WorkBuilder.class)
-public class Work {
-    private String company;
-    private String location;
+@JsonDeserialize(builder = Registration.RegistrationBuilder.class)
+public class Registration {
+    private Japan japan;
+    private China china;
+    private Korea korea;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
-    public static class WorkBuilder {
-
+    public static class RegistrationBuilder {
     }
 }

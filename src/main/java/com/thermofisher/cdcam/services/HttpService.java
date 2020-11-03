@@ -21,8 +21,6 @@ public class HttpService {
 
     public HttpServiceResponse post(String url, JSONObject body) {
         try {
-            logger.info(String.format("Executing POST request to: %s", url));
-
             String requestBody = body.toString();
             StringEntity requestEntity = new StringEntity(requestBody, ContentType.APPLICATION_JSON);
 

@@ -1,16 +1,19 @@
 package com.thermofisher.cdcam.services;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +27,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 public class AccountRequestService {
@@ -112,7 +116,8 @@ public class AccountRequestService {
                 logger.info(String.format("Account username: %s. UID: %s", account.getUsername(), account.getUid()));
                 String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
                 try {
-                    boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountToNotify, snsAccountInfoTopic);
+                    Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(account);
+                    boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountToNotify, snsAccountInfoTopic, messageAttributes);
                     if (!SNSSentCorrectly) {
                         logger.error(String.format("There was an error sending the account information to SNS Topic (%s). UID: %s", snsAccountInfoTopic, uid));
                     }
