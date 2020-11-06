@@ -40,6 +40,9 @@ public class ResetPasswordController {
     @Value("${reset-password.recaptcha.secret.key}")
     private String reCaptchaSecret;
 
+    @Value("${recaptcha.threshold.minimum}")
+    private double RECAPTCHA_MIN_THRESHOLD;
+
     @Autowired
     ReCaptchaService reCaptchaService;
 
@@ -60,12 +63,12 @@ public class ResetPasswordController {
         @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
-        final String SUCCESS = "success";
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
 
-        JSONObject verifyResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
-        if (verifyResponse.has(SUCCESS) && !verifyResponse.getBoolean(SUCCESS)) {
-            logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), verifyResponse.toString()));
+        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
+        logger.info(String.format("Username %s got a %.1f score.", body.getUsername(), reCaptchaResponse.getDouble("score")));
+        if (!isReCaptchaResponseValid(reCaptchaResponse)) {
+            logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), reCaptchaResponse.toString()));
             return ResponseEntity.badRequest().build();
         }
 
@@ -80,6 +83,11 @@ public class ResetPasswordController {
             logger.error(e.getMessage());
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    private boolean isReCaptchaResponseValid(JSONObject reCaptchaResponse) throws JSONException {
+        final String SUCCESS = "success";
+        return reCaptchaResponse.has(SUCCESS) && reCaptchaResponse.getBoolean(SUCCESS) && reCaptchaResponse.getDouble("score") >= RECAPTCHA_MIN_THRESHOLD;
     }
 
     @PutMapping("/")
