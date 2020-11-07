@@ -14,6 +14,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class ResetPasswordService {
@@ -24,6 +26,9 @@ public class ResetPasswordService {
 
     @Value("${tfrn.email-notification.url}")
     private String emailNotificationUrl;
+
+    @Value("${supported.locales}")
+    private String supportedLocales;
 
     @Autowired
     HttpService httpService;
@@ -58,10 +63,18 @@ public class ResetPasswordService {
         final String chinaLocale = "zh-cn";
         final String chineseTemplateMapping = "zh_CN";
 
+        List<String> supportedLocaleList = Arrays.asList(supportedLocales.toUpperCase().split(","));
+
         String locale = account.getLocaleName();
         String country = account.getCountry();
 
         if (locale == null) return;
+
+        if (supportedLocaleList.contains(locale.toUpperCase())) {
+            String[] localeSections = locale.split("_");
+            account.setLocaleName(String.format("%s_%s", localeSections[0].toLowerCase(), localeSections[1].toUpperCase()));
+            return;
+        }
 
         if (locale.equals(chinaLocale)) {
             account.setLocaleName(chineseTemplateMapping);
