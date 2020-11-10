@@ -12,12 +12,13 @@ import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.EmailService;
 
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.Utils;
@@ -48,6 +49,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.*;
+import javax.validation.constraints.NotBlank;
+
 import java.util.Set;
 
 import io.swagger.annotations.ApiImplicitParam;
@@ -228,7 +231,7 @@ public class AccountsController {
             AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(usernameRecoveryDTO.getUserInfo().getEmail());
 
             if (account == null) {
-                logger.warn("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                logger.warn(String.format("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
@@ -236,10 +239,10 @@ public class AccountsController {
             EmailSentResponse response = emailService.sendUsernameRecoveryEmail(usernameRecoveryEmailRequest);
             
             if (!response.isSuccess()) {
-                logger.error("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+                logger.error(String.format("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
                 return new ResponseEntity<>("There was an error sending username recovery email.", HttpStatus.BAD_REQUEST);
             }
-            logger.info("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail());
+            logger.info(String.format("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
             return new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -280,6 +283,31 @@ public class AccountsController {
             String message = String.format("An error occurred during the user's timezone update. UID: %s", userTimezone.getUid());
             logger.error(message);
             return new ResponseEntity<>(message, updateUserTimezoneStatus);
+        }
+    }
+
+    @GetMapping("/{loginID}")
+    @ApiOperation(value = "Checks whether a loginID is available in CDC.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK."),
+            @ApiResponse(code = 404, message = "Not found."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "loginID", value = "LoginID to be checked in CDC.", required = true)
+    public ResponseEntity<?> isAvailableLoginID(@PathVariable @NotBlank String loginID) {
+        try {
+            logger.info(String.format("Check for loginID availability started. Login ID: %s", loginID));
+            boolean isAvailableLoginID = cdcResponseHandler.isAvailableLoginID(loginID);
+            logger.info(String.format("Is %s available: %b", loginID, isAvailableLoginID));
+            
+            if (isAvailableLoginID) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error(String.format("Error checking %s availability: %s", loginID, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
         }
     }
 

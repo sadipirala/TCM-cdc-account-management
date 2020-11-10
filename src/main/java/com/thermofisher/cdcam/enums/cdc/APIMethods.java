@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.enums.cdc;
 public enum APIMethods {
     GET("accounts.getAccountInfo"),
     INITREG("accounts.initRegistration"),
+    IS_AVAILABLE_LOGINID("accounts.isAvailableLoginID"),
     SEARCH("accounts.search"),
     SETINFO("accounts.setAccountInfo"),
     REGISTER("accounts.register"),

@@ -2,7 +2,7 @@ package com.thermofisher.cdcam.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 

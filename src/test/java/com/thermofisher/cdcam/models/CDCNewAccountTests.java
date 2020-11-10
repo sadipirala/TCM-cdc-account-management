@@ -2,9 +2,7 @@ package com.thermofisher.cdcam.models;
 
 import static org.junit.Assert.assertEquals;
 
-import com.thermofisher.cdcam.model.CDCNewAccount;
-import com.thermofisher.cdcam.model.Data;
-import com.thermofisher.cdcam.model.Profile;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 

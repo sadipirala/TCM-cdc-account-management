@@ -21,15 +21,26 @@ public class AccountInfo {
     private String emailAddress;
     @NotBlank
     private String password;
+    private String jobRole;
+    private String interest;
     private String localeName;
     private String company;
     private String department;
     private String city;
     private String country;
+    private String phoneNumber;
+    private Boolean eCommerceTransaction;
+    private Boolean personalInfoMandatory;
+    private Boolean personalInfoOptional;
+    private Boolean privateInfoMandatory;
+    private Boolean privateInfoOptional;
+    private Boolean processingConsignment;
+    private Boolean termsOfUse;
     private String member;
     private String loginProvider;
     private int regAttempts;
     private String duplicatedAccountUid;
     private String registrationType;
     private String timezone;
+    private String hiraganaName;
 }
