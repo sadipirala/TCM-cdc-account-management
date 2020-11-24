@@ -15,11 +15,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * AccountInfoHandlerTests
@@ -28,8 +31,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AccountInfoHandler.class)
 public class AccountInfoHandlerTests {
-    private final AccountInfoHandler accountHandler = new AccountInfoHandler();
+    
+    @InjectMocks
+    AccountInfoHandler accountHandler;
+
+    private final String MOCK_CIPDC = "us";
     private ObjectMapper mapper = new ObjectMapper();
+
+    @Before
+    public void before() {
+        ReflectionTestUtils.setField(accountHandler, "CIPDC", MOCK_CIPDC);
+    }
 
     @After
     public void after() { 
@@ -56,6 +68,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("termsOfUse");
         propertiesToRemove.add("hiraganaName");
         json.put("uuid", json.get("uid").asText());
+        json.put("cipdc", MOCK_CIPDC);
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
@@ -75,6 +88,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("processingConsignment");
         propertiesToRemove.add("termsOfUse");
         json.remove(propertiesToRemove);
+        json.put("cipdc", MOCK_CIPDC);
         return mapper.writeValueAsString(json);
     }
 
@@ -120,5 +134,20 @@ public class AccountInfoHandlerTests {
 
         // then
         assertTrue(messageAttributes.containsValue(mockMessageAttributeValue.withDataType("String").withStringValue(mockAccount.getCountry())));
+    }
+
+    @Test
+    public void buildMessageAttributesForAccountInfoSNS_ShouldSetCountryMessageAttributeAsNotAvailableIfCountryValuesIsNotPresent(){
+        // given
+        AccountInfo mockAccount = AccountUtils.getSiteAccount();
+        MessageAttributeValue mockMessageAttributeValue = new MessageAttributeValue();
+        final String NA_COUNTRY_VALUE = "NOT_AVAILABLE";
+        mockAccount.setCountry("");
+
+        // when
+        Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
+
+        // then
+        assertTrue(messageAttributes.containsValue(mockMessageAttributeValue.withDataType("String").withStringValue(NA_COUNTRY_VALUE)));
     }
 }

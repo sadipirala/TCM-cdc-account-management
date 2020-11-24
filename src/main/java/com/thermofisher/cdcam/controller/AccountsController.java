@@ -65,8 +65,11 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
-    @Value("${registration.recaptcha.secret.key}")
-    private String registrationReCaptchaSecret;
+    @Value("${identity.recaptcha.secret}")
+    private String identityReCaptchaSecret;
+
+    @Value("${recaptcha.threshold.minimum}")
+    private double RECAPTCHA_MIN_THRESHOLD;
 
     @Autowired
     LiteRegHandler handler;
@@ -157,9 +160,9 @@ public class AccountsController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private boolean isReCaptchaResponseInvalid(JSONObject reCaptchaResponse) throws JSONException {
+    private boolean isReCaptchaResponseValid(JSONObject reCaptchaResponse) throws JSONException {
         final String SUCCESS = "success";
-        return reCaptchaResponse.has(SUCCESS) && !reCaptchaResponse.getBoolean(SUCCESS);
+        return reCaptchaResponse.has(SUCCESS) && reCaptchaResponse.getBoolean(SUCCESS) && reCaptchaResponse.getDouble("score") >= RECAPTCHA_MIN_THRESHOLD;
     }
 
     @PostMapping("/")
@@ -182,11 +185,11 @@ public class AccountsController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), registrationReCaptchaSecret);
-        if (isReCaptchaResponseInvalid(reCaptchaResponse)) {
-            String errorCodes = reCaptchaResponse.get("error-codes").toString();
-            logger.warn(String.format("reCaptcha token verification error codes: %s. Username: %s", errorCodes, accountInfo.getUsername()));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, errorCodes).body(null);
+        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), identityReCaptchaSecret);
+        logger.info(String.format("Username %s got a %.1f score.", accountInfo.getUsername(), reCaptchaResponse.getDouble("score")));
+        if (!isReCaptchaResponseValid(reCaptchaResponse)) {
+            logger.error(String.format("reCaptcha error for: %s. message: %s", accountInfo.getUsername(), reCaptchaResponse.toString()));
+            return ResponseEntity.badRequest().build();
         }
 
         AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);

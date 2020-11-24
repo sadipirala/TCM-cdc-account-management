@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.Profile;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -20,11 +22,15 @@ import java.util.Map;
 @Component
 public class AccountInfoHandler {
 
+    @Value("${general.cipdc}")
+    private String CIPDC;
+
     public String prepareForProfileInfoNotification(AccountInfo account) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode json = mapper.valueToTree(account);
         ObjectNode cleanJson = removePropertiesForNotification(json);
         cleanJson.put("uuid", account.getUid());
+        cleanJson.put("cipdc", CIPDC);
         return mapper.writeValueAsString(cleanJson);
     }
 
@@ -46,9 +52,9 @@ public class AccountInfoHandler {
         propertiesToRemove.add("processingConsignment");
         propertiesToRemove.add("termsOfUse");
 
-
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
+        json.put("cipdc", CIPDC);
 
         return mapper.writeValueAsString(json);
     }
@@ -66,7 +72,9 @@ public class AccountInfoHandler {
     }
 
     public Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
-        String country = account.getCountry();
+        final String NA_COUNTRY_VALUE =  "NOT_AVAILABLE";
+        String countryValue = account.getCountry();
+        String country = (countryValue != null && !countryValue.trim().isEmpty()) ? countryValue : NA_COUNTRY_VALUE;
         Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
 
         MessageAttributeValue messageAttributeValue = new MessageAttributeValue()

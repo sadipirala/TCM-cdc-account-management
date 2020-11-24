@@ -18,6 +18,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,8 +38,8 @@ public class ResetPasswordController {
     @Value("${aws.sns.reset.password}")
     private String resetPasswordTopic;
 
-    @Value("${reset-password.recaptcha.secret.key}")
-    private String reCaptchaSecret;
+    @Value("${identity.recaptcha.secret}")
+    private String identityReCaptchaSecret;
 
     @Value("${recaptcha.threshold.minimum}")
     private double RECAPTCHA_MIN_THRESHOLD;
@@ -65,7 +66,7 @@ public class ResetPasswordController {
     public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
 
-        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
+        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), identityReCaptchaSecret);
         logger.info(String.format("Username %s got a %.1f score.", body.getUsername(), reCaptchaResponse.getDouble("score")));
         if (!isReCaptchaResponseValid(reCaptchaResponse)) {
             logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), reCaptchaResponse.toString()));
@@ -101,6 +102,7 @@ public class ResetPasswordController {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<ResetPasswordSubmit>> violations = validator.validate(body);
+        final int EXPIRED_TOKEN_ERROR = 403025;
 
         if (violations.size() > 0) {
             logger.error(String.format("One or more errors occurred while creating the reset password object. %s", violations.toArray()));
@@ -111,8 +113,15 @@ public class ResetPasswordController {
             ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(body);
 
             if (response.getResponseCode() != 0) {
-                logger.warn(String.format("Failed to reset password for user with UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                if (response.getResponseCode() == EXPIRED_TOKEN_ERROR) {
+                    HttpHeaders responseHeaders = new HttpHeaders();
+                    responseHeaders.set("redirect", "/expired");
+                    logger.warn(String.format("Expired token, user UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
+                    return new ResponseEntity<>(response, responseHeaders, HttpStatus.FOUND);
+                } else {
+                    logger.warn(String.format("Failed to reset password for user with UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
             }
 
             String hashedPassword = HashingService.concat(HashingService.hash(body.getNewPassword()));

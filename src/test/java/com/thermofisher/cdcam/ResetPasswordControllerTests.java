@@ -242,4 +242,22 @@ public class ResetPasswordControllerTests {
         //then
         Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    public void resetPassword_WhenTheResetPasswordTokenExpires_returnFOUND() {
+        //given
+        ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
+        when(resetPasswordResponseMock.getResponseCode()).thenReturn(403025);
+        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
+
+
+        //when
+        ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
+
+        //then
+        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.FOUND);
+    }
 }
