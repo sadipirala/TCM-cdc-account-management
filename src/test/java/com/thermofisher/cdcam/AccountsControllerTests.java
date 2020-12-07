@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -12,17 +13,24 @@ import java.util.List;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.EmailSentResponse;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.EmailService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
@@ -33,6 +41,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -54,11 +64,12 @@ public class AccountsControllerTests {
     private final String firstName = "first";
     private final String lastName = "last";
     private final UserTimezone emptyUserTimezone = UserTimezone.builder().uid("").timezone("").build();
-    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("1234567890").timezone("America/Tijuana")
-            .build();
+    private final UserTimezone validUserTimezone = UserTimezone.builder().uid("1234567890").timezone("America/Tijuana").build();
     private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890").timezone(null).build();
-    private final int associatedAccounts = 1;
     private final UsernameRecoveryDTO usernameRecoveryDTO = EmailRequestBuilderUtils.buildUsernameRecoveryDTO();
+    private final int associatedAccounts = 1;
+    private final String reCaptchaV3Secret = "reCaptchaV3Secret";
+    private final String reCaptchaV2Secret = "reCaptchaV2Secret";
 
     @InjectMocks
     AccountsController accountsController;
@@ -84,6 +95,9 @@ public class AccountsControllerTests {
     @Mock
     UpdateAccountService updateAccountService;
 
+    @Captor
+    ArgumentCaptor<String> reCaptchaSecretCaptor;
+
     private CDCResponseData getValidCDCResponse(String uid) {
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
@@ -98,10 +112,11 @@ public class AccountsControllerTests {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         reCaptchaResponse = new JSONObject();
-        ReflectionTestUtils.setField(accountsController, "RECAPTCHA_MIN_THRESHOLD", 0.5);
         uids.add("001");
         uids.add("002");
         uids.add("003");
+        ReflectionTestUtils.setField(accountsController, "identityReCaptchaSecretV3", reCaptchaV3Secret);
+        ReflectionTestUtils.setField(accountsController, "identityReCaptchaSecretV2", reCaptchaV2Secret);
     }
 
     @Test
@@ -263,57 +278,94 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAValidAccountIsReceived_WhenTheTokenIsInvalid_returnBadRequest()
-            throws JSONException, IOException {
+    public void newAccount_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
-        reCaptchaResponse.put("success", false);
-        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setIsReCaptchaV2(true);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
-        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-
-
-        // then
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        // when
+        accountsController.newAccount(accountDTO);
 
         // then
-        Assert.assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
+        Mockito.verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
+        assertEquals(reCaptchaSecret, reCaptchaV2Secret);
     }
 
     @Test
-    public void newAccount_givenAValidAccountIsReceived_WhenTheReCaptchaTokenIsValidAndScoreIsEqualsToMinThreshold_ThenARegistrationShouldBeMade()
-            throws JSONException, IOException {
+    public void newAccount_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        Mockito.verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
+        assertEquals(reCaptchaSecret, reCaptchaV3Secret);
+    }
+
+    @Test
+    public void newAccount_givenReCaptchaVerificationThrowsReCaptchaLowScoreException_ThenResponseEntityShouldBeOfAcceptedType()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
+        // given
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaLowScoreException(""));
+
+        // when
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+
+        // then
+        assertEquals(response.getStatusCode().value(), HttpStatus.ACCEPTED.value());
+    }
+
+    @Test
+    public void newAccount_givenReCaptchaVerificationThrowsReCaptchaUnsuccessfulException_ThenResponseEntityShouldBeOfBadRequestType()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
+        // given
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaUnsuccessfulResponseException(""));
+
+        // when
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+
+        // then
+        assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    public void newAccount_givenReCaptchaVerificationThrowsJSONException_ThenResponseEntityShouldBeInternalServerError()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
+        // given
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenThrow(new JSONException(""));
+
+        // when
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+
+        // then
+        assertEquals(response.getStatusCode().value(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @Test
+    public void newAccount_givenReCaptchaIsValid_ThenContinueWithRegistrationProcess() 
+            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
         when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
 
-        // then
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        // when
+        accountsController.newAccount(accountDTO);
 
         // then
-        Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
+        verify(accountRequestService).processRegistrationRequest(any());
     }
-
-     @Test
-     public void newAccount_givenAValidAccountIsReceived_WhenTheReCaptchaTokenIsValidButTheScoreIsLessThanMinThreshold_returnBadRequest()
-             throws JSONException, IOException {
-         // given
-         reCaptchaResponse.put("success", true);
-         reCaptchaResponse.put("score", 0.3);
-         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-
-         // then
-         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
-
-         // then
-         Assert.assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
-     }
 
     @Test
     public void newAccount_givenAnAccountWithBlankPassword_returnBadRequest() throws IOException, JSONException {
@@ -329,10 +381,9 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenABackendError_returnInternalServerError() throws IOException, JSONException {
+    public void newAccount_givenABackendError_returnInternalServerError()
+            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         when(accountRequestService.processRegistrationRequest(any())).thenReturn(null);
@@ -345,9 +396,8 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAValidAccount_returnUID() throws IOException, JSONException {
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
+    public void newAccount_givenAValidAccount_returnUID() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
@@ -362,10 +412,8 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenAValidAccount_And_RegistrationTypeIsBasic_sendConfirmationEmailShouldBeCalled() throws IOException,
-            JSONException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setRegistrationType(RegistrationType.BASIC.getValue());
@@ -382,10 +430,8 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenAValidAccount_And_RegistrationTypeIsNotBasic_sendConfirmationEmailShouldNotBeCalled() throws IOException,
-            JSONException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setRegistrationType("dummy");
@@ -402,7 +448,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenRegistrationSuccessful_sendVerificationEmailShouldBeCalled() throws IOException,
-            JSONException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -420,7 +466,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenRegistrationNotSuccessful_sendVerificationEmailShouldNotBeCalled() throws IOException,
-            JSONException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -440,10 +486,8 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenAValidAccount_And_RegistrationFails_nullUIDisReturned() throws IOException,
-            JSONException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = new CDCResponseData();

@@ -1,6 +1,8 @@
 package com.thermofisher.cdcam;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,6 +18,8 @@ import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -23,10 +27,11 @@ import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -41,6 +46,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class ResetPasswordControllerTests {
+    private final String reCaptchaV3Secret = "reCaptchaV3Secret";
+    private final String reCaptchaV2Secret = "reCaptchaV2Secret";
+
+    String username = "armadillo@mail.com";
+    String email = "armadillo@mail.com";
+    JSONObject reCaptchaResponse;
+    ResetPasswordRequest resetPasswordRequestBody;
+    ResetPasswordResponse resetPasswordResponseMock;
 
     @InjectMocks
     ResetPasswordController resetPasswordController;
@@ -57,11 +70,8 @@ public class ResetPasswordControllerTests {
     @Mock
     ResetPasswordService resetPasswordService;
 
-    String username = "armadillo@mail.com";
-    String email = "armadillo@mail.com";
-    JSONObject reCaptchaResponse;
-    ResetPasswordRequest resetPasswordRequestBody;
-    ResetPasswordResponse resetPasswordResponseMock;
+    @Captor
+    ArgumentCaptor<String> reCaptchaSecretCaptor;
 
     @Before
     public void setup() {
@@ -69,77 +79,95 @@ public class ResetPasswordControllerTests {
         reCaptchaResponse = new JSONObject();
         resetPasswordRequestBody = mock(ResetPasswordRequest.class);
         resetPasswordResponseMock = mock(ResetPasswordResponse.class);
-        ReflectionTestUtils.setField(resetPasswordController, "RECAPTCHA_MIN_THRESHOLD", 0.5);
+        ReflectionTestUtils.setField(resetPasswordController, "identityReCaptchaSecretV3", reCaptchaV3Secret);
+        ReflectionTestUtils.setField(resetPasswordController, "identityReCaptchaSecretV2", reCaptchaV2Secret);
     }
 
-    private void setSendResetPasswordEmailMocks() throws JSONException {
+    private void setSendResetPasswordEmailMocks()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         when(resetPasswordRequestBody.getUsername()).thenReturn(username);
         when(resetPasswordRequestBody.getCaptchaToken()).thenReturn("token");
+    }
+
+    @Test
+    public void sendResetPasswordEmail_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
+        // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(resetPasswordRequestBody.getIsReCaptchaV2()).thenReturn(true);
+        setSendResetPasswordEmailMocks();
+
+        // when
+        resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+
+        // then
+        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
+        assertEquals(reCaptchaSecret, reCaptchaV2Secret);
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsInvalid_returnBadRequest() throws JSONException, IOException {
+    public void sendResetPasswordEmail_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
+            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
-        reCaptchaResponse.put("success", false);
-        reCaptchaResponse.put("score", 0.5);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        setSendResetPasswordEmailMocks();
+
+        // when
+        resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+
+        // then
+        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
+        assertEquals(reCaptchaSecret, reCaptchaV3Secret);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_WhenReCaptchaTokenVerificationThrowsReCaptchaLowScoreException_returnAccepted() throws JSONException, IOException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaLowScoreException(""));
         setSendResetPasswordEmailMocks();
 
         // when
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
 
         // then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals(result.getStatusCode().value(), HttpStatus.ACCEPTED.value());
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidButScoreIsLessThanMinThreshold_returnBadRequest() throws JSONException, IOException {
+    public void sendResetPasswordEmail_WhenReCaptchaTokenVerificationThrowsReCaptchaUnsuccessfulResponseException_returnBadRequest() throws JSONException, IOException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.4);
+        when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaUnsuccessfulResponseException(""));
         setSendResetPasswordEmailMocks();
 
         // when
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
 
         // then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals(result.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
     }
 
     @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndScoreIsEqualsToMinThreshold_returnOk() throws JSONException, IOException {
+    public void sendResetPasswordEmail_WhenReCaptchaVerificationIsSuccessful_returnOk() throws JSONException, IOException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         setSendResetPasswordEmailMocks();
 
         // when
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
 
         // then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
-    }
-
-    @Test
-    public void sendResetPasswordEmail_WhenATokenIsValidAndScoreIsGreaterThanTheMinThreshold_returnOk() throws JSONException, IOException {
-        // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.6);
-        setSendResetPasswordEmailMocks();
-
-        // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
-
-        // then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
+        assertEquals(result.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountDoesNotExistsInCDC_returnOk()
-            throws JSONException, IOException {
+            throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         when(resetPasswordRequestBody.getCaptchaToken()).thenReturn("token");
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
@@ -147,16 +175,16 @@ public class ResetPasswordControllerTests {
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
 
         // then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
+        assertEquals(result.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistinCDC_returnOK()
-            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException {
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         //given
-        reCaptchaResponse.put("success", true);
-        reCaptchaResponse.put("score", 0.5);
         setSendResetPasswordEmailMocks();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
         doNothing().when(cdcResponseHandler).resetPasswordRequest(username);
 
@@ -164,7 +192,7 @@ public class ResetPasswordControllerTests {
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
 
         //then
-        Assert.assertEquals(result.getStatusCode(), HttpStatus.OK);
+        assertEquals(result.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
@@ -186,7 +214,7 @@ public class ResetPasswordControllerTests {
 
         //then
         verify(resetPasswordService).sendResetPasswordConfirmation(any());
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.OK);
+        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.OK);
     }
 
     @Test
@@ -205,7 +233,7 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -222,7 +250,7 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -240,7 +268,7 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.BAD_REQUEST);
+        assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -258,6 +286,6 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        Assert.assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.FOUND);
+        assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.FOUND);
     }
 }

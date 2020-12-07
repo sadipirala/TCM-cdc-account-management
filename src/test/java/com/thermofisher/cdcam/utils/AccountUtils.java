@@ -114,6 +114,7 @@ public class AccountUtils {
         .department(department)
         .member(member)
         .reCaptchaToken(reCaptchaToken)
+        .isReCaptchaV2(false)
         .build();
     }
 

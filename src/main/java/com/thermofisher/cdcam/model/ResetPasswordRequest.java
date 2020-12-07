@@ -10,4 +10,5 @@ import lombok.Setter;
 public class ResetPasswordRequest {
     private String username;
     private String captchaToken;
+    private Boolean isReCaptchaV2;
 }

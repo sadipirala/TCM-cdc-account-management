@@ -16,6 +16,8 @@ import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.EmailService;
 
@@ -65,11 +67,11 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
-    @Value("${identity.recaptcha.secret}")
-    private String identityReCaptchaSecret;
+    @Value("${identity.recaptcha.secret.v3}")
+    private String identityReCaptchaSecretV3;
 
-    @Value("${recaptcha.threshold.minimum}")
-    private double RECAPTCHA_MIN_THRESHOLD;
+    @Value("${identity.recaptcha.secret.v2}")
+    private String identityReCaptchaSecretV2;
 
     @Autowired
     LiteRegHandler handler;
@@ -160,11 +162,6 @@ public class AccountsController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private boolean isReCaptchaResponseValid(JSONObject reCaptchaResponse) throws JSONException {
-        final String SUCCESS = "success";
-        return reCaptchaResponse.has(SUCCESS) && reCaptchaResponse.getBoolean(SUCCESS) && reCaptchaResponse.getDouble("score") >= RECAPTCHA_MIN_THRESHOLD;
-    }
-
     @PostMapping("/")
     @ApiOperation(value = "Inserts a new Account")
     @ApiResponses({
@@ -184,12 +181,20 @@ public class AccountsController {
             logger.error(String.format("One or more errors occurred while creating the account. %s", violations.toArray()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-
-        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), identityReCaptchaSecret);
-        logger.info(String.format("Username %s got a %.1f score.", accountInfo.getUsername(), reCaptchaResponse.getDouble("score")));
-        if (!isReCaptchaResponseValid(reCaptchaResponse)) {
-            logger.error(String.format("reCaptcha error for: %s. message: %s", accountInfo.getUsername(), reCaptchaResponse.toString()));
+        
+        try {
+            String reCaptchaSecret = accountInfo.getIsReCaptchaV2() ? identityReCaptchaSecretV2 : identityReCaptchaSecretV3;
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), reCaptchaSecret);
+            logger.info(String.format("reCaptcha response for %s: %s", accountInfo.getUsername(), reCaptchaResponse.toString()));
+        } catch (ReCaptchaLowScoreException v3Exception) {
+            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfo.getUsername(), v3Exception.getMessage()));
+            return ResponseEntity.accepted().build();
+        } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
+            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfo.getUsername(), v2Exception.getMessage()));
             return ResponseEntity.badRequest().build();
+        } catch (JSONException jsonException) {
+            logger.error(String.format("JSONException while verifying reCaptcha token: %s.", jsonException.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
         AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);
@@ -348,6 +353,4 @@ public class AccountsController {
             NullPointerException ex) {
         return "Invalid input. Null body present.";
     }
-
-
 }

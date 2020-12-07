@@ -49,4 +49,5 @@ public class AccountInfoDTO {
     private String registrationType;
     private String timezone;
     private String hiraganaName;
+    private Boolean isReCaptchaV2;
 }

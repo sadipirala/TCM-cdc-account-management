@@ -5,6 +5,8 @@ import com.thermofisher.cdcam.enums.ResetPasswordErrors;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
@@ -14,7 +16,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,11 +39,11 @@ public class ResetPasswordController {
     @Value("${aws.sns.reset.password}")
     private String resetPasswordTopic;
 
-    @Value("${identity.recaptcha.secret}")
-    private String identityReCaptchaSecret;
+    @Value("${identity.recaptcha.secret.v3}")
+    private String identityReCaptchaSecretV3;
 
-    @Value("${recaptcha.threshold.minimum}")
-    private double RECAPTCHA_MIN_THRESHOLD;
+    @Value("${identity.recaptcha.secret.v2}")
+    private String identityReCaptchaSecretV2;
 
     @Autowired
     ReCaptchaService reCaptchaService;
@@ -63,17 +64,13 @@ public class ResetPasswordController {
         @ApiResponse(code = 400, message = "Bad request."),
         @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) throws IOException, JSONException {
+    public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) {
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
 
-        JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), identityReCaptchaSecret);
-        logger.info(String.format("Username %s got a %.1f score.", body.getUsername(), reCaptchaResponse.getDouble("score")));
-        if (!isReCaptchaResponseValid(reCaptchaResponse)) {
-            logger.error(String.format("reCaptcha error for %s. message: %s", body.getUsername(), reCaptchaResponse.toString()));
-            return ResponseEntity.badRequest().build();
-        }
-
         try {
+            String reCaptchaSecret = body.getIsReCaptchaV2() ? identityReCaptchaSecretV2 : identityReCaptchaSecretV3;
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
+            logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
             cdcResponseHandler.resetPasswordRequest(body.getUsername());
             logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
             return ResponseEntity.ok().build();
@@ -83,13 +80,18 @@ public class ResetPasswordController {
         } catch (CustomGigyaErrorException e) {
             logger.error(e.getMessage());
             return ResponseEntity.badRequest().build();
+        } catch (ReCaptchaLowScoreException v3Exception) {
+            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", body.getUsername(), v3Exception.getMessage()));
+            return ResponseEntity.accepted().build();
+        } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
+            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", body.getUsername(), v2Exception.getMessage()));
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error(String.format("Error: %s", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    private boolean isReCaptchaResponseValid(JSONObject reCaptchaResponse) throws JSONException {
-        final String SUCCESS = "success";
-        return reCaptchaResponse.has(SUCCESS) && reCaptchaResponse.getBoolean(SUCCESS) && reCaptchaResponse.getDouble("score") >= RECAPTCHA_MIN_THRESHOLD;
-    }
 
     @PutMapping("/")
     @ApiOperation(value = "resets the password.")
