@@ -2,7 +2,12 @@ package com.thermofisher.cdcam;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,9 +21,9 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCValidationError;
-import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.HashValidationService;
@@ -331,13 +336,8 @@ public class AccountRequestServiceTests {
     @Test
     public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData() throws IOException {
         // given
-        AccountInfo accountInfo = AccountInfo.builder()
-                .username("test")
-                .emailAddress("email")
-                .firstName("first")
-                .lastName("last")
-                .password("test")
-                .build();
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setEmailAddress("invalid-email");
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
@@ -356,13 +356,8 @@ public class AccountRequestServiceTests {
     @Test
     public void processRegistrationRequest_givenAnInvalidAccount_returnCDCResponseData() throws IOException {
         // given
-        AccountInfo accountInfo = AccountInfo.builder()
-            .username("test")
-            .emailAddress("email")
-            .firstName("first")
-            .lastName("last")
-            .password("1")
-            .build();
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setEmailAddress("invalid-email");
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);
@@ -389,13 +384,8 @@ public class AccountRequestServiceTests {
     @Test
     public void processRegistrationRequest_givenAnInvalidEmail_returnCDCResponseData() throws IOException {
         // given
-        AccountInfo accountInfo = AccountInfo.builder()
-                .username("test")
-                .emailAddress("email")
-                .firstName("first")
-                .lastName("last")
-                .password("1")
-                .build();
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setEmailAddress("invalid-email");
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);

@@ -1,6 +1,11 @@
 {
         "socialProviders": "site",
         "lastLogin": "2019-08-21T23:13:38.284Z",
+        "acceptsAspireEnrollmentConsent": true,
+        "isHealthcareProfessional": true,
+        "isGovernmentEmployee": true,
+        "isProhibitedFromAcceptingGifts": true,
+        "acceptsAspireTermsAndConditions": true,
         "userInfo": {
                 "country": "United States",
                 "isTempUser": false,

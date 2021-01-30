@@ -1,31 +1,33 @@
 package com.thermofisher.cdcam;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
+
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.utils.AccountUtils;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.IOException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -37,11 +39,6 @@ public class ResetPasswordServiceTests {
 
     @Mock
     HttpService httpService;
-
-    @Before
-    public void setup() {
-        ReflectionTestUtils.setField(resetPasswordService, "supportedLocales", "en_US,en_DE,es_AR,es_ES,en_CL,fr_FR,ko_KR,ja_JP,zh_CN");
-    }
 
     @Test
     public void sendResetPasswordConfirmation_givenAccountWithValidFormat_thenResetPasswordConfirmationEmailPostRequestShouldBeMade() throws IOException {

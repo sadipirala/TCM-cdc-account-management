@@ -2,6 +2,8 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordConfirmation;
+import com.thermofisher.cdcam.utils.EmailLocaleUtils;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
@@ -14,8 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 public class ResetPasswordService {
@@ -27,15 +27,12 @@ public class ResetPasswordService {
     @Value("${tfrn.email-notification.url}")
     private String emailNotificationUrl;
 
-    @Value("${supported.locales}")
-    private String supportedLocales;
-
     @Autowired
     HttpService httpService;
 
     @Async
     public void sendResetPasswordConfirmation(AccountInfo accountInfo) throws IOException {
-        updateLocale(accountInfo);
+        processAccountLocale(accountInfo);
         ResetPasswordConfirmation request = new ResetPasswordConfirmation().build(accountInfo, redirectUrl);
         JSONObject requestBody = new JSONObject(request);
 
@@ -59,30 +56,7 @@ public class ResetPasswordService {
         }
     }
 
-    private void updateLocale(AccountInfo account) {
-        final String chinaLocale = "zh-cn";
-        final String chineseTemplateMapping = "zh_CN";
-
-        List<String> supportedLocaleList = Arrays.asList(supportedLocales.toUpperCase().split(","));
-
-        String locale = account.getLocaleName();
-        String country = account.getCountry();
-
-        if (locale == null) return;
-
-        if (supportedLocaleList.contains(locale.toUpperCase())) {
-            String[] localeSections = locale.split("_");
-            account.setLocaleName(String.format("%s_%s", localeSections[0].toLowerCase(), localeSections[1].toUpperCase()));
-            return;
-        }
-
-        if (locale.equals(chinaLocale)) {
-            account.setLocaleName(chineseTemplateMapping);
-            return;
-        }
-
-        if (country != null) {
-            account.setLocaleName(String.format("%s_%s", locale, country.toUpperCase()));
-        }
+    private void processAccountLocale(AccountInfo account) {
+        account.setLocaleName(EmailLocaleUtils.processLocaleForNotification(account.getLocaleName(), account.getCountry()));
     }
 }

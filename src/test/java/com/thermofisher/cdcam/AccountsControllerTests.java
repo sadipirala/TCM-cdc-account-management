@@ -1,39 +1,20 @@
 package com.thermofisher.cdcam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.EmailSentResponse;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountRequestService;
-import com.thermofisher.cdcam.services.EmailService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -41,12 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +30,15 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -88,6 +73,9 @@ public class AccountsControllerTests {
 
     @Mock
     AccountRequestService accountRequestService;
+
+    @Mock
+    AccountInfoNotificationService accountInfoNotificationService;
 
     @Mock
     ReCaptchaService reCaptchaService;
@@ -463,7 +451,7 @@ public class AccountsControllerTests {
         // then
         verify(accountRequestService, times(1)).sendVerificationEmail(any());
     }
-
+    
     @Test
     public void newAccount_givenRegistrationNotSuccessful_sendVerificationEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
@@ -482,6 +470,111 @@ public class AccountsControllerTests {
 
         // then
         verify(accountRequestService, times(0)).sendVerificationEmail(any());
+    }
+
+    @Test
+    public void newAccount_givenRegistrationIsValid_AndAspireFieldsAreNull_sendAspireSNSShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setAcceptsAspireEnrollmentConsent(null);
+        accountDTO.setIsHealthcareProfessional(null);
+        accountDTO.setAcceptsAspireTermsAndConditions(null);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+    }
+
+    @Test
+    public void newAccount_givenAspireRegistrationIsValid_sendAspireSNSShouldBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setAcceptsAspireEnrollmentConsent(true);
+        accountDTO.setIsHealthcareProfessional(false);
+        accountDTO.setAcceptsAspireTermsAndConditions(true);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountInfoNotificationService, times(1)).sendAspireRegistrationSNS(any());
+    }
+
+    @Test
+    public void newAccount_givenAspireEnrollmentIsNotAccepted_sendAspireSNSShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setAcceptsAspireEnrollmentConsent(false);
+        accountDTO.setIsHealthcareProfessional(false);
+        accountDTO.setAcceptsAspireTermsAndConditions(true);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+    }
+
+    @Test
+    public void newAccount_givenUserIsHealthCareProfessional_sendAspireSNSShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setAcceptsAspireEnrollmentConsent(true);
+        accountDTO.setIsHealthcareProfessional(true);
+        accountDTO.setAcceptsAspireTermsAndConditions(true);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+    }
+
+    @Test
+    public void newAccount_givenUserDoesNotAcceptAspireTermsAndConditions_sendAspireSNSShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setAcceptsAspireEnrollmentConsent(true);
+        accountDTO.setIsHealthcareProfessional(false);
+        accountDTO.setAcceptsAspireTermsAndConditions(false);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
     }
 
     @Test
@@ -539,7 +632,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void sendVerificationEmail_shouldSearchForAccountInfoByEmail() throws IOException {
+    public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
         when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
@@ -552,7 +645,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void sendVerificationEmail_shouldSendUsernameRecoveryEmail() throws IOException {
+    public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException {
         // given
         EmailSentResponse response = EmailSentResponse.builder().statusCode(200).build();
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -682,28 +775,44 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void isAvailableLoginID_GivenIdIsAvailable_ItShouldReturn404Response() throws Exception {
+    public void isAvailableLoginID_GivenIdIsAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginID(any())).thenReturn(true);
+        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenReturn(true);
 
         // when
-        ResponseEntity<?> response = accountsController.isAvailableLoginID(loginID);
+        ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
 
         // then
-        assertTrue(response.getStatusCode().value() == HttpStatus.NOT_FOUND.value());
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertTrue(response.getBody().getIsCDCAvailable());
     }
 
     @Test
-    public void isAvailableLoginID_GivenIdIsNotAvailable_ItShouldReturn200Response() throws Exception {
+    public void isAvailableLoginID_GivenIdIsNotAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginID(any())).thenReturn(false);
+        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenReturn(false);
 
         // when
-        ResponseEntity<?> response = accountsController.isAvailableLoginID(loginID);
+        ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
 
         // then
-        assertTrue(response.getStatusCode().is2xxSuccessful());
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertFalse(response.getBody().getIsCDCAvailable());
+    }
+
+
+    @Test
+    public void isAvailableLoginID_GivenAnExceptionOccursWhenCheckingCDC_ItShouldReturnInternalServerError() throws Exception {
+        // given
+        String loginID = "test@mail.com";
+        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenThrow(Exception.class);
+
+        // when
+        ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

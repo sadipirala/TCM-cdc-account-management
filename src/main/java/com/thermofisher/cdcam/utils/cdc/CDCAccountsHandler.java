@@ -21,20 +21,9 @@ public class CDCAccountsHandler {
             .registration(buildRegistrationObject(accountInfo))
             .build();
 
-        Work work = Work.builder()
-            .company(accountInfo.getCompany())
-            .location(accountInfo.getDepartment())
-            .build();
+        Work work = buildWorkObject(accountInfo);
 
-        Profile profile = Profile.builder()
-            .firstName(accountInfo.getFirstName())
-            .lastName(accountInfo.getLastName())
-            .country(accountInfo.getCountry())
-            .city(accountInfo.getCity())
-            .locale(locale)
-            .work(work)
-            .timezone(accountInfo.getTimezone())
-            .build();
+        Profile profile = buildProfileObject(accountInfo, work, locale);
 
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())
@@ -47,8 +36,31 @@ public class CDCAccountsHandler {
         return newAccount;
     }
 
+    private static Work buildWorkObject(AccountInfo accountInfo) {
+        return accountInfo.getMember().equals("false") ? null : Work.builder()
+                .company(accountInfo.getCompany())
+                .location(accountInfo.getDepartment())
+                .build();
+    }
 
-    private static Registration buildRegistrationObject(AccountInfo accountInfo){
+    private static Profile buildProfileObject(AccountInfo accountInfo, Work work, String locale) {
+        Profile profile = Profile.builder()
+                .firstName(accountInfo.getFirstName())
+                .lastName(accountInfo.getLastName())
+                .locale(locale)
+                .country(accountInfo.getCountry())
+                .work(work)
+                .timezone(accountInfo.getTimezone())
+                .build();
+
+        if (accountInfo.getMember().equals("true")) {
+            profile.setCity(accountInfo.getCity());
+        }
+        return profile;
+    }
+
+
+    private static Registration buildRegistrationObject(AccountInfo accountInfo) {
         Japan japan = Japan.builder()
                 .hiraganaName(accountInfo.getHiraganaName())
                 .build();
@@ -56,7 +68,7 @@ public class CDCAccountsHandler {
         China china = China.builder()
                 .interest(accountInfo.getInterest())
                 .jobRole(accountInfo.getJobRole())
-                .phoneNumber(accountInfo.getPhoneNumber())
+                .phoneNumber(getPhoneNumberForChina(accountInfo))
                 .build();
 
         Korea korea = Korea.builder()
@@ -74,5 +86,9 @@ public class CDCAccountsHandler {
                 .china(china)
                 .korea(korea)
                 .build();
+    }
+
+    private static String getPhoneNumberForChina(AccountInfo accountInfo) {
+        return accountInfo.getMember().equals("true") && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
     }
 }

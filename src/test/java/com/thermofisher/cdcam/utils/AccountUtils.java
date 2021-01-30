@@ -50,6 +50,11 @@ public class AccountUtils {
     public static final Boolean privateInfoOptional = true;
     public static final Boolean processingConsignment = true;
     public static final Boolean termsOfUse = true;
+    public static final Boolean acceptsAspireEnrollmentConsent = true;
+    public static final Boolean isHealthcareProfessional = true;
+    public static final Boolean isGovernmentEmployee = true;
+    public static final Boolean isProhibitedFromAcceptingGifts = true;
+    public static final Boolean acceptsAspireTermsAndConditions = true;
 
     public static AccountInfo getFederatedAccount() {
         return AccountInfo.builder()
@@ -115,10 +120,16 @@ public class AccountUtils {
         .member(member)
         .reCaptchaToken(reCaptchaToken)
         .isReCaptchaV2(false)
+        .acceptsAspireEnrollmentConsent(acceptsAspireEnrollmentConsent)
+        .isHealthcareProfessional(isHealthcareProfessional)
+        .isGovernmentEmployee(isGovernmentEmployee)
+        .isProhibitedFromAcceptingGifts(isProhibitedFromAcceptingGifts)
+        .acceptsAspireTermsAndConditions(acceptsAspireTermsAndConditions)
         .build();
     }
 
     public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {
+        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
             .build();
@@ -126,7 +137,7 @@ public class AccountUtils {
         China china = China.builder()
             .jobRole(jobRole)
             .interest(interest)
-            .phoneNumber(phoneNumber)
+            .phoneNumber(getPhoneNumberForChina(accountInfo))
             .build();
 
         Japan japan = Japan.builder()
@@ -155,20 +166,9 @@ public class AccountUtils {
             .registration(registration)
             .build();
 
-        Work work = Work.builder()
-            .company(accountInfo.getCompany())
-            .location(accountInfo.getDepartment())
-            .build();
+        Work work = buildWorkObject(accountInfo);
 
-        Profile profile = Profile.builder()
-            .firstName(accountInfo.getFirstName())
-            .lastName(accountInfo.getLastName())
-            .country(accountInfo.getCountry())
-            .city(accountInfo.getCity())
-            .locale(Utils.parseLocale(accountInfo.getLocaleName()))
-            .work(work)
-            .timezone(accountInfo.getTimezone())
-            .build();
+        Profile profile = buildProfileObject(accountInfo, work, locale);
 
         CDCNewAccount newAccount = CDCNewAccount.builder()
             .username(accountInfo.getUsername())
@@ -213,6 +213,33 @@ public class AccountUtils {
             .legacyEmail(email)
             .legacyUsername(username)
             .build();
+    }
+
+    private static String getPhoneNumberForChina(AccountInfo accountInfo) {
+        return accountInfo.getMember().equals("true") && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
+    }
+
+    private static Profile buildProfileObject(AccountInfo accountInfo, Work work, String locale) {
+        Profile profile = Profile.builder()
+                .firstName(accountInfo.getFirstName())
+                .lastName(accountInfo.getLastName())
+                .locale(locale)
+                .country(accountInfo.getCountry())
+                .work(work)
+                .timezone(accountInfo.getTimezone())
+                .build();
+
+        if (accountInfo.getMember().equals("true")) {
+            profile.setCity(accountInfo.getCity());
+        }
+        return profile;
+    }
+
+    private static Work buildWorkObject(AccountInfo accountInfo) {
+        return accountInfo.getMember().equals("false") ? null : Work.builder()
+                .company(accountInfo.getCompany())
+                .location(accountInfo.getDepartment())
+                .build();
     }
 
     public static String getSiteAccountJsonString() throws IOException, ParseException {

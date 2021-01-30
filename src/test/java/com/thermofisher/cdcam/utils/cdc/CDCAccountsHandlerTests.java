@@ -1,8 +1,5 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -12,6 +9,8 @@ import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class CDCAccountsHandlerTests {
@@ -87,9 +86,11 @@ public class CDCAccountsHandlerTests {
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsPhoneNumber_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
+    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsMember_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setCountry("cn");
+        accountInfo.setMember("true");
         String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
@@ -97,6 +98,92 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertTrue(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsNotMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
+        // given
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setCountry("cn");
+        accountInfo.setMember("false");
+        String phoneNumber = accountInfo.getPhoneNumber();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAspireAccountContainsPhoneNumberAndIsNotAMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setMember("false");
+        String phoneNumber = accountInfo.getPhoneNumber();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAspireAccountContainsCompanyAndIsNotAMember_ThenCDCAccountShouldNotContainCompany() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setMember("false");
+        String company = accountInfo.getCompany();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getProfile().contains(String.format("\"company\":\"%s\"", company)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAspireAccountContainsDepartmentAndIsNotAMember_ThenCDCAccountShouldNotContainDepartment() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setMember("false");
+        String department = accountInfo.getDepartment();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getProfile().contains(String.format("\"department\":\"%s\"", department)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAspireAccountContainsCityAndIsNotAMember_ThenCDCAccountShouldNotContainCity() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setMember("false");
+        String city = accountInfo.getCity();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getProfile().contains(String.format("\"city\":\"%s\"", city)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAspireAccountContainsCountryAndIsNotAMember_ThenCDCAccountShouldContainCountry() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setMember("false");
+        String country = accountInfo.getCountry();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getProfile().contains(String.format("\"country\":\"%s\"", country)));
     }
 
     @Test

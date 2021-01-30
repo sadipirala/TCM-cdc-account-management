@@ -50,4 +50,9 @@ public class AccountInfoDTO {
     private String timezone;
     private String hiraganaName;
     private Boolean isReCaptchaV2;
+    private Boolean acceptsAspireEnrollmentConsent;
+    private Boolean isHealthcareProfessional;
+    private Boolean isGovernmentEmployee;
+    private Boolean isProhibitedFromAcceptingGifts;
+    private Boolean acceptsAspireTermsAndConditions;
 }

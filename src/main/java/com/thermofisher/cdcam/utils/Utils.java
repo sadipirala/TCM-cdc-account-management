@@ -12,6 +12,7 @@ import java.io.StringWriter;
 
 public class Utils {
     private final static String CHINA_LOCALE = "zh-cn";
+    private final static String TAIWAN_LOCALE = "zh-tw";
 
     public static String getAlphaNumericString(int length) {
         final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
@@ -45,12 +46,25 @@ public class Utils {
     }
 
     public static String parseLocale(String locale) {
-        String _locale = locale.split("_")[0];
-        return isChinaLocale(_locale) ? CHINA_LOCALE : _locale;
+        final int LANGUAGE_CODE_INDEX = 0;
+        String lang = locale.split("_")[LANGUAGE_CODE_INDEX];
+
+        if (isChinaLocale(lang)) {
+            return CHINA_LOCALE;
+        } else if (isTaiwanLocale(lang)) {
+            return TAIWAN_LOCALE;
+        }
+
+        return lang;
     }
 
     private static boolean isChinaLocale(String locale) {
         return locale.toLowerCase().equals("zh");
+    }
+
+    private static boolean isTaiwanLocale(String locale) {
+        final String TFCOM_LANG_FOR_TAIWAN = "zt";
+        return locale.toLowerCase().equals(TFCOM_LANG_FOR_TAIWAN);
     }
 
     public static String stackTraceToString(Exception e) {

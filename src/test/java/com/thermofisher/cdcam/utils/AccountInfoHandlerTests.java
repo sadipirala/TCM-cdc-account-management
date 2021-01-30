@@ -67,6 +67,11 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("processingConsignment");
         propertiesToRemove.add("termsOfUse");
         propertiesToRemove.add("hiraganaName");
+        propertiesToRemove.add("acceptsAspireEnrollmentConsent");
+        propertiesToRemove.add("isHealthcareProfessional");
+        propertiesToRemove.add("isGovernmentEmployee");
+        propertiesToRemove.add("isProhibitedFromAcceptingGifts");
+        propertiesToRemove.add("acceptsAspireTermsAndConditions");
         json.put("uuid", json.get("uid").asText());
         json.put("cipdc", MOCK_CIPDC);
         json.remove(propertiesToRemove);
@@ -87,8 +92,38 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("privateInfoOptional");
         propertiesToRemove.add("processingConsignment");
         propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("acceptsAspireEnrollmentConsent");
+        propertiesToRemove.add("isHealthcareProfessional");
+        propertiesToRemove.add("isGovernmentEmployee");
+        propertiesToRemove.add("isProhibitedFromAcceptingGifts");
+        propertiesToRemove.add("acceptsAspireTermsAndConditions");
         json.remove(propertiesToRemove);
         json.put("cipdc", MOCK_CIPDC);
+        return mapper.writeValueAsString(json);
+    }
+
+    public String prepareJsonForAspireNotification(ObjectNode json) throws JsonProcessingException {
+        List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("duplicatedAccountUid");
+        propertiesToRemove.add("registrationType");
+        propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("timezone");
+        propertiesToRemove.add("localeName");
+        propertiesToRemove.add("cipdc");
+        propertiesToRemove.add("regAttempts");
+        propertiesToRemove.add("uid");
+        propertiesToRemove.add("password");
+        propertiesToRemove.add("ecommerceTransaction");
+        propertiesToRemove.add("personalInfoMandatory");
+        propertiesToRemove.add("personalInfoOptional");
+        propertiesToRemove.add("privateInfoMandatory");
+        propertiesToRemove.add("privateInfoOptional");
+        propertiesToRemove.add("processingConsignment");
+        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("interests");
+        propertiesToRemove.add("jobRole");
+        propertiesToRemove.add("hiraganaName");
+        json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
 
@@ -121,6 +156,38 @@ public class AccountInfoHandlerTests {
         // then
         assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);
         assertTrue(expectedAccountToNotify.equals(parsedAccount));
+    }
+
+    @Test
+    public void prepareForAspireNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
+        // given
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        AccountInfo mockAccount = AccountUtils.getSiteAccount();
+        ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
+        String expectedAccountToNotify = prepareJsonForAspireNotification(jsonAccount);
+
+        // when
+        String parsedAccount = accountHandler.prepareForAspireNotification(mockAccount);
+
+        // then
+        assertEquals(parsedAccount.indexOf("\"duplicatedAccountUid\""), -1);
+        assertEquals(expectedAccountToNotify, parsedAccount);
+    }
+
+    @Test
+    public void prepareForGRPNotification_givenAspireAccountIsNotMember_ShouldNotAddAdditionalFieldsToString() throws JsonProcessingException {
+        // given
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        AccountInfo mockAccount = AccountUtils.getSiteAccount();
+        mockAccount.setMember("false");
+
+        // when
+        String parsedAccount = accountHandler.prepareForGRPNotification(mockAccount);
+
+        // then
+        assertEquals(parsedAccount.indexOf("\"department\""), -1);
+        assertEquals(parsedAccount.indexOf("\"company\""), -1);
+        assertEquals(parsedAccount.indexOf("\"city\""), -1);
     }
 
     @Test

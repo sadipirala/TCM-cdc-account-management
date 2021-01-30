@@ -110,6 +110,11 @@ public class AccountBuilder {
             .privateInfoOptional(accountInfoDTO.getPrivateInfoOptional())
             .processingConsignment(accountInfoDTO.getProcessingConsignment())
             .termsOfUse(accountInfoDTO.getTermsOfUse())
+            .acceptsAspireEnrollmentConsent(accountInfoDTO.getAcceptsAspireEnrollmentConsent())
+            .isHealthcareProfessional(accountInfoDTO.getIsHealthcareProfessional())
+            .isGovernmentEmployee(accountInfoDTO.getIsGovernmentEmployee())
+            .isProhibitedFromAcceptingGifts(accountInfoDTO.getIsProhibitedFromAcceptingGifts())
+            .acceptsAspireTermsAndConditions(accountInfoDTO.getAcceptsAspireTermsAndConditions())
             .build();
     }
 }

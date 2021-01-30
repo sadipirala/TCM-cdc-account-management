@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Builder(builderClassName = "ProfileBuilder", toBuilder = true)
 @Getter
+@Setter
 @JsonDeserialize(builder = Profile.ProfileBuilder.class)
 public class Profile {
     private String username;

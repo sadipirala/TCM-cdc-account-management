@@ -1,33 +1,21 @@
 package com.thermofisher.cdcam.controller;
 
-import java.io.IOException;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.model.*;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountRequestService;
-import com.thermofisher.cdcam.services.EmailService;
-
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-
+import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -39,27 +27,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.*;
 import javax.validation.constraints.NotBlank;
-
+import java.io.IOException;
+import java.util.List;
 import java.util.Set;
-
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.ResponseHeader;
 
 @RestController
 @RequestMapping("/accounts")
@@ -94,6 +68,8 @@ public class AccountsController {
     @Autowired
     ReCaptchaService reCaptchaService;
 
+    @Autowired
+    AccountInfoNotificationService accountInfoNotificationService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -206,6 +182,9 @@ public class AccountsController {
             if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
                 String uid = account.getUid();
                 logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), uid));
+                if (isAspireRegistrationValid(account)) {
+                    accountInfoNotificationService.sendAspireRegistrationSNS(account);
+                }
 
                 if (account.getRegistrationType() != null && account.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
                     logger.info(String.format("Attempting to send confirmation email. UID: %s", uid));
@@ -225,6 +204,12 @@ public class AccountsController {
             logger.error(String.format("An error occurred while creating account for: %s", account.getUsername()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private boolean isAspireRegistrationValid (AccountInfo accountInfo) {
+        return accountInfo.getAcceptsAspireEnrollmentConsent() != null && accountInfo.getAcceptsAspireEnrollmentConsent()
+            && accountInfo.getIsHealthcareProfessional() != null && !accountInfo.getIsHealthcareProfessional()
+            && accountInfo.getAcceptsAspireTermsAndConditions() != null && accountInfo.getAcceptsAspireTermsAndConditions();
     }
 
     @PostMapping("/username/recovery")
@@ -302,21 +287,25 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "loginID", value = "LoginID to be checked in CDC.", required = true)
-    public ResponseEntity<?> isAvailableLoginID(@PathVariable @NotBlank String loginID) {
+    public ResponseEntity<AccountAvailabilityResponse> isAvailableLoginID(@PathVariable @NotBlank String loginID) {
+        logger.info(String.format("Check for loginID availability started. Login ID: %s", loginID));
+
+        Boolean cdcAvailabilityResponse;
         try {
-            logger.info(String.format("Check for loginID availability started. Login ID: %s", loginID));
-            boolean isAvailableLoginID = cdcResponseHandler.isAvailableLoginID(loginID);
-            logger.info(String.format("Is %s available: %b", loginID, isAvailableLoginID));
-            
-            if (isAvailableLoginID) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            return ResponseEntity.ok().build();
+            cdcAvailabilityResponse = cdcResponseHandler.isAvailableLoginID(loginID);
         } catch (Exception e) {
-            logger.error(String.format("Error checking %s availability: %s", loginID, e.getMessage()));
+            String exception = Utils.stackTraceToString(e);
+            logger.error(String.format("An error occurred while checking availability in CDC for: %s. Error: %s", loginID, exception));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
         }
+
+        logger.info(String.format("Is %s available in CDC: %b", loginID, cdcAvailabilityResponse));
+
+        AccountAvailabilityResponse response = AccountAvailabilityResponse.builder()
+                .isCDCAvailable(cdcAvailabilityResponse)
+                .build();
+
+        return ResponseEntity.ok().body(response);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
