@@ -24,10 +24,12 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCValidationError;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.services.AccountRequestService;
 import com.thermofisher.cdcam.services.CDCAccountsService;
-import com.thermofisher.cdcam.services.HashValidationService;
 import com.thermofisher.cdcam.services.HttpService;
+import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -43,6 +45,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,7 +59,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 @SpringBootTest(classes = CdcamApplication.class)
 public class AccountRequestServiceTests {
     private final List<String> uids = new ArrayList<>();
-    private final String hashedString = "QJERFC2183DASJ=";
 
     @InjectMocks
     AccountRequestService accountRequestService;
@@ -65,13 +67,7 @@ public class AccountRequestServiceTests {
     AccountInfoHandler accountInfoHandler;
 
     @Mock
-    SNSHandler snsHandler;
-
-    @Mock
-    SecretsManager secretsManager;
-
-    @Mock
-    HashValidationService hashValidationService;
+    CDCAccountsService cdcAccountsService;
 
     @Mock
     CDCResponseHandler cdcResponseHandler;
@@ -80,7 +76,13 @@ public class AccountRequestServiceTests {
     HttpService httpService;
 
     @Mock
-    CDCAccountsService cdcAccountsService;
+    NotificationService notificationService;
+
+    @Mock
+    SNSHandler snsHandler;
+
+    @Mock
+    SecretsManager secretsManager;
 
     private AccountInfo federationAccount = AccountInfo.builder().uid("0055").username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
@@ -94,234 +96,93 @@ public class AccountRequestServiceTests {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         uids.add("001");
         uids.add("002");
         uids.add("003");
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn(hashedString);
     }
 
     @Test
-    public void processRequest_IfGivenAUID_searchAccountInfo() throws JSONException, IOException{
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+    public void onAccountRegistered_IfGivenAUID_searchAccountInfo() throws IOException, CustomGigyaErrorException{
+        // given
+        String uid = UUID.randomUUID().toString();
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
 
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
+        // when
+        accountRequestService.onAccountRegistered(uid);
 
-        //validation
+        // then
         Mockito.verify(cdcResponseHandler).getAccountInfo(any());
     }
 
     @Test
-    public void processRequest_IfGivenAUID_setAwsQuickSightRole() throws JSONException, IOException{
-        //setup
+    public void onAccountRegistered_IfGivenAUID_setAwsQuickSightRole() throws IOException, CustomGigyaErrorException{
+        // given
         AccountRequestService accountRequestServiceMock = Mockito.spy(accountRequestService);
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+        String uid = UUID.randomUUID().toString();
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
         Mockito.doNothing().when(accountRequestServiceMock).setAwsQuickSightRole(any());
 
-        //execution
-        accountRequestServiceMock.processRequest("Test", mockBody);
+        // when
+        accountRequestServiceMock.onAccountRegistered(uid);
 
-        //validation
+        // then
         Mockito.verify(accountRequestServiceMock).setAwsQuickSightRole(any());
     }
 
     @Test
-    public void processRequest_IfGivenAFederatedUser_searchForDuplicatedAccountsInCDC() throws JSONException, IOException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+    public void onAccountRegistered_IfAccountIsNull_thenLogError() throws CustomGigyaErrorException {
+        // given
+        String uid = UUID.randomUUID().toString();
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(null);
 
-        //execution
-        accountRequestService.processRequest("Federated account", mockBody);
-
-        //validation
-        Mockito.verify(cdcResponseHandler).searchDuplicatedAccountUid(federationAccount.getUid(),federationAccount.getEmailAddress());
+        // when
+        accountRequestService.onAccountRegistered(uid);
     }
 
     @Test
-    public void processRequest_IfGivenAFederatedUser_disableDuplicatedAccounts() throws JSONException, IOException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
-
-        //execution
-        accountRequestService.processRequest("Federated account", mockBody);
-
-        //validation
-        Mockito.verify(cdcResponseHandler).disableAccount(anyString());
-    }
-
-    @Test
-    public void processRequest_IfGivenAFederatedUser_saveDuplicatedAccountUidToAccount() throws JSONException, IOException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"0055\"}}]}";
-
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
-        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
-
-        //execution
-        accountRequestService.processRequest("Federated account", mockBody);
-
-        //validation
-        federationAccount.setDuplicatedAccountUid("0055");
-    }
-
-
-    @Test
-    public void processRequest_IfValidHashIsFalse_thenLogError() throws JSONException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(false);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-    }
-
-    @Test
-    public void processRequest_IfEventTypeIsNotRegistration_thenLogError() throws JSONException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"undefined\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-    }
-
-    @Test
-    public void processRequest_IfRawBodyHasNoEvents_thenLogError() throws JSONException {
-        //setup
-        String mockBody = "{\"events\":[]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(nonFederationAccount);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-    }
-
-    @Test
-    public void processRequest_IfAccountIsNull_thenLogError() throws JSONException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(null);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-    }
-
-    @Test
-    public void processRequest_IfGivenAnInvalidUid_thenCatchException() throws JSONException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenThrow(Exception.class);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\"`:\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
-    }
-
-    @Test
-    public void processRequest_IfGivenAccountToNotify_ThenSendNotification() throws JSONException, IOException {
-        //setup
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+    public void onAccountRegistered_IfGivenAccountToNotify_ThenSendNotification() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = UUID.randomUUID().toString();
         String mockAccountToNotify = "Test Account";
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
+        when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
 
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
+        // when
+        accountRequestService.onAccountRegistered(uid);
 
-        //validation
-        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(any(), any(), any());
+        // then
+        Mockito.verify(snsHandler,atLeastOnce()).sendNotification(any(), any(), any());
     }
 
     @Test
-    public void processRequest_IfGivenAccount_ThenSendNotificationToGRP() throws JSONException, IOException{
-        //setup
+    public void onAccountRegistered_IfGivenAccount_ThenSendNotificationToGRP() throws IOException, CustomGigyaErrorException {
+        // given
         ReflectionTestUtils.setField(accountRequestService,"snsRegistrationTopic","regSNS");
         ReflectionTestUtils.setField(accountRequestService,"snsAccountInfoTopic","infoSNS");
-        String mockBody = "{\"events\":[{\"type\":\"accountRegistered\",\"data\":{\"uid\":\"00000\"}}]}";
+        String uid = UUID.randomUUID().toString();
         String mockAccountToNotify = "Test Account";
         CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class, Mockito.RETURNS_DEEP_STUBS);
         BasicHttpEntity entity = new BasicHttpEntity();
         entity.setContent(new ByteArrayInputStream("".getBytes()));
 
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(hashValidationService.isValidHash(anyString(), anyString())).thenReturn(true);
-        Mockito.when(hashValidationService.getHashedString(anyString(), anyString())).thenReturn("Test");
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
-        Mockito.when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
-        Mockito.when(mockResponse.getEntity()).thenReturn(entity);
-        Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
-
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
+        when(accountInfoHandler.prepareForProfileInfoNotification(any())).thenReturn(mockAccountToNotify);
+        when(mockResponse.getEntity()).thenReturn(entity);
+        when(mockResponse.getStatusLine().getStatusCode()).thenReturn(200);
         doNothing().when(mockResponse).close();
-        Mockito.when(accountInfoHandler.prepareForGRPNotification(any())).thenCallRealMethod();
-        Mockito.when(snsHandler.sendSNSNotification(anyString(),anyString())).thenReturn(true);
+        when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
 
-        //execution
-        accountRequestService.processRequest("Test", mockBody);
+        // when
+        accountRequestService.onAccountRegistered(uid);
 
-        //validation
-        Mockito.verify(snsHandler,atLeastOnce()).sendSNSNotification(anyString(),anyString());
+        // then
+        Mockito.verify(snsHandler,atLeastOnce()).sendNotification(anyString(),anyString());
     }
 
     @Test
@@ -343,8 +204,7 @@ public class AccountRequestServiceTests {
         cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
         cdcResponseData.setStatusCode(0);
         cdcResponseData.setStatusReason("");
-        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
-        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+        when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
 
         // when
         accountRequestService.processRegistrationRequest(accountInfo);
@@ -370,15 +230,14 @@ public class AccountRequestServiceTests {
         errors.add(error);
         cdcResponseData.setValidationErrors(errors);
 
-        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
-        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+        when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
 
         // when
         accountRequestService.processRegistrationRequest(accountInfo);
 
         // then
         Mockito.verify(cdcResponseHandler).register(any());
-        Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
+        Mockito.verify(snsHandler, never()).sendNotification(any(),any());
     }
 
     @Test
@@ -391,15 +250,14 @@ public class AccountRequestServiceTests {
         cdcResponseData.setStatusCode(400);
         cdcResponseData.setStatusReason("");
 
-        Mockito.when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
-        Mockito.when(accountInfoHandler.prepareProfileForRegistration(any())).thenCallRealMethod();
+        when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
 
         // when
         accountRequestService.processRegistrationRequest(accountInfo);
 
         // then
         Mockito.verify(cdcResponseHandler).register(any());
-        Mockito.verify(snsHandler, never()).sendSNSNotification(any(),any());
+        Mockito.verify(snsHandler, never()).sendNotification(any(),any());
     }
 
     @Test
@@ -411,10 +269,10 @@ public class AccountRequestServiceTests {
                 .closeableHttpResponse(mockHttpCloseableResponse)
                 .build();
 
-        Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
-        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
-        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
-        Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+        when(mockStatusLine.getStatusCode()).thenReturn(200);
+        when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
+        when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -440,10 +298,10 @@ public class AccountRequestServiceTests {
                 .closeableHttpResponse(mockHttpCloseableResponse)
                 .build();
 
-        Mockito.when(mockStatusLine.getStatusCode()).thenReturn(500);
-        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
-        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
-        Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+        when(mockStatusLine.getStatusCode()).thenReturn(500);
+        when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
+        when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -467,8 +325,8 @@ public class AccountRequestServiceTests {
                 .closeableHttpResponse(mockHttpCloseableResponse)
                 .build();
 
-        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(null);
-        Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
+        when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(null);
+        when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
         AccountInfo accountInfo = AccountInfo.builder()
                 .username("test")
@@ -546,19 +404,112 @@ public class AccountRequestServiceTests {
 
     @Test
     public void setAwsQuickSightRole_givenAUID_should_setUserInfo() throws JSONException {
-        //setup
+        // given
         String uid = UUID.randomUUID().toString();
         String mockData = "{\"awsQuickSightRole\":\"Test\"}";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        Mockito.when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
-        Mockito.when(cdcAccountsService.setUserInfo(any(),any(),any())).thenReturn(mockCdcResponse);
+        when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
+        when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
+        when(cdcAccountsService.setUserInfo(any(),any(),any())).thenReturn(mockCdcResponse);
 
-        //execution
+        // when
         accountRequestService.setAwsQuickSightRole(uid);
 
-        //validation
-        Mockito.verify(cdcAccountsService).setUserInfo(uid,mockData,"");
+        // then
+        Mockito.verify(cdcAccountsService).setUserInfo(uid, mockData, "");
+    }
 
+    @Test(expected = NullPointerException.class)
+    public void givenOnAccountMergedIsCalled_WhenUidParameterIsNull_ThenNullPointerExceptionShouldBeThrown() {
+        // when
+        accountRequestService.onAccountMerged(null);
+    }
+
+    @Test
+    public void givenOnAccountMergedIsCalled_WhenAccountIsFederated_ThenAccountMergedNotificationShouldBeSent() throws CustomGigyaErrorException {
+        // when
+        String uid = AccountUtils.uid;
+        AccountInfo accountMock = AccountUtils.getFederatedAccount();
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountMock);
+        when(cdcResponseHandler.getAccountInfo(uid)).thenReturn(accountMock);
+        doNothing().when(notificationService).sendAccountMergedNotification(any());
+
+        try (MockedStatic<MergedAccountNotification> mergedAccountNotificationStatic = Mockito.mockStatic(MergedAccountNotification.class)) {
+            // when
+            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.buildFrom(any())).thenReturn(mergedAccountNotification);
+            accountRequestService.onAccountMerged(uid);
+
+            // then
+            verify(notificationService).sendAccountMergedNotification(mergedAccountNotification);
+        }
+    }
+
+    @Test
+    public void givenOnAccountMergedIsCalled_WhenAccountIsNotFederated_ThenAccountMergedNotificationShouldNotBeSent() throws CustomGigyaErrorException {
+        // when
+        String uid = AccountUtils.uid;
+        AccountInfo accountMock = AccountUtils.getSiteAccount();
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountMock);
+        when(cdcResponseHandler.getAccountInfo(uid)).thenReturn(accountMock);
+        doNothing().when(notificationService).sendAccountMergedNotification(any());
+
+        try (MockedStatic<MergedAccountNotification> mergedAccountNotificationStatic = Mockito.mockStatic(MergedAccountNotification.class)) {
+            // when
+            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.buildFrom(any())).thenReturn(mergedAccountNotification);
+            accountRequestService.onAccountMerged(uid);
+
+            // then
+            verify(notificationService, never()).sendAccountMergedNotification(any());
+        }
+    }
+
+    @Test
+    public void onAccountRegistered_IfGivenAFederatedUser_searchForDuplicatedAccountsInCDC() throws IOException, CustomGigyaErrorException {
+        //setup
+        String uid = UUID.randomUUID().toString();
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
+        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
+
+        //execution
+        accountRequestService.onAccountRegistered(uid);
+
+        //validation
+        Mockito.verify(cdcResponseHandler).searchDuplicatedAccountUid(federationAccount.getUid(),federationAccount.getEmailAddress());
+    }
+
+    @Test
+    public void onAccountRegistered_IfGivenAFederatedUser_disableDuplicatedAccounts() throws IOException, CustomGigyaErrorException {
+        //setup
+        String uid = UUID.randomUUID().toString();
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
+        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
+
+        //execution
+        accountRequestService.onAccountRegistered(uid);
+
+        //validation
+        Mockito.verify(cdcResponseHandler).disableAccount(anyString());
+    }
+
+    @Test
+    public void onAccountRegistered_IfGivenAFederatedUser_saveDuplicatedAccountUidToAccount() throws IOException, CustomGigyaErrorException {
+        //setup
+        String uid = UUID.randomUUID().toString();
+
+        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
+        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
+        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
+        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
+
+        //execution
+        accountRequestService.onAccountRegistered(uid);
+
+        //validation
+        federationAccount.setDuplicatedAccountUid("0055");
     }
 }

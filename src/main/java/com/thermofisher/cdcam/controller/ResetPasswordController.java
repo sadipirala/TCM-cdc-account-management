@@ -1,8 +1,19 @@
 package com.thermofisher.cdcam.controller;
 
+import java.io.IOException;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
 import com.thermofisher.cdcam.aws.SNSHandler;
-import com.thermofisher.cdcam.enums.ResetPasswordErrors;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.ResetPasswordNotification;
+import com.thermofisher.cdcam.model.ResetPasswordRequest;
+import com.thermofisher.cdcam.model.ResetPasswordResponse;
+import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
@@ -11,9 +22,7 @@ import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -22,14 +31,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
-import java.io.IOException;
-import java.util.Set;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/reset-password")
@@ -129,31 +139,29 @@ public class ResetPasswordController {
             String hashedPassword = HashingService.concat(HashingService.hash(body.getNewPassword()));
 
             ResetPasswordNotification resetPasswordNotification = ResetPasswordNotification.builder()
-                    .newPassword(hashedPassword)
-                    .uid(body.getUid())
-                    .build();
+                .newPassword(hashedPassword)
+                .uid(body.getUid())
+                .build();
 
             String message = (new JSONObject(resetPasswordNotification)).toString();
-
-            if (!snsHandler.sendSNSNotification(message, resetPasswordTopic)) {
-                logger.warn(String.format("Failed to send SNS notification. topic: %s", resetPasswordTopic));
-                return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ResetPasswordErrors.SNS_NOT_SEND.getValue()), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
+            snsHandler.sendNotification(message, resetPasswordTopic);
             sendResetPasswordConfirmationEmail(body.getUid());
+            
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            ResetPasswordResponse response = createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     private ResetPasswordResponse createResetPasswordResponse(int responseCode,String responseMessage) {
         return ResetPasswordResponse.builder()
-                .responseCode(responseCode)
-                .responseMessage(responseMessage).build();
+            .responseCode(responseCode)
+            .responseMessage(responseMessage)
+            .build();
     }
 
-    private void sendResetPasswordConfirmationEmail(String uid) throws IOException {
+    private void sendResetPasswordConfirmationEmail(String uid) throws IOException, CustomGigyaErrorException {
         AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
         resetPasswordService.sendResetPasswordConfirmation(account);
     }

@@ -1,20 +1,20 @@
 package com.thermofisher.cdcam.utils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.Profile;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * AccountInfoHandler
@@ -34,7 +34,7 @@ public class AccountInfoHandler {
         return mapper.writeValueAsString(cleanJson);
     }
 
-    public String prepareForGRPNotification(AccountInfo account) throws JsonProcessingException {
+    public String buildRegistrationNotificationPayload(AccountInfo account) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
@@ -45,17 +45,20 @@ public class AccountInfoHandler {
             propertiesToRemove.add("city");
         }
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("timezone");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("phoneNumber");
         propertiesToRemove.add("interest");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");
         propertiesToRemove.add("isGovernmentEmployee");
@@ -65,18 +68,7 @@ public class AccountInfoHandler {
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
         json.put("cipdc", CIPDC);
-
-        return mapper.writeValueAsString(json);
-    }
-
-    public String prepareProfileForRegistration(Profile profile) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("username");
-        propertiesToRemove.add("email");
-
-        ObjectNode json = mapper.valueToTree(profile);
-        json.remove(propertiesToRemove);
+        json.put("type", NotificationType.REGISTRATION.getValue());
 
         return mapper.writeValueAsString(json);
     }
@@ -89,19 +81,21 @@ public class AccountInfoHandler {
         propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("timezone");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("cipdc");
         propertiesToRemove.add("regAttempts");
-        propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("interests");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("hiraganaName");
@@ -128,22 +122,25 @@ public class AccountInfoHandler {
 
     private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("timezone");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("hiraganaName");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");

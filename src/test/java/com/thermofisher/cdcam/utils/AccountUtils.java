@@ -1,18 +1,22 @@
 package com.thermofisher.cdcam.utils;
 
-import java.io.FileReader;
 import java.io.IOException;
 
+import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.China;
+import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.cdc.Japan;
+import com.thermofisher.cdcam.model.cdc.Korea;
+import com.thermofisher.cdcam.model.cdc.Profile;
+import com.thermofisher.cdcam.model.cdc.Registration;
+import com.thermofisher.cdcam.model.cdc.Thermofisher;
+import com.thermofisher.cdcam.model.cdc.Work;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-
 import org.json.JSONException;
-
-import lombok.Getter;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import lombok.Getter;
 
 /**
  * AccountInfoUtils
@@ -36,6 +40,7 @@ public class AccountUtils {
     public static final String member = "member";
     public static final String localeName = "en_US";
     public static final String loginProvider = "oidc";
+    public static final String federationSocialProviders = "saml-FID-TF-Centrify,site";
     public static final String company = "company";
     public static final String location = "Digital Engineering";
     public static final String timezone = "America/Tijuana";
@@ -43,13 +48,19 @@ public class AccountUtils {
     public static final String jobRole = "Development";
     public static final String interest = "Test interest";
     public static final String phoneNumber = "6648675309";
-    public static final Boolean eComerceTransaction = true;
-    public static final Boolean personalInfoMandatory = true;
-    public static final Boolean personalInfoOptional = true;
-    public static final Boolean privateInfoMandatory = true;
-    public static final Boolean privateInfoOptional = true;
-    public static final Boolean processingConsignment = true;
-    public static final Boolean termsOfUse = true;
+    
+    // Korea
+    public static final Boolean websiteTermsOfUse = true;
+    public static final Boolean eCommerceTermsOfUse = true;
+    public static final Boolean thirdPartyTransferPersonalInfoMandatory = true;
+    public static final Boolean thirdPartyTransferPersonalInfoOptional = true;
+    public static final Boolean collectionAndUsePersonalInfoMandatory = true;
+    public static final Boolean collectionAndUsePersonalInfoOptional = true;
+    public static final Boolean collectionAndUsePersonalInfoMarketing = true;
+    public static final Boolean overseasTransferPersonalInfoMandatory = true;
+    public static final Boolean overseasTransferPersonalInfoOptional = true;
+
+    // Aspire
     public static final Boolean acceptsAspireEnrollmentConsent = true;
     public static final Boolean isHealthcareProfessional = true;
     public static final Boolean isGovernmentEmployee = true;
@@ -71,6 +82,7 @@ public class AccountUtils {
                 .department(department)
                 .member(member)
                 .loginProvider(loginProvider)
+                .socialProviders(federationSocialProviders)
                 .regAttempts(0)
                 .build();
     }
@@ -93,16 +105,29 @@ public class AccountUtils {
                 .department(department)
                 .member(member)
                 .loginProvider(loginProvider)
+                .socialProviders("site")
                 .regAttempts(0)
                 .hiraganaName(hiraganaName)
-                .eCommerceTransaction(eComerceTransaction)
-                .personalInfoMandatory(personalInfoMandatory)
-                .personalInfoOptional(personalInfoOptional)
-                .privateInfoOptional(privateInfoOptional)
-                .privateInfoMandatory(privateInfoMandatory)
-                .processingConsignment(processingConsignment)
-                .termsOfUse(termsOfUse)
+                .websiteTermsOfUse(websiteTermsOfUse)
+                .eCommerceTermsOfUse(eCommerceTermsOfUse)
+                .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
+                .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
+                .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
+                .collectionAndUsePersonalInfoOptional(collectionAndUsePersonalInfoOptional)
+                .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
+                .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
+                .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
                 .build();
+    }
+
+    public static AccountInfo getAspireAccount() {
+        AccountInfo account = AccountUtils.getSiteAccount();
+        account.setAcceptsAspireTermsAndConditions(true);
+        account.setIsHealthcareProfessional(true);
+        account.setIsGovernmentEmployee(true);
+        account.setIsProhibitedFromAcceptingGifts(true);
+        account.setAcceptsAspireEnrollmentConsent(true);
+        return account;
     }
 
     public static AccountInfoDTO getAccountInfoDTO() {
@@ -134,36 +159,10 @@ public class AccountUtils {
             .legacyUsername(accountInfo.getUsername())
             .build();
 
-        China china = China.builder()
-            .jobRole(jobRole)
-            .interest(interest)
-            .phoneNumber(getPhoneNumberForChina(accountInfo))
-            .build();
-
-        Japan japan = Japan.builder()
-            .hiraganaName(hiraganaName)
-            .build();
-
-        Korea korea = Korea.builder()
-             .eComerceTransaction(eComerceTransaction)
-             .personalInfoMandatory(personalInfoMandatory)
-             .personalInfoOptional(personalInfoOptional)
-             .privateInfoMandatory(privateInfoMandatory)
-             .privateInfoOptional(privateInfoOptional)
-             .processingConsignment(processingConsignment)
-             .termsOfUse(termsOfUse)
-             .build();
-
-        Registration registration = Registration.builder()
-            .china(china)
-            .japan(japan)
-            .korea(korea)
-            .build();
-
         Data data = Data.builder()
             .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
-            .registration(registration)
+            .registration(buildRegistrationObject(accountInfo))
             .build();
 
         Work work = buildWorkObject(accountInfo);
@@ -242,24 +241,62 @@ public class AccountUtils {
                 .build();
     }
 
+    private static Registration buildRegistrationObject(AccountInfo accountInfo) {
+        Japan japan = null;
+        China china = null;
+        Korea korea = null;
+
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.JAPAN.getValue())) {
+            japan = Japan.builder()
+                .hiraganaName(accountInfo.getHiraganaName())
+                .build();
+        }
+
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.CHINA.getValue())) {
+            china = China.builder()
+                .interest(accountInfo.getInterest())
+                .jobRole(accountInfo.getJobRole())
+                .phoneNumber(getPhoneNumberForChina(accountInfo))
+                .build();   
+        }
+
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
+            korea = Korea.builder()
+                .websiteTermsOfUse(accountInfo.getWebsiteTermsOfUse())
+                .eCommerceTermsOfUse(accountInfo.getECommerceTermsOfUse())
+                .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
+                .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
+                .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())
+                .thirdPartyTransferPersonalInfoOptional(accountInfo.getThirdPartyTransferPersonalInfoOptional())
+                .collectionAndUsePersonalInfoOptional(accountInfo.getCollectionAndUsePersonalInfoOptional())
+                .collectionAndUsePersonalInfoMarketing(accountInfo.getCollectionAndUsePersonalInfoMarketing())
+                .overseasTransferPersonalInfoOptional(accountInfo.getOverseasTransferPersonalInfoOptional())
+                .build();
+        }
+
+        if (japan == null && china == null && korea == null) {
+            return null;
+        }
+
+        return Registration.builder()
+            .japan(japan)
+            .china(china)
+            .korea(korea)
+            .build();
+    }
+
     public static String getSiteAccountJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account.json";
-        return getJSONFromFile(path).toString();
+        return TestUtils.getJSONFromFile(path).toString();
     }
 
     public static String getFederatedAccountJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/federated-account.json";
-        return getJSONFromFile(path).toString();
+        return TestUtils.getJSONFromFile(path).toString();
     }
 
     public static String getInvalidAccountJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/invalid-account.json";
-        return getJSONFromFile(path).toString();
-    }
-
-    private static JSONObject getJSONFromFile (String filePath) throws IOException, ParseException{
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(new FileReader(filePath));
-        return (JSONObject) obj;
+        return TestUtils.getJSONFromFile(path).toString();
     }
 }

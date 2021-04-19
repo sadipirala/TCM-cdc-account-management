@@ -25,6 +25,7 @@ public class AccountBuilder {
             GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
             String email = profile.containsKey("email") ? profile.getString("email") : "";
             GSObject password = obj.containsKey("password") ? (GSObject) obj.get("password") : null;
+            String socialProviders = obj.containsKey("socialProviders") ? obj.getString("socialProviders") : "";
             String company = "";
             String department = "";
             String finalPassword = "";
@@ -59,17 +60,20 @@ public class AccountBuilder {
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
+                    .socialProviders(socialProviders)
                     .hiraganaName(registrationAttributesHandler.getHiraganaName())
                     .jobRole(registrationAttributesHandler.getJobRole())
                     .interest(registrationAttributesHandler.getInterest())
                     .phoneNumber(registrationAttributesHandler.getPhoneNumber())
-                    .eCommerceTransaction(registrationAttributesHandler.getEcomerceTransaction())
-                    .personalInfoMandatory(registrationAttributesHandler.getPersonalInfoMandatory())
-                    .personalInfoOptional(registrationAttributesHandler.getPersonalInfoOptional())
-                    .privateInfoMandatory(registrationAttributesHandler.getPrivateInfoMandatory())
-                    .privateInfoOptional(registrationAttributesHandler.getPrivateInfoOptional())
-                    .processingConsignment(registrationAttributesHandler.getProcessingConsignment())
-                    .termsOfUse(registrationAttributesHandler.getTermsOfUse())
+                    .websiteTermsOfUse(registrationAttributesHandler.getWebsiteTermsOfUse())
+                    .eCommerceTermsOfUse(registrationAttributesHandler.getECommerceTermsOfUse())
+                    .thirdPartyTransferPersonalInfoMandatory(registrationAttributesHandler.getThirdPartyTransferPersonalInfoMandatory())
+                    .thirdPartyTransferPersonalInfoOptional(registrationAttributesHandler.getThirdPartyTransferPersonalInfoOptional())
+                    .collectionAndUsePersonalInfoMandatory(registrationAttributesHandler.getCollectionAndUsePersonalInfoMandatory())
+                    .collectionAndUsePersonalInfoOptional(registrationAttributesHandler.getCollectionAndUsePersonalInfoOptional())
+                    .collectionAndUsePersonalInfoMarketing(registrationAttributesHandler.getCollectionAndUsePersonalInfoMarketing())
+                    .overseasTransferPersonalInfoMandatory(registrationAttributesHandler.getOverseasTransferPersonalInfoMandatory())
+                    .overseasTransferPersonalInfoOptional(registrationAttributesHandler.getOverseasTransferPersonalInfoOptional())
                     .regAttempts(0)
                     .build();
 
@@ -103,13 +107,15 @@ public class AccountBuilder {
             .jobRole(accountInfoDTO.getJobRole())
             .interest(accountInfoDTO.getInterest())
             .phoneNumber(accountInfoDTO.getPhoneNumber())
-            .eCommerceTransaction(accountInfoDTO.getECommerceTransaction())
-            .personalInfoMandatory(accountInfoDTO.getPersonalInfoMandatory())
-            .personalInfoOptional(accountInfoDTO.getPersonalInfoOptional())
-            .privateInfoMandatory(accountInfoDTO.getPrivateInfoMandatory())
-            .privateInfoOptional(accountInfoDTO.getPrivateInfoOptional())
-            .processingConsignment(accountInfoDTO.getProcessingConsignment())
-            .termsOfUse(accountInfoDTO.getTermsOfUse())
+            .websiteTermsOfUse(accountInfoDTO.getWebsiteTermsOfUse())
+            .eCommerceTermsOfUse(accountInfoDTO.getECommerceTermsOfUse())
+            .thirdPartyTransferPersonalInfoMandatory(accountInfoDTO.getThirdPartyTransferPersonalInfoMandatory())
+            .thirdPartyTransferPersonalInfoOptional(accountInfoDTO.getThirdPartyTransferPersonalInfoOptional())
+            .collectionAndUsePersonalInfoMandatory(accountInfoDTO.getCollectionAndUsePersonalInfoMandatory())
+            .collectionAndUsePersonalInfoOptional(accountInfoDTO.getCollectionAndUsePersonalInfoOptional())
+            .collectionAndUsePersonalInfoMarketing(accountInfoDTO.getCollectionAndUsePersonalInfoMarketing())
+            .overseasTransferPersonalInfoMandatory(accountInfoDTO.getOverseasTransferPersonalInfoMandatory())
+            .overseasTransferPersonalInfoOptional(accountInfoDTO.getOverseasTransferPersonalInfoOptional())
             .acceptsAspireEnrollmentConsent(accountInfoDTO.getAcceptsAspireEnrollmentConsent())
             .isHealthcareProfessional(accountInfoDTO.getIsHealthcareProfessional())
             .isGovernmentEmployee(accountInfoDTO.getIsGovernmentEmployee())

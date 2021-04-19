@@ -1,23 +1,50 @@
 package com.thermofisher.cdcam.controller;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Valid;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+import javax.validation.constraints.NotBlank;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
+import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.EmailSentResponse;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.UsernameRecoveryEmailRequest;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.*;
+import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.EmailService;
+import com.thermofisher.cdcam.services.JWTValidator;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-import io.swagger.annotations.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -27,13 +54,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.*;
-import javax.validation.constraints.NotBlank;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ResponseHeader;
 
 @RestController
 @RequestMapping("/accounts")
@@ -69,7 +105,10 @@ public class AccountsController {
     ReCaptchaService reCaptchaService;
 
     @Autowired
-    AccountInfoNotificationService accountInfoNotificationService;
+    DataProtectionService dataProtectionService;
+
+    @Autowired
+    NotificationService notificationService;
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -116,10 +155,10 @@ public class AccountsController {
         try {
             logger.info("User data by UID requested.");
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
-
+            
             logger.info(String.format("Retrieved %d user(s)", userDetails.size()));
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error(String.format("An error occurred while retrieving user data from CDC: %s", Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -132,9 +171,40 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> notifyRegistration(@RequestHeader("x-gigya-sig-hmac-sha1") String headerValue, @RequestBody String rawBody) {
-        logger.info("Notify registration initiated.");
-        accountRequestService.processRequest(headerValue, rawBody);
+    public ResponseEntity<String> onAccountRegistered(@RequestHeader("x-gigya-sig-jwt") String jwt, @RequestBody String body) {
+        logger.info(String.format("/accounts/user called with body: %s", body));
+        
+        try {
+            logger.info("JWT validation started.");
+            logger.info("Getting JWT public key.");
+            JWTPublicKey jwtPublicKey = cdcResponseHandler.getJWTPublicKey();
+            logger.info("Validating JWT signature.");
+            boolean isJWTValid = JWTValidator.isValidSignature(jwt, jwtPublicKey);
+
+            if (!isJWTValid) {
+                logger.info("Invalid JWT signature. Bad request.");
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            logger.info("JWT signature valid.");
+            JSONObject jsonBody = new JSONObject(body);
+            JSONArray events = (JSONArray) jsonBody.get("events");
+            if (events.length() == 0) {
+                logger.error("No webhook events found in request.");
+            }
+
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                if (!event.get("type").equals(WebhookEvent.REGISTRATION.getValue())) continue;
+
+                JSONObject data = (JSONObject) event.get("data");
+                String uid = data.get("uid").toString();
+                logger.info("onAccountRegistered initiated.");
+                accountRequestService.onAccountRegistered(uid);
+            }
+        } catch (Exception e) {
+            logger.error(String.format("onAccountRegistered error: %s. %s.", e.getMessage(), e.getCause()));
+        }
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -145,8 +215,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfo) throws IOException,
-            JSONException {
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfo) throws IOException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
@@ -173,6 +242,21 @@ public class AccountsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
+        String ciphertext = accountInfo.getCiphertext();
+
+        if (ciphertext != null && !ciphertext.isEmpty()) {
+            try{
+                JSONObject decryptedUserData = dataProtectionService.decrypt(ciphertext);
+                logger.info(String.format("Decryption response for %s: %s", accountInfo.getUsername(), decryptedUserData.toString()));
+                accountInfo.setFirstName(decryptedUserData.getJSONObject("body").getString("firstName"));
+                accountInfo.setLastName(decryptedUserData.getJSONObject("body").getString("lastName"));
+                accountInfo.setEmailAddress(decryptedUserData.getJSONObject("body").getString("email"));
+            }
+            catch (JSONException exception) {
+                logger.error(String.format("Data decryption error for : %s. message: %s", accountInfo.getUsername(), exception.getMessage()));
+            }
+        }
+
         AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);
         CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(account);
 
@@ -182,8 +266,10 @@ public class AccountsController {
             if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
                 String uid = account.getUid();
                 logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), uid));
+
                 if (isAspireRegistrationValid(account)) {
-                    accountInfoNotificationService.sendAspireRegistrationSNS(account);
+                    notificationService.sendAspireRegistrationNotification(account);
+                    logger.info(String.format("Aspire Registration Notification sent successfully. UID: %s", uid));
                 }
 
                 if (account.getRegistrationType() != null && account.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
@@ -210,6 +296,46 @@ public class AccountsController {
         return accountInfo.getAcceptsAspireEnrollmentConsent() != null && accountInfo.getAcceptsAspireEnrollmentConsent()
             && accountInfo.getIsHealthcareProfessional() != null && !accountInfo.getIsHealthcareProfessional()
             && accountInfo.getAcceptsAspireTermsAndConditions() != null && accountInfo.getAcceptsAspireTermsAndConditions();
+    }
+
+    @PostMapping("/merged")
+    @ApiOperation(value = "Updates account data based on the accountMerged event from CDC.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Bad request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> onAccountsMerge(@RequestHeader("x-gigya-sig-jwt") String jwt, @RequestBody String body) {
+        logger.info(String.format("/accounts/merged called with body: %s", body));
+        try {
+            logger.info("JWT validation started.");
+            logger.info("Getting JWT public key.");
+            JWTPublicKey jwtPublicKey = cdcResponseHandler.getJWTPublicKey();
+            logger.info("Validating JWT signature.");
+            boolean isJWTValid = JWTValidator.isValidSignature(jwt, jwtPublicKey);
+    
+            if (!isJWTValid) {
+                logger.info("Invalid JWT signature. Bad request.");
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            logger.info("JWT signature valid.");
+            
+            JSONObject jsonBody = new JSONObject(body);
+            JSONArray events = (JSONArray) jsonBody.get("events");
+
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                if (!event.get("type").equals(WebhookEvent.MERGE.getValue())) continue;
+    
+                JSONObject data = (JSONObject) event.get("data");
+                String uid = data.get("uid").toString();
+                accountRequestService.onAccountMerged(uid);
+            }
+        } catch (Exception e) {
+            logger.error(String.format("onAccountsMerge error: %s. %s.", e.getMessage(), e.getCause()));
+        }
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/username/recovery")
@@ -292,7 +418,7 @@ public class AccountsController {
 
         Boolean cdcAvailabilityResponse;
         try {
-            cdcAvailabilityResponse = cdcResponseHandler.isAvailableLoginID(loginID);
+            cdcAvailabilityResponse = cdcResponseHandler.isAvailableLoginId(loginID);
         } catch (Exception e) {
             String exception = Utils.stackTraceToString(e);
             logger.error(String.format("An error occurred while checking availability in CDC for: %s. Error: %s", loginID, exception));

@@ -1,5 +1,5 @@
 {
-  "socialProviders": "site,oidc-fedspikegidp",
+  "socialProviders": "saml-FID-TF-Centrify,site",
   "lastLogin": "2019-08-21T23:13:38.284Z",
   "userInfo": {
     "country": "United States",

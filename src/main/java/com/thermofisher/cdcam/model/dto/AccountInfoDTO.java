@@ -38,21 +38,30 @@ public class AccountInfoDTO {
     private String country;
     @Size(max = 13)
     private String phoneNumber;
-    private Boolean eCommerceTransaction;
-    private Boolean personalInfoMandatory;
-    private Boolean personalInfoOptional;
-    private Boolean privateInfoMandatory;
-    private Boolean privateInfoOptional;
-    private Boolean processingConsignment;
-    private Boolean termsOfUse;
     private String member;
     private String registrationType;
     private String timezone;
     private String hiraganaName;
     private Boolean isReCaptchaV2;
+
+    // loyalty
     private Boolean acceptsAspireEnrollmentConsent;
     private Boolean isHealthcareProfessional;
     private Boolean isGovernmentEmployee;
     private Boolean isProhibitedFromAcceptingGifts;
     private Boolean acceptsAspireTermsAndConditions;
+
+    // encryption
+    private String ciphertext;
+
+    // korea
+    private Boolean websiteTermsOfUse;
+    private Boolean eCommerceTermsOfUse;
+    private Boolean thirdPartyTransferPersonalInfoMandatory;
+    private Boolean thirdPartyTransferPersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMandatory;
+    private Boolean collectionAndUsePersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMarketing;
+    private Boolean overseasTransferPersonalInfoMandatory;
+    private Boolean overseasTransferPersonalInfoOptional;
 }

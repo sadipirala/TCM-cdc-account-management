@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
 
 import org.junit.After;
@@ -50,22 +51,25 @@ public class AccountInfoHandlerTests {
     
     private String prepareJsonForNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
+        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("timezone");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("hiraganaName");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");
@@ -81,17 +85,20 @@ public class AccountInfoHandlerTests {
     private String prepareJsonForGRP(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("timezone");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("phoneNumber");
         propertiesToRemove.add("interest");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");
         propertiesToRemove.add("isGovernmentEmployee");
@@ -99,6 +106,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
         json.remove(propertiesToRemove);
         json.put("cipdc", MOCK_CIPDC);
+        json.put("type", NotificationType.REGISTRATION.getValue());
         return mapper.writeValueAsString(json);
     }
 
@@ -107,19 +115,21 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("loginProvider");
+        propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("timezone");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("cipdc");
         propertiesToRemove.add("regAttempts");
-        propertiesToRemove.add("uid");
         propertiesToRemove.add("password");
-        propertiesToRemove.add("ecommerceTransaction");
-        propertiesToRemove.add("personalInfoMandatory");
-        propertiesToRemove.add("personalInfoOptional");
-        propertiesToRemove.add("privateInfoMandatory");
-        propertiesToRemove.add("privateInfoOptional");
-        propertiesToRemove.add("processingConsignment");
-        propertiesToRemove.add("termsOfUse");
+        propertiesToRemove.add("websiteTermsOfUse");
+        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
+        propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
+        propertiesToRemove.add("collectionAndUsePersonalInfoOptional");
+        propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
+        propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
+        propertiesToRemove.add("overseasTransferPersonalInfoOptional");
         propertiesToRemove.add("interests");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("hiraganaName");
@@ -143,7 +153,7 @@ public class AccountInfoHandlerTests {
     }
 
     @Test
-    public void prepareForGRPNotification_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
+    public void buildRegistrationNotificationPayload_ShouldConvertTheAccountInfoObjectAsAJSONString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
@@ -151,7 +161,7 @@ public class AccountInfoHandlerTests {
         String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
 
         // when
-        String parsedAccount = accountHandler.prepareForGRPNotification(mockAccount);
+        String parsedAccount = accountHandler.buildRegistrationNotificationPayload(mockAccount);
 
         // then
         assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);
@@ -175,14 +185,14 @@ public class AccountInfoHandlerTests {
     }
 
     @Test
-    public void prepareForGRPNotification_givenAspireAccountIsNotMember_ShouldNotAddAdditionalFieldsToString() throws JsonProcessingException {
+    public void buildRegistrationNotificationPayload_givenAspireAccountIsNotMember_ShouldNotAddAdditionalFieldsToString() throws JsonProcessingException {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
         mockAccount.setMember("false");
 
         // when
-        String parsedAccount = accountHandler.prepareForGRPNotification(mockAccount);
+        String parsedAccount = accountHandler.buildRegistrationNotificationPayload(mockAccount);
 
         // then
         assertEquals(parsedAccount.indexOf("\"department\""), -1);

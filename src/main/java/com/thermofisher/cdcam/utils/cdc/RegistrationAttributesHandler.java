@@ -17,47 +17,57 @@ public class RegistrationAttributesHandler {
         korea = registration != null ? registration.getKorea() : null;
     }
 
-    public String getHiraganaName () {
+    public String getHiraganaName() {
         return japan != null ? japan.getHiraganaName() : null;
     }
 
-    public String getJobRole () {
+    public String getJobRole() {
         return china != null ? china.getJobRole() : null;
     }
 
-    public String getInterest () {
+    public String getInterest() {
         return china != null ? china.getInterest() : null;
     }
 
-    public String getPhoneNumber () {
+    public String getPhoneNumber() {
         return china != null ? china.getPhoneNumber() : null;
     }
 
-    public Boolean getEcomerceTransaction () {
-        return korea != null ? korea.getEComerceTransaction() : null;
+    // Korea
+
+    public Boolean getWebsiteTermsOfUse() {
+        return korea != null ? korea.getWebsiteTermsOfUse() : null;
     }
 
-    public Boolean getPersonalInfoMandatory () {
-        return korea != null ? korea.getPersonalInfoMandatory() : null;
+    public Boolean getECommerceTermsOfUse() {
+        return korea != null ? korea.getECommerceTermsOfUse() : null;
     }
 
-    public Boolean getPersonalInfoOptional () {
-        return korea != null ? korea.getPersonalInfoOptional() : null;
+    public Boolean getThirdPartyTransferPersonalInfoMandatory() {
+        return korea != null ? korea.getThirdPartyTransferPersonalInfoMandatory() : null;
     }
 
-    public Boolean getPrivateInfoMandatory () {
-        return korea != null ? korea.getPrivateInfoMandatory() : null;
+    public Boolean getThirdPartyTransferPersonalInfoOptional() {
+        return korea != null ? korea.getThirdPartyTransferPersonalInfoOptional() : null;
     }
 
-    public Boolean getPrivateInfoOptional () {
-        return korea != null ? korea.getPrivateInfoOptional() : null;
+    public Boolean getCollectionAndUsePersonalInfoMandatory() {
+        return korea != null ? korea.getCollectionAndUsePersonalInfoMandatory() : null;
     }
 
-    public Boolean getProcessingConsignment () {
-        return korea != null ? korea.getProcessingConsignment() : null;
+    public Boolean getCollectionAndUsePersonalInfoOptional() {
+        return korea != null ? korea.getCollectionAndUsePersonalInfoOptional() : null;
     }
 
-    public Boolean getTermsOfUse () {
-        return korea != null ? korea.getTermsOfUse() : null;
+    public Boolean getCollectionAndUsePersonalInfoMarketing() {
+        return korea != null ? korea.getCollectionAndUsePersonalInfoMarketing() : null;
+    }
+
+    public Boolean getOverseasTransferPersonalInfoMandatory() {
+        return korea != null ? korea.getOverseasTransferPersonalInfoMandatory() : null;
+    }
+
+    public Boolean getOverseasTransferPersonalInfoOptional() {
+        return korea != null ? korea.getOverseasTransferPersonalInfoOptional() : null;
     }
 }

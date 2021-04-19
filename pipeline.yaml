@@ -1,0 +1,72 @@
+build:
+  image: maven:3-alpine
+  steps:
+    - mvn clean package -U
+
+containerBuild:
+  imageName: cdcam/cdc-account-management
+#
+deployment:
+  name: cdc-account-management
+  namespace: cdcam
+  cpu: 100m
+  memory: 2Gi
+  replicas: 1
+  containerPort: 8080
+  healthCheckPath: /cdcam/actuator/health
+  healthCheckPort: 8080 #management port
+  ingressPath: /cdcam
+  iamRole: cdcam-execution-role
+  #startupSeconds: 180
+
+environments:
+  dev:
+    branch: integration/*
+    cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
+    env:
+      - name: spring.profiles.active
+        value: qa4-cn
+      - name: SPRING.PROFILES.ACTIVE
+        value: qa4-cn
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 2
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 70
+    ingressDomains:
+      - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
+
+  qa:
+    branch: development/*
+    cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
+    env:
+      - name: spring.profiles.active
+        value: qa1-cn
+      - name: SPRING.PROFILES.ACTIVE
+        value: qa1-cn
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 2
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 70
+    ingressDomains:
+      - cdcam.tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
+
+  prod:
+    branch: release/*
+    cluster: tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
+    env:
+      - name: spring.profiles.active
+        value: prod-cn
+      - name: SPRING.PROFILES.ACTIVE
+        value: prod-cn
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 70 
+    ingressDomains:
+      - cdcam.tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn

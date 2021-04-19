@@ -1,0 +1,31 @@
+{
+  "callId": "51bcb7ebbcf25717854f5af72023906b",
+  "errorCode": 0,
+  "apiVersion": 2,
+  "statusCode": 200,
+  "statusReason": "OK",
+  "time": "2021-02-10T00:29:48.645Z",
+  "config": {
+    "name": "FID-IDP",
+    "entityID": "http://nilekbi.tc/elakil",
+    "singleSignOnServiceUrl": "http://nilekbi.tc/elakil",
+    "singleSignOnServiceBinding": "aaa:bbbbb:ccccc:dd:SAML:2.0:eeeeeeee:HTTP-FFFF",
+    "singleLogoutServiceUrl": "http://nilekbi.tc/elakil",
+    "singleLogoutServiceBinding": "aaa:bbbbb:ccccc:dd:SAML:2.0:eeeeeeee:HTTP-FFFF",
+    "nameIDFormat": "aaa:bbbbb:ccccc:dd:SAML:2.0:eeeeeeee:HTTP-FFFF",
+    "attributeMap": {
+      "first_Name": "FirstName",
+      "Groups": "samlData.federated_groups",
+      "family_Name": "LastName",
+      "email": "Email"
+    },
+    "certificate": "5@A$%*ncN8RQ[D%PA]qudzavbO&f31UB[xt2IDa(abMeZ9qw7EskyLYZuAE2]hus6VS5xzyFjbzk^fQjqs1tq48bP%6PojGJXp8A(KSaByYK(ytkiJ[Vw6gSwClYpZBfrRSC^8wsljgx&5@1FRic$10[g*%QYbTg)V@29N(eK)@]Thc%x!E^d&3xzrx4Q*ma[gf(Y6B9OOgs4DSiG4K4Gtd$$9tIF&%naM2eXYbaCHEn!Arci)VMwcOW^lP1nL4X55o$NK4K$aLo@YQFq4N(T%tzNv8nfPRlQ[BHTAuJVt#YeBBoSQwqftjDJ(^]p1IiD(lTggmGUsYg[76]4TP#3syeX9BG3Nm)8cN31jp7L022rSa2TH!5nZSU8DH1*^4n]kG$t9gL%vNcA7BcleKQiw^zivgaEKd#P0]4X[%@AayJgAEqW[rKa9Too6QYJ$Fw4v&Y0urVb@&I750ldShH0Mylf4^Z!&24Xgh$im9kkL*6&nL0T3PfT]qdq8wz(8xI]GM]SR&eH2lkDRoul[^SKaCWeniSYDfcQJdnf$5n85s!o5a)Ay(3S&XAioLeT9PC9JCTr6Vfc81oZ#9[1&jjv90^ZN%3vc]K9MK$A5&AgYgPsGw9xR%w]TzG(m*GP1P^D)W581Vhr7PGxq6KkDl#qQA]h4K7Gi(cYTLbDRWp697#*^sVee%!u^&BM]%QAHwiz9Bz[M9R$i[W[coc3c8wesWtOyXyGtUqZEt@N20%q5Nl7dj7EM6Y*WliRmVh%1hn6@SuZyO%iDvQ3%uIeXlm[)2r4&lIoTM24RRFibbRxd2dBZ7KzMV!g&jxtfE7D)cW%]ZNR^e]!jSgE&sCUfzIoy5p$RY[cbN$%r1N$@C^k]85K2W&uUxofQBQf9xjQZp^ewAS$Pq@%zFvIM]62GvYZs7F]LKB62Uc49NSq%S34jvW4Ti1SVY4X3i#(m53vU$mnQ)J04d96FLF]*uh&cgK9XqKQciugnAypEgzHadspfdWBbSDKjuG2S]t",
+    "spSigningAlgorithm": "SHA256",
+    "signAuthnRequest": false,
+    "requireSAMLResponseSigned": false,
+    "requireAssertionSigned": false,
+    "requireAssertionEncrypted": false,
+    "useSessionNotOnOrAfter": false
+  }
+}
+  

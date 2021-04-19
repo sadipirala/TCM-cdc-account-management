@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.Utils;
@@ -59,33 +60,48 @@ public class CDCAccountsHandler {
         return profile;
     }
 
-
     private static Registration buildRegistrationObject(AccountInfo accountInfo) {
-        Japan japan = Japan.builder()
+        Japan japan = null;
+        China china = null;
+        Korea korea = null;
+
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.JAPAN.getValue())) {
+            japan = Japan.builder()
                 .hiraganaName(accountInfo.getHiraganaName())
                 .build();
+        }
 
-        China china = China.builder()
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.CHINA.getValue())) {
+            china = China.builder()
                 .interest(accountInfo.getInterest())
                 .jobRole(accountInfo.getJobRole())
                 .phoneNumber(getPhoneNumberForChina(accountInfo))
-                .build();
+                .build();   
+        }
 
-        Korea korea = Korea.builder()
-                .eComerceTransaction(accountInfo.getECommerceTransaction())
-                .personalInfoMandatory(accountInfo.getPersonalInfoMandatory())
-                .personalInfoOptional(accountInfo.getPersonalInfoOptional())
-                .privateInfoMandatory(accountInfo.getPrivateInfoMandatory())
-                .privateInfoOptional(accountInfo.getPrivateInfoOptional())
-                .processingConsignment(accountInfo.getProcessingConsignment())
-                .termsOfUse(accountInfo.getTermsOfUse())
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
+            korea = Korea.builder()
+                .websiteTermsOfUse(accountInfo.getWebsiteTermsOfUse())
+                .eCommerceTermsOfUse(accountInfo.getECommerceTermsOfUse())
+                .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
+                .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
+                .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())
+                .thirdPartyTransferPersonalInfoOptional(accountInfo.getThirdPartyTransferPersonalInfoOptional())
+                .collectionAndUsePersonalInfoOptional(accountInfo.getCollectionAndUsePersonalInfoOptional())
+                .collectionAndUsePersonalInfoMarketing(accountInfo.getCollectionAndUsePersonalInfoMarketing())
+                .overseasTransferPersonalInfoOptional(accountInfo.getOverseasTransferPersonalInfoOptional())
                 .build();
+        }
+
+        if (japan == null && china == null && korea == null) {
+            return null;
+        }
 
         return Registration.builder()
-                .japan(japan)
-                .china(china)
-                .korea(korea)
-                .build();
+            .japan(japan)
+            .china(china)
+            .korea(korea)
+            .build();
     }
 
     private static String getPhoneNumberForChina(AccountInfo accountInfo) {

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,7 +76,7 @@ public class ResetPasswordControllerTests {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         reCaptchaResponse = new JSONObject();
         resetPasswordRequestBody = mock(ResetPasswordRequest.class);
         resetPasswordResponseMock = mock(ResetPasswordResponse.class);
@@ -196,17 +197,16 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws IOException {
+    public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws IOException, CustomGigyaErrorException {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .uid("62623d97356b4815a9965d912fa3331a").build();
+            .newPassword("testPassword1")
+            .resetPasswordToken("testTkn")
+            .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        when(snsHandler.sendSNSNotification(any(),any())).thenReturn(true);
-
+        doNothing().when(snsHandler).sendNotification(any(),any());
         doNothing().when(resetPasswordService).sendResetPasswordConfirmation(any());
 
         //when
@@ -219,20 +219,19 @@ public class ResetPasswordControllerTests {
 
     @Test
     public void resetPassword_WhenTheSNSHandlerFails_returnINTERNAL_SERVER_ERROR() {
-
-        //given
+        // given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .uid("62623d97356b4815a9965d912fa3331a").build();
+            .newPassword("testPassword1")
+            .resetPasswordToken("testTkn")
+            .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
-        when(snsHandler.sendSNSNotification(any(),any())).thenReturn(false);
+        doThrow(NullPointerException.class).when(snsHandler).sendNotification(any(), any());
 
-        //when
+        // when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
-        //then
+        // then
         assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -240,26 +239,27 @@ public class ResetPasswordControllerTests {
     public void resetPassword_WhenAnExceptionIsThrown_returnINTERNAL_SERVER_ERROR() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .uid("62623d97356b4815a9965d912fa3331a").build();
+            .newPassword("testPassword1")
+            .resetPasswordToken("testTkn")
+            .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
+        doThrow(NullPointerException.class).when(snsHandler).sendNotification(any(), any());
 
         //when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void resetPassword_WhenTheResetPasswordOnCDCFails_returnBAD_REQUEST() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .uid("62623d97356b4815a9965d912fa3331a").build();
+            .newPassword("testPassword1")
+            .resetPasswordToken("testTkn")
+            .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(40001);
         when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 
@@ -275,9 +275,9 @@ public class ResetPasswordControllerTests {
     public void resetPassword_WhenTheResetPasswordTokenExpires_returnFOUND() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-                .newPassword("testPassword1")
-                .resetPasswordToken("testTkn")
-                .uid("62623d97356b4815a9965d912fa3331a").build();
+            .newPassword("testPassword1")
+            .resetPasswordToken("testTkn")
+            .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(403025);
         when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 

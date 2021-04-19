@@ -1,11 +1,12 @@
 package com.thermofisher.cdcam.enums.cdc;
 
-public enum Events {
+public enum WebhookEvent {
+    MERGE("accountMerged"),
     REGISTRATION("accountRegistered");
 
     private String value;
 
-    Events(String value) { this.value = value; }
+    WebhookEvent(String value) { this.value = value; }
 
     public String getValue() { return this.value; }
 }

@@ -134,198 +134,227 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getEcommerceTransaction_IfKoreaObjectIsNull_ShouldReturnEcommerceTransactionNull(){
+    public void getWebsiteTermsOfUse_IfKoreaObjectIsNull_ShouldReturnWebsiteTermsOfUseNull() {
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean eCommerceTransaction = registrationAttributesHandler.getEcomerceTransaction();
+        Boolean websiteTermsOfUse = registrationAttributesHandler.getWebsiteTermsOfUse();
 
         // then
-        assertNull(eCommerceTransaction);
+        assertNull(websiteTermsOfUse);
     }
 
     @Test
-    public void getEcommerceTransaction_IfKoreaObjectIsNotNull_ShouldReturnEcommerceTransaction(){
+    public void getWebsiteTermsOfUse_IfKoreaObjectIsNotNull_ShouldReturnWebsiteTermsOfUse() {
         // given
-        Korea mockKorea = Korea.builder().eComerceTransaction(true).build();
+        Korea mockKorea = Korea.builder().websiteTermsOfUse(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean eCommerceTransaction = registrationAttributesHandler.getEcomerceTransaction();
+        Boolean websiteTermsOfUse = registrationAttributesHandler.getWebsiteTermsOfUse();
 
         // then
-        assertEquals(eCommerceTransaction, mockKorea.getEComerceTransaction());
+        assertEquals(websiteTermsOfUse, mockKorea.getWebsiteTermsOfUse());
     }
 
     @Test
-    public void getPersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnPersonalInfoMandatoryNull(){
-        // given
-        Korea mockKorea = null;
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean personalInfoMandatory = registrationAttributesHandler.getPersonalInfoMandatory();
-
-        // then
-        assertNull(personalInfoMandatory);
-    }
-
-    @Test
-    public void getPersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnPersonalInfoMandatory(){
-        // given
-        Korea mockKorea = Korea.builder().personalInfoMandatory(true).build();
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean personalInfoMandatory = registrationAttributesHandler.getPersonalInfoMandatory();
-
-        // then
-        assertEquals(personalInfoMandatory, mockKorea.getPersonalInfoMandatory());
-    }
-
-    @Test
-    public void getPersonalInfoOptional_IfKoreaObjectIsNull_ShouldReturnPersonalInfoOptionalNull(){
+    public void getECommerceTermsOfUse_IfKoreaObjectIsNull_ShouldReturnECommerceTermsOfUseNull() {
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean personalInfoOptional = registrationAttributesHandler.getPersonalInfoOptional();
+        Boolean eCommerceTermsOfUse = registrationAttributesHandler.getECommerceTermsOfUse();
 
         // then
-        assertNull(personalInfoOptional);
+        assertNull(eCommerceTermsOfUse);
     }
 
     @Test
-    public void getPersonalInfoOptional_IfKoreaObjectIsNotNull_ShouldReturnPersonalInfoOptional(){
+    public void getECommerceTermsOfUse_IfKoreaObjectIsNotNull_ShouldReturnECommerceTermsOfUse() {
         // given
-        Korea mockKorea = Korea.builder().personalInfoOptional(true).build();
+        Korea mockKorea = Korea.builder().eCommerceTermsOfUse(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean personalInfoOptional = registrationAttributesHandler.getPersonalInfoOptional();
+        Boolean eCommerceTermsOfUse = registrationAttributesHandler.getECommerceTermsOfUse();
 
         // then
-        assertEquals(personalInfoOptional, mockKorea.getPersonalInfoOptional());
+        assertEquals(eCommerceTermsOfUse, mockKorea.getECommerceTermsOfUse());
     }
 
     @Test
-    public void getPrivateInfoOptional_IfKoreaObjectIsNull_ShouldReturnPrivateInfoOptionalNull(){
-        // given
-        Korea mockKorea = null;
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean privateInfoOptional = registrationAttributesHandler.getPrivateInfoOptional();
-
-        // then
-        assertNull(privateInfoOptional);
-    }
-
-    @Test
-    public void getPrivateInfoOptional_IfKoreaObjectIsNotNull_ShouldReturnPrivateInfoOptional(){
-        // given
-        Korea mockKorea = Korea.builder().privateInfoOptional(true).build();
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean privateInfoOptional = registrationAttributesHandler.getPrivateInfoOptional();
-
-        // then
-        assertEquals(privateInfoOptional, mockKorea.getPrivateInfoOptional());
-    }
-
-    @Test
-    public void getPrivateInfoMandatory_IfKoreaObjectIsNull_ShouldReturnPrivateInfoMandatoryNull(){
+    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnThirdPartyTransferPersonalInfoMandatoryNull(){
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean privateInfoMandatory = registrationAttributesHandler.getPrivateInfoMandatory();
+        Boolean thirdPartyTransferPersonalInfoMandatory = registrationAttributesHandler.getThirdPartyTransferPersonalInfoMandatory();
 
         // then
-        assertNull(privateInfoMandatory);
+        assertNull(thirdPartyTransferPersonalInfoMandatory);
     }
 
     @Test
-    public void getPrivateInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnPrivateInfoMandatory(){
+    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnThirdPartyTransferPersonalInfoMandatory(){
         // given
-        Korea mockKorea = Korea.builder().privateInfoMandatory(true).build();
+        Korea mockKorea = Korea.builder().thirdPartyTransferPersonalInfoMandatory(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean privateInfoMandatory = registrationAttributesHandler.getPrivateInfoMandatory();
+        Boolean thirdPartyTransferPersonalInfoMandatory = registrationAttributesHandler.getThirdPartyTransferPersonalInfoMandatory();
 
         // then
-        assertEquals(privateInfoMandatory, mockKorea.getPrivateInfoMandatory());
+        assertEquals(thirdPartyTransferPersonalInfoMandatory, mockKorea.getThirdPartyTransferPersonalInfoMandatory());
     }
 
     @Test
-    public void getProcessingConsignment_IfKoreaObjectIsNull_ShouldReturnProcessingConsignmentNull(){
-        // given
-        Korea mockKorea = null;
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean processingConsignment = registrationAttributesHandler.getProcessingConsignment();
-
-        // then
-        assertNull(processingConsignment);
-    }
-
-    @Test
-    public void getProcessingConsignment_IfKoreaObjectIsNotNull_ShouldReturnProcessingConsignment(){
-        // given
-        Korea mockKorea = Korea.builder().processingConsignment(true).build();
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean processingConsignment = registrationAttributesHandler.getProcessingConsignment();
-
-        // then
-        assertEquals(processingConsignment, mockKorea.getProcessingConsignment());
-    }
-
-    @Test
-    public void getTermsOfUse_IfKoreaObjectIsNull_ShouldReturnTermsOfUseNull(){
+    public void getThirdPartyTransferPersonalInfoOptional_IfKoreaObjectIsNull_ShouldReturnThirdPartyTransferPersonalInfoOptionalNull() {
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean termsOfUse = registrationAttributesHandler.getTermsOfUse();
+        Boolean thirdPartyTransferPersonalInfoOptional = registrationAttributesHandler.getThirdPartyTransferPersonalInfoOptional();
 
         // then
-        assertNull(termsOfUse);
+        assertNull(thirdPartyTransferPersonalInfoOptional);
     }
 
     @Test
-    public void getTermsOfUse_IfKoreaObjectIsNotNull_ShouldReturnTermsOfUse(){
+    public void getThirdPartyTransferPersonalInfoOptional_IfKoreaObjectIsNotNull_ShouldReturnThirdPartyTransferPersonalInfoOptional() {
         // given
-        Korea mockKorea = Korea.builder().termsOfUse(true).build();
+        Korea mockKorea = Korea.builder().thirdPartyTransferPersonalInfoOptional(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean termsOfUse = registrationAttributesHandler.getTermsOfUse();
+        Boolean thirdPartyTransferPersonalInfoOptional = registrationAttributesHandler.getThirdPartyTransferPersonalInfoOptional();
 
         // then
-        assertEquals(termsOfUse, mockKorea.getTermsOfUse());
+        assertEquals(thirdPartyTransferPersonalInfoOptional, mockKorea.getThirdPartyTransferPersonalInfoOptional());
     }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnCollectionAndUsePersonalInfoMandatoryNull() {
+        // given
+        Korea mockKorea = null;
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoMandatory = registrationAttributesHandler.getCollectionAndUsePersonalInfoMandatory();
+
+        // then
+        assertNull(collectionAndUsePersonalInfoMandatory);
+    }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnCollectionAndUsePersonalInfoMandatory() {
+        // given
+        Korea mockKorea = Korea.builder().collectionAndUsePersonalInfoMandatory(true).build();
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoMandatory = registrationAttributesHandler.getCollectionAndUsePersonalInfoMandatory();
+
+        // then
+        assertEquals(collectionAndUsePersonalInfoMandatory, mockKorea.getCollectionAndUsePersonalInfoMandatory());
+    }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoOptional_IfKoreaObjectIsNull_ShouldReturnCollectionAndUsePersonalInfoOptionalNull() {
+        // given
+        Korea mockKorea = null;
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoOptional = registrationAttributesHandler.getCollectionAndUsePersonalInfoOptional();
+
+        // then
+        assertNull(collectionAndUsePersonalInfoOptional);
+    }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoOptional_IfKoreaObjectIsNotNull_ShouldReturnCollectionAndUsePersonalInfoOptional() {
+        // given
+        Korea mockKorea = Korea.builder().collectionAndUsePersonalInfoOptional(true).build();
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoOptional = registrationAttributesHandler.getCollectionAndUsePersonalInfoOptional();
+
+        // then
+        assertEquals(collectionAndUsePersonalInfoOptional, mockKorea.getCollectionAndUsePersonalInfoOptional());
+    }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoMarketing_IfKoreaObjectIsNull_ShouldReturnCollectionAndUsePersonalInfoMarketingNull() {
+        // given
+        Korea mockKorea = null;
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoMarketing = registrationAttributesHandler.getCollectionAndUsePersonalInfoMarketing();
+
+        // then
+        assertNull(collectionAndUsePersonalInfoMarketing);
+    }
+
+    @Test
+    public void getCollectionAndUsePersonalInfoMarketing_IfKoreaObjectIsNotNull_ShouldReturnCollectionAndUsePersonalInfoMarketing() {
+        // given
+        Korea mockKorea = Korea.builder().collectionAndUsePersonalInfoMarketing(true).build();
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean collectionAndUsePersonalInfoMarketing = registrationAttributesHandler.getCollectionAndUsePersonalInfoMarketing();
+
+        // then
+        assertEquals(collectionAndUsePersonalInfoMarketing, mockKorea.getCollectionAndUsePersonalInfoMarketing());
+    }
+
+    @Test
+    public void getOverseasTransferPersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnOverseasTransferPersonalInfoMandatoryNull() {
+        // given
+        Korea mockKorea = null;
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean overseasTransferPersonalInfoMandatory = registrationAttributesHandler.getOverseasTransferPersonalInfoMandatory();
+
+        // then
+        assertNull(overseasTransferPersonalInfoMandatory);
+    }
+
+    @Test
+    public void getOverseasTransferPersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnOverseasTransferPersonalInfoMandatory() {
+        // given
+        Korea mockKorea = Korea.builder().overseasTransferPersonalInfoMandatory(true).build();
+        Registration registration = Registration.builder().korea(mockKorea).build();
+        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+        // when
+        Boolean overseasTransferPersonalInfoMandatory = registrationAttributesHandler.getOverseasTransferPersonalInfoMandatory();
+
+        // then
+        assertEquals(overseasTransferPersonalInfoMandatory, mockKorea.getOverseasTransferPersonalInfoMandatory());
+    }
+
 }

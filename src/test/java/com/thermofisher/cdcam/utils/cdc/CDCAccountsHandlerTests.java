@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -44,90 +45,6 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertTrue(expectedAccount.getProfile().contains(String.format("\"locale\":\"%s\"", expectedLocale)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsHiraganaName_ThenCDCAccountShouldContainHiraganaName() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        String hiraganaName = accountInfo.getHiraganaName();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains(String.format("\"hiraganaName\":\"%s\"", hiraganaName)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsJobRole_ThenCDCAccountShouldContainJobRole() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        String jobRole = accountInfo.getJobRole();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains(String.format("\"jobRole\":\"%s\"", jobRole)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsInterest_ThenCDCAccountShouldContainInterest() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        String interest = accountInfo.getInterest();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains(String.format("\"interest\":\"%s\"", interest)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsMember_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setCountry("cn");
-        accountInfo.setMember("true");
-        String phoneNumber = accountInfo.getPhoneNumber();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsNotMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
-        // given
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setCountry("cn");
-        accountInfo.setMember("false");
-        String phoneNumber = accountInfo.getPhoneNumber();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenAspireAccountContainsPhoneNumberAndIsNotAMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
-        String phoneNumber = accountInfo.getPhoneNumber();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
     }
 
     @Test
@@ -187,93 +104,134 @@ public class CDCAccountsHandlerTests {
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsEcommerceTransaction_ThenCDCAccountShouldContainEcommerceTransaction() throws JSONException {
+    public void buildNewCDCAccount_GivenAspireAccountContainsPhoneNumberAndIsNotAMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean eCommerceTransaction = accountInfo.getECommerceTransaction();
+        accountInfo.setMember("false");
+        String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"eComerceTransaction\":%s", eCommerceTransaction)));
+        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsPersonalInfoMandatory_ThenCDCAccountShouldContainPersonalInfoMandatory() throws JSONException {
+    public void buildNewCDCAccount_GivenAccountInfoHasJapanAsCountry_ThenCDCAccountShouldContainJapanObject() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean personalInfoMandatory = accountInfo.getPersonalInfoMandatory();
+        accountInfo.setCountry(CountryCodes.JAPAN.getValue());
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"personalInfoMandatory\":%s", personalInfoMandatory)));
+        assertTrue(result.getData().contains(String.format("\"hiraganaName\":\"%s\"", accountInfo.getHiraganaName())));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsPersonalInfoOptional_ThenCDCAccountShouldContainPersonalInfoOptional() throws JSONException {
+    public void buildNewCDCAccount_GivenAccountInfoDoesNotHaveJapanAsCountry_ThenCDCAccountShouldNotJapanObject() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean personalInfoOptional = accountInfo.getPersonalInfoOptional();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"personalInfoOptional\":%s", personalInfoOptional)));
+        assertFalse(result.getData().contains("japan"));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsPrivateInfoMandatory_ThenCDCAccountShouldContainPrivateInfoMandatory() throws JSONException {
+    public void buildNewCDCAccount_GivenAccountInfoHasChinaAsCountry_ThenCDCAccountShouldContainChinaObject() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean privateInfoMandatory = accountInfo.getPrivateInfoMandatory();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"privateInfoMandatory\":%s", privateInfoMandatory)));
+        assertTrue(result.getData().contains(String.format("\"jobRole\":\"%s\"", accountInfo.getJobRole())));
+        assertTrue(result.getData().contains(String.format("\"interest\":\"%s\"", accountInfo.getInterest())));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsPrivateInfoOptional_ThenCDCAccountShouldContainPrivateInfoOptional() throws JSONException {
+    public void buildNewCDCAccount_GivenAccountInfoDoesNotHaveChinaAsCountry_ThenCDCAccountShouldNotContainChinaObject() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean privateInfoOptional = accountInfo.getPrivateInfoOptional();
+        accountInfo.setCountry(CountryCodes.JAPAN.getValue());
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"privateInfoOptional\":%s", privateInfoOptional)));
+        assertFalse(result.getData().contains("china"));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsProcessingConsignment_ThenCDCAccountShouldContainProcessingConsignment() throws JSONException {
+    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsMember_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean processingConsignment = accountInfo.getProcessingConsignment();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
+        accountInfo.setMember("true");
+        String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"processingConsignment\":%s", processingConsignment)));
+        assertTrue(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAccountInfoContainsTermsOfUse_ThenCDCAccountShouldContainTermsOfUse() throws JSONException {
+    public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsNotMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
+        // given
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        Boolean termsOfUse = accountInfo.getTermsOfUse();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
+        accountInfo.setMember("false");
+        String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"termsOfUse\":%s", termsOfUse)));
+        assertFalse(result.getData().contains(String.format("\"phoneNumber\":\"%s\"", phoneNumber)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoHasKoreaAsCountry_ThenCDCAccountShouldKoreaObject() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setCountry(CountryCodes.KOREA.getValue());
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"websiteTermsOfUse\":%s", accountInfo.getWebsiteTermsOfUse())));
+        assertTrue(result.getData().contains(String.format("\"eCommerceTermsOfUse\":%s", accountInfo.getECommerceTermsOfUse())));
+        assertTrue(result.getData().contains(String.format("\"thirdPartyTransferPersonalInfoMandatory\":%s", accountInfo.getThirdPartyTransferPersonalInfoMandatory())));
+        assertTrue(result.getData().contains(String.format("\"thirdPartyTransferPersonalInfoOptional\":%s", accountInfo.getThirdPartyTransferPersonalInfoOptional())));
+        assertTrue(result.getData().contains(String.format("\"collectionAndUsePersonalInfoMandatory\":%s", accountInfo.getCollectionAndUsePersonalInfoMandatory())));
+        assertTrue(result.getData().contains(String.format("\"collectionAndUsePersonalInfoOptional\":%s", accountInfo.getCollectionAndUsePersonalInfoOptional())));
+        assertTrue(result.getData().contains(String.format("\"collectionAndUsePersonalInfoMarketing\":%s", accountInfo.getCollectionAndUsePersonalInfoMarketing())));
+        assertTrue(result.getData().contains(String.format("\"overseasTransferPersonalInfoOptional\":%s", accountInfo.getOverseasTransferPersonalInfoOptional())));
+        assertTrue(result.getData().contains(String.format("\"overseasTransferPersonalInfoMandatory\":%s", accountInfo.getOverseasTransferPersonalInfoMandatory())));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountInfoDoesNotHaveKoreaAsCountry_ThenCDCAccountShouldNotHaveKoreaObject() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getData().contains("korea"));
     }
 }

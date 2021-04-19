@@ -133,94 +133,120 @@ public class AccountBuilderTests {
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithECommerceTransaction_returnAccountInfoWithECommerceTransaction() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithWebsiteTermsOfUse_returnAccountInfoWithWebsiteTermsOfUse() throws Exception {
         // given
-        Boolean eCommerceTransaction = AccountUtils.eComerceTransaction;
+        Boolean websiteTermsOfUse = AccountUtils.websiteTermsOfUse;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getECommerceTransaction(), eCommerceTransaction);
+        assertEquals(res.getWebsiteTermsOfUse(), websiteTermsOfUse);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithPersonalInfoMandatory_returnAccountInfoWithPersonalInfoMandatory() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithECommerceTermsOfUse_returnAccountInfoWithECommerceTermsOfUse() throws Exception {
         // given
-        Boolean personalInfoMandatory = AccountUtils.personalInfoMandatory;
+        Boolean eCommerceTermsOfUse = AccountUtils.eCommerceTermsOfUse;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getPersonalInfoMandatory(), personalInfoMandatory);
+        assertEquals(res.getECommerceTermsOfUse(), eCommerceTermsOfUse);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithPersonalInfoOptional_returnAccountInfoWithPersonalInfoOptional() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithThirdPartyTransferPersonalInfoMandatory_returnAccountInfoWithThirdPartyTransferPersonalInfoMandatory() throws Exception {
         // given
-        Boolean personalInfoOptional = AccountUtils.personalInfoOptional;
+        Boolean thirdPartyTransferPersonalInfoMandatory = AccountUtils.thirdPartyTransferPersonalInfoMandatory;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getPersonalInfoOptional(), personalInfoOptional);
+        assertEquals(res.getThirdPartyTransferPersonalInfoMandatory(), thirdPartyTransferPersonalInfoMandatory);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithPrivateInfoMandatory_returnAccountInfoWithPrivateInfoMandatory() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithThirdPartyTransferPersonalInfoOptional_returnAccountInfoWithThirdPartyTransferPersonalInfoOptional() throws Exception {
         // given
-        Boolean privateInfoMandatory = AccountUtils.privateInfoMandatory;
+        Boolean thirdPartyTransferPersonalInfoOptional = AccountUtils.thirdPartyTransferPersonalInfoOptional;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getPrivateInfoMandatory(), privateInfoMandatory);
+        assertEquals(res.getThirdPartyTransferPersonalInfoOptional(), thirdPartyTransferPersonalInfoOptional);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithPrivateInfoOptional_returnAccountInfoWithPrivateInfoOptional() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithCollectionAndUsePersonalInfoMandatory_returnAccountInfoWithCollectionAndUsePersonalInfoMandatory() throws Exception {
         // given
-        Boolean privateInfoOptional = AccountUtils.privateInfoOptional;
+        Boolean collectionAndUsePersonalInfoMandatory = AccountUtils.collectionAndUsePersonalInfoMandatory;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getPersonalInfoOptional(), privateInfoOptional);
+        assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithProcessingConsignment_returnAccountInfoWithProcessingConsignment() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithCollectionAndUsePersonalInfoOptional_returnAccountInfoWithCollectionAndUsePersonalInfoOptional() throws Exception {
         // given
-        Boolean processingConsignment = AccountUtils.processingConsignment;
+        Boolean collectionAndUsePersonalInfoOptional = AccountUtils.collectionAndUsePersonalInfoOptional;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getProcessingConsignment(), processingConsignment);
+        assertEquals(res.getCollectionAndUsePersonalInfoOptional(), collectionAndUsePersonalInfoOptional);
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithTermsOfUse_returnAccountInfoWithTermsOfUse() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithCollectionAndUsePersonalInfoMarketing_returnAccountInfoWithCollectionAndUsePersonalInfoMarketing() throws Exception {
         // given
-        Boolean termsOfUse = AccountUtils.termsOfUse;
+        Boolean collectionAndUsePersonalInfoMarketing = AccountUtils.collectionAndUsePersonalInfoMarketing;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getTermsOfUse(), termsOfUse);
+        assertEquals(res.getCollectionAndUsePersonalInfoMarketing(), collectionAndUsePersonalInfoMarketing);
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserWithOverseasTransferPersonalInfoMandatory_returnAccountInfoWithOverseasTransferPersonalInfoMandatory() throws Exception {
+        // given
+        Boolean overseasTransferPersonalInfoMandatory = AccountUtils.overseasTransferPersonalInfoMandatory;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+
+        // then
+        assertEquals(res.getOverseasTransferPersonalInfoMandatory(), overseasTransferPersonalInfoMandatory);
+    }
+
+    @Test
+    public void getAccountInfo_ifGivenSiteUserWithOverseasTransferPersonalInfoOptional_returnAccountInfoWithOverseasTransferPersonalInfoOptional() throws Exception {
+        // given
+        Boolean overseasTransferPersonalInfoOptional = AccountUtils.overseasTransferPersonalInfoOptional;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+
+        // then
+        assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);
     }
 
     @Test

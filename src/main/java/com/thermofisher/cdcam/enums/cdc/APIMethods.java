@@ -2,13 +2,15 @@ package com.thermofisher.cdcam.enums.cdc;
 
 public enum APIMethods {
     GET("accounts.getAccountInfo"),
+    GET_IDP_INFORMATION("fidm.saml.getRegisteredIdP"),
+    GET_JWT_PUBLIC_KEY("accounts.getJWTPublicKey"),
     INITREG("accounts.initRegistration"),
     IS_AVAILABLE_LOGINID("accounts.isAvailableLoginID"),
-    SEARCH("accounts.search"),
-    SETINFO("accounts.setAccountInfo"),
     REGISTER("accounts.register"),
+    RESET_PASSWORD("accounts.resetPassword"),
+    SEARCH("accounts.search"),
     SEND_VERIFICATION_EMAIL("accounts.resendVerificationCode"),
-    RESET_PASSWORD("accounts.resetPassword");
+    SETINFO("accounts.setAccountInfo");
 
     private String value;
 

@@ -1,13 +1,22 @@
 package com.thermofisher.cdcam.services;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.validation.constraints.NotBlank;
+
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.aws.SecretsManager;
-import com.thermofisher.cdcam.enums.cdc.Events;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
-import com.thermofisher.cdcam.model.*;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.RegistrationConfirmation;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.Utils;
@@ -18,7 +27,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,15 +34,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.Map;
-
 @Service
 public class AccountRequestService {
     private Logger logger = LogManager.getLogger(this.getClass());
-
-    @Value("${federation.aws.secret}")
-    private String federationSecret;
+    private final int FED_PASSWORD_LENGTH = 10;
 
     @Value("${aws.quick.sight.role}")
     String awsQuickSightRoleSecret;
@@ -51,18 +54,11 @@ public class AccountRequestService {
     @Value("${tf.home}")
     private String redirectUrl;
 
-
-    @Autowired
-    SecretsManager secretsManager;
-
-    @Autowired
-    SNSHandler snsHandler;
-
     @Autowired
     AccountInfoHandler accountHandler;
 
     @Autowired
-    HashValidationService hashValidationService;
+    CDCAccountsService cdcAccountsService;
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
@@ -71,66 +67,36 @@ public class AccountRequestService {
     HttpService httpService;
 
     @Autowired
-    CDCAccountsService cdcAccountsService;
+    NotificationService notificationService;
 
+    @Autowired
+    SecretsManager secretsManager;
+
+    @Autowired
+    SNSHandler snsHandler;
 
     @Async
-    public void processRequest(String headerValue, String rawBody) {
-        final int FED_PASSWORD_LENGTH = 10;
+    public void onAccountRegistered(@NotBlank String uid) {
+        Objects.requireNonNull(uid);
+        logger.info(String.format("Async process for onAccountRegistered initiated for UID: %s", uid));
 
-        logger.info("Async process for notify registration initiated.");
         try {
-            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(federationSecret));
-            String key = secretsManager.getProperty(secretProperties, "cdc-secret-key");
-            String hash = hashValidationService.getHashedString(key, rawBody);
+            setAwsQuickSightRole(uid);
 
-            if (!hashValidationService.isValidHash(hash, headerValue)) {
-                logger.error("Invalid hash signature.");
-                return;
+            AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
+            logger.info(String.format("Account username: %s. UID: %s", account.getUsername(), account.getUid()));
+
+            String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
+            Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(account);
+
+            try {
+                snsHandler.sendNotification(accountToNotify, snsAccountInfoTopic, messageAttributes);
+                logger.info(String.format("Account Info Notification sent successfully. UID: %s", uid));
+            } catch (Exception e) {
+                logger.error(String.format("Account Info notification error: %s", e.getMessage()));
             }
 
-            JSONObject mainObject = new JSONObject(rawBody);
-            JSONArray events = (JSONArray) mainObject.get("events");
-
-            for (int i = 0; i < events.length(); i++) {
-                JSONObject event = events.getJSONObject(i);
-                JSONObject data = (JSONObject) event.get("data");
-
-                if (!event.get("type").equals(Events.REGISTRATION.getValue())) {
-                    logger.warn(String.format("Notify registration webhook event type was not recognized: %s", event.get("type")));
-                    return;
-                }
-
-                String uid = data.get("uid").toString();
-
-                setAwsQuickSightRole(uid);
-
-                logger.info(String.format("Account UID: %s", uid));
-
-                AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
-                if (account == null) {
-                    logger.error(String.format("Account not found in CDC. UID: %s", uid));
-                    return;
-                }
-
-                logger.info(String.format("Account username: %s. UID: %s", account.getUsername(), account.getUid()));
-                String accountToNotify = accountHandler.prepareForProfileInfoNotification(account);
-                try {
-                    Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(account);
-                    boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountToNotify, snsAccountInfoTopic, messageAttributes);
-                    if (!SNSSentCorrectly) {
-                        logger.error(String.format("There was an error sending the account information to SNS Topic (%s). UID: %s", snsAccountInfoTopic, uid));
-                    }
-                    logger.info(String.format("Account Info Notification sent successfully. UID: %s", uid));
-                } catch (Exception e) {
-                    logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s. Error: %s", snsAccountInfoTopic, uid, Utils.stackTraceToString(e)));
-                }
-
-                if (!hasFederationProvider(account)) {
-                    logger.info(String.format("Account is not federated. UID: %s", account.getUid()));
-                    return;
-                }
-
+            if (hasFederationProvider(account)) {
                 String duplicatedAccountUid = cdcResponseHandler.searchDuplicatedAccountUid(account.getUid(), account.getEmailAddress());
                 boolean disableAccountStatus = cdcResponseHandler.disableAccount(duplicatedAccountUid);
 
@@ -141,26 +107,19 @@ public class AccountRequestService {
                 if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 }
-                String accountForGRP = accountHandler.prepareForGRPNotification(account);
-
-                boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP, snsRegistrationTopic);
-                if (!SNSSentCorrectly) {
-                    logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s.", snsRegistrationTopic, uid));
-                    return;
-                }
+                String accountForGRP = accountHandler.buildRegistrationNotificationPayload(account);
+                snsHandler.sendNotification(accountForGRP, snsRegistrationTopic);
                 logger.info(String.format("Account Registration Notification sent successfully. UID: %s", uid));
-                return;
             }
-            logger.error("No webhook events found in request.");
-
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while processing an account notify registration request. Error: %s", Utils.stackTraceToString(e)));
+            logger.error(Utils.stackTraceToString(e));
+            logger.error(String.format("Error: %s. UID: %s.", e.getMessage(), uid));
         }
     }
 
     public CDCResponseData processRegistrationRequest(AccountInfo accountInfo) {
         try {
-            CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);            
+            CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
             CDCResponseData cdcResponseData = cdcResponseHandler.register(newAccount);
 
             if (cdcResponseData != null) {
@@ -170,16 +129,12 @@ public class AccountRequestService {
 
                     logger.info(String.format("Account registration successful. Username: %s. UID: %s.", accountInfo.getUsername(), accountInfo.getUid()));
 
-                    String accountForGRP = accountHandler.prepareForGRPNotification(accountInfo);
-                    boolean SNSSentCorrectly = snsHandler.sendSNSNotification(accountForGRP, snsRegistrationTopic);
-                    if (!SNSSentCorrectly) {
-                        logger.error(String.format("Posting SNS Topic (%s) failed for UID: %s.", snsRegistrationTopic, accountInfo.getUid()));
-                    } else {
-                        logger.info(String.format("Account Registration Notification sent successfully. UID: %s", accountInfo.getUid()));
-                    }
+                    String accountForGRP = accountHandler.buildRegistrationNotificationPayload(accountInfo);
+                    snsHandler.sendNotification(accountForGRP, snsRegistrationTopic);
+                    logger.info(String.format("Account Registration Notification sent successfully. UID: %s", accountInfo.getUid()));
                 } else {
-                    logger.error(String.format("An error occurred while processing an account registration request. Username: %s. Error: %s",
-                            accountInfo.getUsername(), cdcResponseData.getStatusReason()));
+                    String error = String.format("Error on account registration request. Username: %s. Error: %s", accountInfo.getUsername(), cdcResponseData.getStatusReason());
+                    logger.error(error);
                 }
             }
 
@@ -271,5 +226,29 @@ public class AccountRequestService {
 
     private boolean hasFederationProvider(AccountInfo account) {
         return account.getLoginProvider().toLowerCase().contains(FederationProviders.OIDC.getValue()) || account.getLoginProvider().toLowerCase().contains(FederationProviders.SAML.getValue());
+    }
+
+    @Async
+    public void onAccountMerged(@NotBlank String uid) {
+        Objects.requireNonNull(uid);
+
+        logger.info(String.format("Merge update process started for UID: %s", uid));
+        try {
+            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            if (!accountInfo.isFederatedAccount()) {
+                logger.info(String.format("Merge process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
+                return;
+            }
+
+            logger.info("Setting random password for merged account notification.");
+            accountInfo.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
+            logger.info("Building MergedAccountNotification object.");
+            MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountInfo);
+            logger.info("Sending accountMerged notification.");
+            notificationService.sendAccountMergedNotification(mergedAccountNotification);
+            logger.info("accountMerged notification sent.");
+        } catch (Exception e) {
+            logger.error(String.format("Something went wrong. %s.", e.getMessage()));
+        }
     }
 }

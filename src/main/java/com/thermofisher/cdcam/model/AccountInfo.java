@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Builder
 @Getter
 @Setter
@@ -29,23 +31,36 @@ public class AccountInfo {
     private String city;
     private String country;
     private String phoneNumber;
-    private Boolean eCommerceTransaction;
-    private Boolean personalInfoMandatory;
-    private Boolean personalInfoOptional;
-    private Boolean privateInfoMandatory;
-    private Boolean privateInfoOptional;
-    private Boolean processingConsignment;
-    private Boolean termsOfUse;
     private String member;
     private String loginProvider;
     private int regAttempts;
-    private String duplicatedAccountUid;
     private String registrationType;
     private String timezone;
     private String hiraganaName;
+    private String socialProviders;
+
+    // loyalty
     private Boolean acceptsAspireEnrollmentConsent;
     private Boolean isHealthcareProfessional;
     private Boolean isGovernmentEmployee;
     private Boolean isProhibitedFromAcceptingGifts;
     private Boolean acceptsAspireTermsAndConditions;
+
+    // korea
+    private Boolean websiteTermsOfUse;
+    private Boolean eCommerceTermsOfUse;
+    private Boolean thirdPartyTransferPersonalInfoMandatory;
+    private Boolean thirdPartyTransferPersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMandatory;
+    private Boolean collectionAndUsePersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMarketing;
+    private Boolean overseasTransferPersonalInfoMandatory;
+    private Boolean overseasTransferPersonalInfoOptional;
+
+    private String duplicatedAccountUid;
+
+    @JsonIgnore
+    public boolean isFederatedAccount() {
+        return this.socialProviders.toLowerCase().contains("saml-");
+    }
 }

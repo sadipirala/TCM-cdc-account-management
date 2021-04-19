@@ -1,10 +1,14 @@
 package com.thermofisher.cdcam;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
@@ -12,7 +16,9 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
+import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.json.JSONException;
@@ -55,6 +61,7 @@ public class AccountsControllerTests {
     private final int associatedAccounts = 1;
     private final String reCaptchaV3Secret = "reCaptchaV3Secret";
     private final String reCaptchaV2Secret = "reCaptchaV2Secret";
+    private final String CIPHERTEXT = "VTJGc2RHVmtYMStuTTlOT3ExeHZtNG5rUHpqNjhMTmhKbHRkVkJZU0xlMnpGTm5QVk1oV0oycUhrVm1JQ2ozSXJVUWdCK2pBaDBuczMyM0ZMYkdLVm1tSzJ4R3BENmtJZ1VGbm1JeURVMUNpSkcxcU1aNzBvRjBJeG80dHVCbHhmdU02TDJFMmtLUDdvUzdGMWpidU53PT0=";
 
     @InjectMocks
     AccountsController accountsController;
@@ -75,10 +82,13 @@ public class AccountsControllerTests {
     AccountRequestService accountRequestService;
 
     @Mock
-    AccountInfoNotificationService accountInfoNotificationService;
+    NotificationService notificationService;
 
     @Mock
     ReCaptchaService reCaptchaService;
+
+    @Mock
+    DataProtectionService dataProtectionService;
 
     @Mock
     UpdateAccountService updateAccountService;
@@ -94,11 +104,22 @@ public class AccountsControllerTests {
         return cdcResponseData;
     }
 
+    private JSONObject getValidDecryptionResponse(String ciphertext) throws JSONException {
+        JSONObject decryptionResponse = new JSONObject();
+        decryptionResponse.put("statusCode", 200);
+        JSONObject body = new JSONObject();
+        body.put("firstName", "John");
+        body.put("lastName", "Doe");
+        body.put("email", "john.doe@mail.com");
+        decryptionResponse.put("body", body);
+        return decryptionResponse;
+    }
+
     JSONObject reCaptchaResponse;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         reCaptchaResponse = new JSONObject();
         uids.add("001");
         uids.add("002");
@@ -219,14 +240,13 @@ public class AccountsControllerTests {
     @Test
     public void getUsers_GivenAnIOError_returnInternalServerError() throws IOException {
         // given
-        Mockito.when(usersHandler.getUsers(uids)).thenThrow(Exception.class);
+        Mockito.when(usersHandler.getUsers(uids)).thenThrow(IOException.class);
 
         // when
         ResponseEntity<List<UserDetails>> resp = accountsController.getUsers(uids);
 
         // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
-
     }
 
     @Test
@@ -254,15 +274,64 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void notifyRegistration_givenMethodCalled_returnOk() {
+    public void onAccountRegistered_givenMethodCalled_WhenJWTIsValid_returnOk() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
-        doNothing().when(accountRequestService).processRequest(any(), any());
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountRegistered(any());
 
-        // when
-        ResponseEntity<String> response = accountsController.notifyRegistration("test", "test");
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
 
-        // then
-        Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+            // when
+            ResponseEntity<String> response = accountsController.onAccountRegistered(jwt, body);
+
+            // then
+            Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+    }
+
+    @Test
+    public void onAccountRegistered_givenMethodCalled_WhenJWTIsNotValid_ThenOnAccountRegisteredShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountRegistered(any());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
+
+            // when
+            accountsController.onAccountRegistered(jwt, body);
+
+            // then
+            verify(accountRequestService, times(0)).onAccountRegistered(body);
+        }
+    }
+
+
+    @Test
+    public void onAccountRegistered_GivenTheMethodIsCalled_ThenAccountsRequestService_onAccountRegisteredMethodShouldBeCalledSameTimesAsWebhookEventsAmount() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 2;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountRegistered(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
+            
+            // when
+            accountsController.onAccountRegistered(jwt, body);
+
+            // then
+            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountRegistered(anyString());
+        }
     }
 
     @Test
@@ -353,6 +422,51 @@ public class AccountsControllerTests {
 
         // then
         verify(accountRequestService).processRegistrationRequest(any());
+    }
+
+    @Test
+    public void newAccount_givenAnAccountWithValidEncryptedDataIsProvided_ThenACallToDecryptShouldBeMade() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setCiphertext(CIPHERTEXT);
+        JSONObject decryptionResponse = getValidDecryptionResponse(CIPHERTEXT);
+        when(dataProtectionService.decrypt(any())).thenReturn(decryptionResponse);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(dataProtectionService, times(1)).decrypt(CIPHERTEXT);
+    }
+
+    @Test
+    public void newAccount_givenAnAccountDTOWithValidEncryptedDataIsProvided_ThenAccountInfoShouldBeSetWithDecryptionResponse() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setCiphertext(CIPHERTEXT);
+        JSONObject decryptionResponse = getValidDecryptionResponse(CIPHERTEXT);
+        accountDTO.setFirstName(decryptionResponse.getJSONObject("body").getString("firstName"));
+        accountDTO.setLastName(decryptionResponse.getJSONObject("body").getString("lastName"));
+        accountDTO.setEmailAddress(decryptionResponse.getJSONObject("body").getString("email"));
+
+
+        AccountInfo accountInfo = AccountBuilder.parseFromAccountInfoDTO(accountDTO);
+
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(dataProtectionService.decrypt(CIPHERTEXT)).thenReturn(decryptionResponse);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        Assert.assertEquals(accountInfo.getFirstName(),accountDTO.getFirstName());
+        Assert.assertEquals(accountInfo.getLastName(),accountDTO.getLastName());
+        Assert.assertEquals(accountInfo.getEmailAddress(),accountDTO.getEmailAddress());
     }
 
     @Test
@@ -490,7 +604,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO);
 
         // then
-        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+        verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
     }
 
     @Test
@@ -511,7 +625,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO);
 
         // then
-        verify(accountInfoNotificationService, times(1)).sendAspireRegistrationSNS(any());
+        verify(notificationService, times(1)).sendAspireRegistrationNotification(any());
     }
 
     @Test
@@ -532,7 +646,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO);
 
         // then
-        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+        verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
     }
 
     @Test
@@ -553,7 +667,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO);
 
         // then
-        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+        verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
     }
 
     @Test
@@ -574,7 +688,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO);
 
         // then
-        verify(accountInfoNotificationService, times(0)).sendAspireRegistrationSNS(any());
+        verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
     }
 
     @Test
@@ -632,7 +746,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException {
+    public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException, CustomGigyaErrorException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
         when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
@@ -645,7 +759,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException {
+    public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException, CustomGigyaErrorException {
         // given
         EmailSentResponse response = EmailSentResponse.builder().statusCode(200).build();
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -778,7 +892,7 @@ public class AccountsControllerTests {
     public void isAvailableLoginID_GivenIdIsAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenReturn(true);
+        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenReturn(true);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
@@ -792,7 +906,7 @@ public class AccountsControllerTests {
     public void isAvailableLoginID_GivenIdIsNotAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenReturn(false);
+        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenReturn(false);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
@@ -802,17 +916,76 @@ public class AccountsControllerTests {
         assertFalse(response.getBody().getIsCDCAvailable());
     }
 
-
     @Test
     public void isAvailableLoginID_GivenAnExceptionOccursWhenCheckingCDC_ItShouldReturnInternalServerError() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginID(loginID)).thenThrow(Exception.class);
+        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenThrow(CustomGigyaErrorException.class);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void onAccountsMerge_GivenTheMethodIsCalled_WhenJWTIsNotValid_ThenAccountRequestService_OnAccountMergedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountMerged(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
+            
+            // when
+            accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, never()).onAccountMerged(anyString());
+        }
+    }
+
+    @Test
+    public void onAccountsMerge_GivenTheMethodIsCalled_WhenNotificationTypeIsNotMerge_ThenAccountRequestService_OnAccountMergedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountMerged(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
+            
+            // when
+            accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, never()).onAccountMerged(anyString());
+        }
+    }
+
+    @Test
+    public void onAccountsMerge_GivenTheMethodIsCalled_ThenAccountsRequestService_OnAccountMergedMethodShouldBeCalledSameTimesAsWebhookEventsAmount() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 2;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountMerged(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
+            
+            // when
+            accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountMerged(anyString());
+        }
     }
 }

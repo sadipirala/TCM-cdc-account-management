@@ -1,5 +1,8 @@
 package com.thermofisher.cdcam.utils.cdc;
 
+import java.io.IOException;
+import java.io.InvalidClassException;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -9,49 +12,70 @@ import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
+import com.thermofisher.cdcam.services.CDCIdentityProviderService;
 import com.thermofisher.cdcam.utils.Utils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-
-import java.io.IOException;
-import java.io.InvalidClassException;
+import org.springframework.stereotype.Service;
 
 /**
  * CDCAccountsService
  */
-@Configuration
+@Service
 public class CDCResponseHandler {
     private final int SUCCESS_CODE = 0;
     private final String NO_RESULTS_FOUND = "";
     private final AccountBuilder accountBuilder = new AccountBuilder();
+    private final IdentityProviderBuilder identityProviderBuilder = new IdentityProviderBuilder();
 
     private Logger logger = LogManager.getLogger(this.getClass());
 
     @Autowired
     CDCAccountsService cdcAccountsService;
 
-    public AccountInfo getAccountInfo(String uid) {
+    @Autowired(required = false)
+    CDCIdentityProviderService cdcIdentityProviderService;
+
+    @Value("${cdc.main.datacenter}")
+    private String mainApiDomain;
+
+    @Value("${cdc.secondary.datacenter}")
+    private String secondaryApiDomain;
+
+    @Value("${env.name}")
+    private String env;
+
+    public AccountInfo getAccountInfo(String uid) throws CustomGigyaErrorException {
         GSResponse response = cdcAccountsService.getAccount(uid);
         if (response.getErrorCode() == 0) {
             GSObject obj = response.getData();
             return accountBuilder.getAccountInfo(obj);
         } else {
-            logger.error(String.format("An error occurred while retrieving account info. UID: %s. Error: %s", uid, response.getErrorDetails()));
-            return null;
+            String error = String.format("An error occurred while retrieving account info. UID: %s. Error: %s", uid, response.getErrorDetails());
+            throw new CustomGigyaErrorException(error);
         }
     }
 
-    public AccountInfo getAccountInfoByEmail(String email) throws IOException {
+    public AccountInfo getAccountInfoByEmail(String email) throws IOException, CustomGigyaErrorException {
         String uid = this.getUIDByEmail(email);
 
         if (uid.isEmpty()) {
@@ -213,16 +237,63 @@ public class CDCResponseHandler {
             .build();
     }
 
-    public boolean isAvailableLoginID(String loginID) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
-        final String IS_AVAILABLE_PARAM = "isAvailable";
-        GSResponse gsResponse = cdcAccountsService.isAvailableLoginID(loginID);
+    public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
+        boolean isAvailableLoginId = false;
 
-        if (gsResponse.getErrorCode() != 0) {
-            String errorMessage = String.format("Error on %s: %s - %s", "isAvailableLoginID", gsResponse.getErrorCode(), gsResponse.getErrorMessage());
+        isAvailableLoginId = isAvailableLoginId(loginId, mainApiDomain);
+        if (!isAvailableLoginId) {
+            return isAvailableLoginId;
+        }
+
+        if (CDCUtils.isSecondaryDCSupported(env)) {
+            isAvailableLoginId = isAvailableLoginId(loginId, secondaryApiDomain);
+        }
+
+        return isAvailableLoginId;
+    }
+
+    private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
+        final String IS_AVAILABLE_PARAM = "isAvailable";
+        GSResponse response = cdcAccountsService.isAvailableLoginId(loginId, apiDomain);
+
+        logger.info(String.format("Error code: %d", response.getErrorCode()));
+        if (response.getErrorCode() != 0) {
+            String errorMessage = String.format("Error on isAvailableLoginID::%s: %s - %s", apiDomain, response.getErrorCode(), response.getErrorMessage());
             throw new CustomGigyaErrorException(errorMessage);
         }
 
-        GSObject gsObject = gsResponse.getData();
+        GSObject gsObject = response.getData();
         return gsObject.getBool(IS_AVAILABLE_PARAM);
+    }
+
+    public IdentityProviderResponse getIdPInformation(String idpName) {
+        GSResponse response = cdcIdentityProviderService.getIdPInformation(idpName);
+
+        if (response.getErrorCode() == 0) {
+            GSObject obj = response.getData();
+            return identityProviderBuilder.getIdPInformation(obj);
+        } else {
+            logger.error(String.format("An error occurred while retrieving IdP info. IdP Name: %s. Error: %s", idpName, response.getErrorDetails()));
+            return null;
+        }
+    }
+
+    public JWTPublicKey getJWTPublicKey() throws CustomGigyaErrorException, GSKeyNotFoundException {
+        logger.info("Getting JWTPublicKey from CDC.");
+        GSResponse response = cdcAccountsService.getJWTPublicKey();
+        logger.info("Got JWTPublicKey.");
+
+        if (response.getErrorCode() != 0) {
+            String error = String.format("Error on getJWTPublicKey. Error code: %d. Message: %s.", response.getErrorCode(), response.getErrorMessage());
+            logger.error(error);
+            throw new CustomGigyaErrorException(error);
+        }
+        
+        GSObject gsData = response.getData();
+        JWTPublicKey jwtPublicKey = JWTPublicKey.builder()
+            .n(gsData.getString("n"))
+            .e(gsData.getString("e"))
+            .build();
+        return jwtPublicKey;
     }
 }

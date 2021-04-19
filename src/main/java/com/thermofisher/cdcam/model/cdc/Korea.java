@@ -13,13 +13,15 @@ import lombok.Setter;
 @Builder
 @JsonDeserialize(builder = Korea.KoreaBuilder.class)
 public class Korea {
-    private Boolean eComerceTransaction;
-    private Boolean personalInfoMandatory;
-    private Boolean personalInfoOptional;
-    private Boolean privateInfoMandatory;
-    private Boolean privateInfoOptional;
-    private Boolean processingConsignment;
-    private Boolean termsOfUse;
+    private Boolean websiteTermsOfUse;
+    private Boolean eCommerceTermsOfUse;
+    private Boolean thirdPartyTransferPersonalInfoMandatory;
+    private Boolean thirdPartyTransferPersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMandatory;
+    private Boolean collectionAndUsePersonalInfoOptional;
+    private Boolean collectionAndUsePersonalInfoMarketing;
+    private Boolean overseasTransferPersonalInfoMandatory;
+    private Boolean overseasTransferPersonalInfoOptional;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
