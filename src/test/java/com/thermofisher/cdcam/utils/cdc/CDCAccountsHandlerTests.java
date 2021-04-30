@@ -62,20 +62,6 @@ public class CDCAccountsHandlerTests {
     }
 
     @Test
-    public void buildNewCDCAccount_GivenAspireAccountContainsDepartmentAndIsNotAMember_ThenCDCAccountShouldNotContainDepartment() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
-        String department = accountInfo.getDepartment();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertFalse(result.getProfile().contains(String.format("\"department\":\"%s\"", department)));
-    }
-
-    @Test
     public void buildNewCDCAccount_GivenAspireAccountContainsCityAndIsNotAMember_ThenCDCAccountShouldNotContainCity() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();

@@ -861,20 +861,6 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongDepartment_returnBadRequest() throws IOException, JSONException {
-        // given
-        final String LONG_DEPARTMENT = "199hvjoVi3t7QSF676unFTfLmbBWiJ3nmb0kXmfrr2Mu3DrJoEN";
-        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        accountDTO.setDepartment(LONG_DEPARTMENT);
-
-        // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
-
-        // then
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
     public void newAccount_givenAnAccountWithLongCity_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_CITY = "TI1YPaFY9MAzdtUiHAP3cYfGWVDs11z";

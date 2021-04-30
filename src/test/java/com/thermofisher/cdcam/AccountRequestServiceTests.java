@@ -87,12 +87,12 @@ public class AccountRequestServiceTests {
     private AccountInfo federationAccount = AccountInfo.builder().uid("0055").username("federatedUser@OIDC.com")
             .emailAddress("federatedUser@OIDC.com").firstName("first").lastName("last").country("country")
             .localeName("en_US").loginProvider("oidc").password("Randompassword1").regAttempts(0).city("testCity")
-            .department("dep").company("myCompany").build();
+            .company("myCompany").build();
 
     private AccountInfo nonFederationAccount = AccountInfo.builder().username("nonFederatedUser@email.com")
             .emailAddress("nonFederatedUser@email.com").firstName("first").lastName("last").country("country")
             .localeName("en_US").loginProvider("site").password("Randompassword1").regAttempts(0).city("testCity")
-            .department("dep").company("myCompany").build();
+            .company("myCompany").build();
 
     @Before
     public void setup() {

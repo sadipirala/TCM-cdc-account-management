@@ -31,8 +31,6 @@ public class AccountInfoDTO {
     private String localeName;
     @Size(max = 50)
     private String company;
-    @Size(max = 50)
-    private String department;
     @Size(max = 30)
     private String city;
     private String country;

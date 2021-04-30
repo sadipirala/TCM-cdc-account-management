@@ -36,7 +36,6 @@ public class AccountUtils {
     public static final String lastName = "last";
     public static final String country = "United States";
     public static final String city = "testCity";
-    public static final String department = "dep";
     public static final String member = "member";
     public static final String localeName = "en_US";
     public static final String loginProvider = "oidc";
@@ -79,7 +78,6 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .department(department)
                 .member(member)
                 .loginProvider(loginProvider)
                 .socialProviders(federationSocialProviders)
@@ -102,7 +100,6 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .department(department)
                 .member(member)
                 .loginProvider(loginProvider)
                 .socialProviders("site")
@@ -141,7 +138,6 @@ public class AccountUtils {
         .company(company)
         .country(country)
         .city(city)
-        .department(department)
         .member(member)
         .reCaptchaToken(reCaptchaToken)
         .isReCaptchaV2(false)
@@ -237,7 +233,6 @@ public class AccountUtils {
     private static Work buildWorkObject(AccountInfo accountInfo) {
         return accountInfo.getMember().equals("false") ? null : Work.builder()
                 .company(accountInfo.getCompany())
-                .location(accountInfo.getDepartment())
                 .build();
     }
 

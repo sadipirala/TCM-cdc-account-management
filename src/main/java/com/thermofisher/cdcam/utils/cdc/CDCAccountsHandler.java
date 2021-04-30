@@ -40,7 +40,6 @@ public class CDCAccountsHandler {
     private static Work buildWorkObject(AccountInfo accountInfo) {
         return accountInfo.getMember().equals("false") ? null : Work.builder()
                 .company(accountInfo.getCompany())
-                .location(accountInfo.getDepartment())
                 .build();
     }
 

@@ -27,7 +27,6 @@ public class AccountInfo {
     private String interest;
     private String localeName;
     private String company;
-    private String department;
     private String city;
     private String country;
     private String phoneNumber;

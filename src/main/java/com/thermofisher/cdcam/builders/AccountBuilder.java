@@ -27,7 +27,6 @@ public class AccountBuilder {
             GSObject password = obj.containsKey("password") ? (GSObject) obj.get("password") : null;
             String socialProviders = obj.containsKey("socialProviders") ? obj.getString("socialProviders") : "";
             String company = "";
-            String department = "";
             String finalPassword = "";
             Registration registration = getRegistration(data);
             RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
@@ -43,7 +42,6 @@ public class AccountBuilder {
 
             if (work != null) {
                 company = work.containsKey("company") ? work.getString("company") : "";
-                department = work.containsKey("location") ? work.getString("location") : "";
             }
 
             return AccountInfo.builder()
@@ -56,7 +54,6 @@ public class AccountBuilder {
                     .company(company)
                     .country(profile.containsKey("country") ? profile.getString("country") : "")
                     .city(profile.containsKey("city") ? profile.getString("city") : "")
-                    .department(department)
                     .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
@@ -97,7 +94,6 @@ public class AccountBuilder {
             .password(accountInfoDTO.getPassword())
             .localeName(accountInfoDTO.getLocaleName())
             .company(accountInfoDTO.getCompany())
-            .department(accountInfoDTO.getDepartment())
             .city(accountInfoDTO.getCity())
             .country(accountInfoDTO.getCountry())
             .member(accountInfoDTO.getMember())

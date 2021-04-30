@@ -40,7 +40,6 @@ public class AccountInfoHandler {
 
         List<String> propertiesToRemove = new ArrayList<>();
         if (account.getMember().equals("false")) {
-            propertiesToRemove.add("department");
             propertiesToRemove.add("company");
             propertiesToRemove.add("city");
         }

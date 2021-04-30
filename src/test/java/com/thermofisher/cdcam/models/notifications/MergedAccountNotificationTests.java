@@ -26,7 +26,6 @@ public class MergedAccountNotificationTests {
         assertEquals(result.getUid(), accountInfo.getUid());
         assertEquals(result.getPassword(), accountInfo.getPassword());
         assertEquals(result.getCompany(), accountInfo.getCompany());
-        assertEquals(result.getDepartment(), accountInfo.getDepartment());
         assertEquals(result.getCity(), accountInfo.getCity());
         assertEquals(result.getCountry(), accountInfo.getCountry());
         assertEquals(result.getMember(), accountInfo.getMember());

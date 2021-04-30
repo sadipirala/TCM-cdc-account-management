@@ -16,7 +16,6 @@ public class MergedAccountNotification {
     private String uid;
     private String password;
     private String company;
-    private String department;
     private String city;
     private String country;
     private String member;
@@ -26,7 +25,6 @@ public class MergedAccountNotification {
             .uid(accountInfo.getUid())
             .password(accountInfo.getPassword())
             .company(accountInfo.getCompany())
-            .department(accountInfo.getDepartment())
             .city(accountInfo.getCity())
             .country(accountInfo.getCountry())
             .member(accountInfo.getMember())
