@@ -10,20 +10,18 @@ import lombok.Setter;
 @Builder
 @Getter
 @Setter
-public class MergedAccountNotification {
+public class AccountUpdatedNotification {
     @Builder.Default
-    private String type = NotificationType.MERGE.getValue();
+    private String type = NotificationType.UPDATE.getValue();
     private String uid;
-    private String password;
     private String company;
     private String city;
     private String country;
     private String member;
 
-    public static MergedAccountNotification build(AccountInfo accountInfo) {
-        return MergedAccountNotification.builder()
+    public static AccountUpdatedNotification build(AccountInfo accountInfo) {
+        return AccountUpdatedNotification.builder()
             .uid(accountInfo.getUid())
-            .password(accountInfo.getPassword())
             .company(accountInfo.getCompany())
             .city(accountInfo.getCity())
             .country(accountInfo.getCountry())

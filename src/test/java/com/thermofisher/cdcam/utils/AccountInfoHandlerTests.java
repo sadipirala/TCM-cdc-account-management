@@ -51,7 +51,6 @@ public class AccountInfoHandlerTests {
     
     private String prepareJsonForNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
@@ -112,7 +111,6 @@ public class AccountInfoHandlerTests {
 
     public String prepareJsonForAspireNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
@@ -180,7 +178,6 @@ public class AccountInfoHandlerTests {
         String parsedAccount = accountHandler.prepareForAspireNotification(mockAccount);
 
         // then
-        assertEquals(parsedAccount.indexOf("\"duplicatedAccountUid\""), -1);
         assertEquals(expectedAccountToNotify, parsedAccount);
     }
 

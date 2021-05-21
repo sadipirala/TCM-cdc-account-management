@@ -14,6 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,4 +97,150 @@ public class UtilsTests {
         Assert.assertNotNull(testUser);
     }
 
+    @Test
+    public void isNullOrEmpty_ShouldReturnTrue_WhenThePassedListIsNull() {
+        List<String> list = null;
+
+        // when
+        boolean result = Utils.isNullOrEmpty(list);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnTrue_WhenThePassedListIsEmpty() {
+        // given
+        List<String> list = new ArrayList<String>();
+
+        // when
+        boolean result = Utils.isNullOrEmpty(list);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnFalse_WhenThePassedListIsNotNull() {
+        // given
+        List<String> list = new ArrayList<String>();
+        list.add("");
+
+        // when
+        boolean result = Utils.isNullOrEmpty(list);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnFalse_WhenThePassedListIsNotEmpty() {
+        // given
+        List<String> list = new ArrayList<String>();
+        list.add("");
+
+        // when
+        boolean result = Utils.isNullOrEmpty(list);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnTrue_WhenThePassedStringIsNull() {
+        String text = null;
+
+        // when
+        boolean result = Utils.isNullOrEmpty(text);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnTrue_WhenThePassedStringIsEmpty() {
+        // given
+        String text = "";
+
+        // when
+        boolean result = Utils.isNullOrEmpty(text);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnFalse_WhenThePassedStringIsNotNull() {
+        // given
+        String text = "200";
+
+        // when
+        boolean result = Utils.isNullOrEmpty(text);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void isNullOrEmpty_ShouldReturnFalse_WhenThePassedStringIsNotEmpty() {
+        // given
+        String text = "200";
+
+        // when
+        boolean result = Utils.isNullOrEmpty(text);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void hasNullOrEmptyValues_GivenAListHasNullValues_ThenItShouldReturnTrue() {
+        // given
+        ArrayList<String> list = new ArrayList<String>();
+        list.add(null);
+
+        // when
+        boolean result = Utils.hasNullOrEmptyValues(list);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void hasNullOrEmptyValues_GivenAListDoesNotHasNullValues_ThenItShouldReturnFalse() {
+        // given
+        ArrayList<String> list = new ArrayList<String>();
+
+        // when
+        boolean result = Utils.hasNullOrEmptyValues(list);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void hasNullOrEmptyValues_GivenAListHasEmptyValues_ThenItShouldReturnTrue() {
+        // given
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("");
+
+        // when
+        boolean result = Utils.hasNullOrEmptyValues(list);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void hasNullOrEmptyValues_GivenAListDoesNotHasEmptyValues_ThenItShouldReturnFalse() {
+        // given
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("200");
+
+        // when
+        boolean result = Utils.hasNullOrEmptyValues(list);
+
+        // then
+        assertFalse(result);
+    }
 }

@@ -9,7 +9,8 @@ public class EECUser {
     private String uid;
     private String username;
     private String email;
-    private boolean registered;
+    private Boolean registered;
+    // private Boolean isActive;
     private int responseCode;
     private String responseMessage;
 }

@@ -89,11 +89,6 @@ public class AccountRequestServiceTests {
             .localeName("en_US").loginProvider("oidc").password("Randompassword1").regAttempts(0).city("testCity")
             .company("myCompany").build();
 
-    private AccountInfo nonFederationAccount = AccountInfo.builder().username("nonFederatedUser@email.com")
-            .emailAddress("nonFederatedUser@email.com").firstName("first").lastName("last").country("country")
-            .localeName("en_US").loginProvider("site").password("Randompassword1").regAttempts(0).city("testCity")
-            .company("myCompany").build();
-
     @Before
     public void setup() {
         MockitoAnnotations.openMocks(this);
@@ -430,13 +425,13 @@ public class AccountRequestServiceTests {
         // when
         String uid = AccountUtils.uid;
         AccountInfo accountMock = AccountUtils.getFederatedAccount();
-        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountMock);
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountMock);
         when(cdcResponseHandler.getAccountInfo(uid)).thenReturn(accountMock);
         doNothing().when(notificationService).sendAccountMergedNotification(any());
 
         try (MockedStatic<MergedAccountNotification> mergedAccountNotificationStatic = Mockito.mockStatic(MergedAccountNotification.class)) {
             // when
-            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.buildFrom(any())).thenReturn(mergedAccountNotification);
+            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.build(any())).thenReturn(mergedAccountNotification);
             accountRequestService.onAccountMerged(uid);
 
             // then
@@ -449,67 +444,17 @@ public class AccountRequestServiceTests {
         // when
         String uid = AccountUtils.uid;
         AccountInfo accountMock = AccountUtils.getSiteAccount();
-        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountMock);
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountMock);
         when(cdcResponseHandler.getAccountInfo(uid)).thenReturn(accountMock);
         doNothing().when(notificationService).sendAccountMergedNotification(any());
 
         try (MockedStatic<MergedAccountNotification> mergedAccountNotificationStatic = Mockito.mockStatic(MergedAccountNotification.class)) {
             // when
-            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.buildFrom(any())).thenReturn(mergedAccountNotification);
+            mergedAccountNotificationStatic.when(() -> MergedAccountNotification.build(any())).thenReturn(mergedAccountNotification);
             accountRequestService.onAccountMerged(uid);
 
             // then
             verify(notificationService, never()).sendAccountMergedNotification(any());
         }
-    }
-
-    @Test
-    public void onAccountRegistered_IfGivenAFederatedUser_searchForDuplicatedAccountsInCDC() throws IOException, CustomGigyaErrorException {
-        //setup
-        String uid = UUID.randomUUID().toString();
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
-        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
-        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
-
-        //execution
-        accountRequestService.onAccountRegistered(uid);
-
-        //validation
-        Mockito.verify(cdcResponseHandler).searchDuplicatedAccountUid(federationAccount.getUid(),federationAccount.getEmailAddress());
-    }
-
-    @Test
-    public void onAccountRegistered_IfGivenAFederatedUser_disableDuplicatedAccounts() throws IOException, CustomGigyaErrorException {
-        //setup
-        String uid = UUID.randomUUID().toString();
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
-        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
-        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
-
-        //execution
-        accountRequestService.onAccountRegistered(uid);
-
-        //validation
-        Mockito.verify(cdcResponseHandler).disableAccount(anyString());
-    }
-
-    @Test
-    public void onAccountRegistered_IfGivenAFederatedUser_saveDuplicatedAccountUidToAccount() throws IOException, CustomGigyaErrorException {
-        //setup
-        String uid = UUID.randomUUID().toString();
-
-        Mockito.when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(federationAccount);
-        Mockito.when(cdcResponseHandler.searchDuplicatedAccountUid(anyString(), anyString())).thenReturn("0055");
-        Mockito.when(cdcResponseHandler.disableAccount(anyString())).thenReturn(true);
-        Mockito.when(accountInfoHandler.buildRegistrationNotificationPayload(any())).thenCallRealMethod();
-        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
-
-        //execution
-        accountRequestService.onAccountRegistered(uid);
-
-        //validation
-        federationAccount.setDuplicatedAccountUid("0055");
     }
 }

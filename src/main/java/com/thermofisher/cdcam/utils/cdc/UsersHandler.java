@@ -2,12 +2,16 @@ package com.thermofisher.cdcam.utils.cdc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
-import com.thermofisher.cdcam.enums.cdc.AccountTypes;
+import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.Profile;
+import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
+import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.services.CDCAccountsService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,9 @@ public class UsersHandler {
     @Autowired
     CDCAccountsService cdcAccountsService;
 
+    @Autowired
+    CDCResponseHandler cdcResponseHandler;
+
     public List<UserDetails> getUsers(List<String> uids) throws IOException {
         final int ONE_ACCOUNT = 1;
         final int TWO_ACCOUNTS = 2;
@@ -38,7 +45,7 @@ public class UsersHandler {
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
         String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
-        GSResponse response = cdcAccountsService.search(query, AccountTypes.FULL_LITE.getValue());
+        GSResponse response = cdcAccountsService.search(query, AccountType.FULL_LITE);
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {
@@ -73,5 +80,21 @@ public class UsersHandler {
         }
 
         return userDetails;
+    }
+
+    public ProfileInfoDTO getUserProfileByUID(String uid) throws IOException {
+        logger.info("Requested user profile by UID.");
+
+        ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder().build();
+        AccountInfo accountInfo;
+        try {
+            accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            profileInfoDTO = ProfileInfoDTO.build(accountInfo);
+        } catch (CustomGigyaErrorException e) {
+            logger.error(String.format("An error occurred when searching user. Error: %s", e.getMessage()));
+            profileInfoDTO = null;
+        }
+
+        return profileInfoDTO;
     }
 }

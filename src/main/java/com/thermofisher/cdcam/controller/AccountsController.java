@@ -27,6 +27,7 @@ import com.thermofisher.cdcam.model.UsernameRecoveryEmailRequest;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
@@ -84,7 +85,7 @@ public class AccountsController {
     private String identityReCaptchaSecretV2;
 
     @Autowired
-    LiteRegHandler handler;
+    LiteRegHandler liteRegHandler;
 
     @Autowired
     UsersHandler usersHandler;
@@ -113,33 +114,39 @@ public class AccountsController {
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Invalid request. Either no list elements were sent or limit was exceeded.", responseHeaders = {
-                    @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
-            }),
-            @ApiResponse(code = 500, message = "Internal server error", responseHeaders = {
-                    @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
-            })
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Invalid request. Either no list elements were sent or limit was exceeded.", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        }),
+        @ApiResponse(code = 500, message = "Internal server error", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        })
     })
     @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
     public ResponseEntity<List<EECUser>> emailOnlyRegistration(@Valid @RequestBody EmailList emailList) {
         logger.info("Email only registration initiated.");
-        if (emailList.getEmails() == null || emailList.getEmails().size() == 0) {
-            logger.warn("No users requested.");
-            return ResponseEntity.badRequest().header(requestExceptionHeader, "No users requested.").body(null);
-        } else if (emailList.getEmails().size() > handler.requestLimit) {
-            String errorMessage = String.format("Requested users exceed request limit: %s.", handler.requestLimit);
+
+        if (Utils.isNullOrEmpty(emailList.getEmails())) {
+            String errorMessage = "No users requested.";
             logger.error(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
-        } else {
-            try {
-                List<EECUser> response = handler.process(emailList);
-                return ResponseEntity.ok().body(response);
-            } catch (IOException e) {
-                String errorMessage = String.format("An error occurred during email only registration process... %s", e.toString());
-                logger.error(errorMessage);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, errorMessage).body(null);
-            }
+        } else if (emailList.getEmails().size() > liteRegHandler.requestLimit) {
+            String errorMessage = String.format("Requested users exceed request limit: %s.", liteRegHandler.requestLimit);
+            logger.error(errorMessage);
+            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+        }
+        
+        try {
+            List<EECUser> response = liteRegHandler.createLiteAccounts(emailList);
+            return ResponseEntity.ok().body(response);
+        } catch (IllegalArgumentException e) {
+            String error = e.getMessage();
+            logger.error(error);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, error).body(null);
+        } catch (Exception e) {
+            String error = String.format("An error occurred during email only registration process... %s", e.getMessage());
+            logger.error(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, error).body(null);
         }
     }
 
@@ -158,6 +165,27 @@ public class AccountsController {
             
             logger.info(String.format("Retrieved %d user(s)", userDetails.size()));
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (IOException e) {
+            logger.error(String.format("An error occurred while retrieving user data from CDC: %s", Utils.stackTraceToString(e)));
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/user/{uid}")
+    @ApiOperation(value = "Get user profile by UID")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 404, message = "Account Not found"),
+        @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "uid", value = "A valid UID", required = true)
+    public ResponseEntity<ProfileInfoDTO> getUserProfileByUID(@PathVariable String uid){
+        try{
+            logger.info("User profile data by UID requested.");
+            ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
+
+            logger.info(String.format("Retrieved user with UID: %s", uid));
+            return (profileInfoDTO != null) ? new ResponseEntity<ProfileInfoDTO>(profileInfoDTO, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (IOException e) {
             logger.error(String.format("An error occurred while retrieving user data from CDC: %s", Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -325,17 +353,33 @@ public class AccountsController {
 
             for (int i = 0; i < events.length(); i++) {
                 JSONObject event = events.getJSONObject(i);
-                if (!event.get("type").equals(WebhookEvent.MERGE.getValue())) continue;
     
-                JSONObject data = (JSONObject) event.get("data");
-                String uid = data.get("uid").toString();
-                accountRequestService.onAccountMerged(uid);
+     
+                if (isMergeEvent(event)) {
+                    logger.info("accountMerged webhook event fired.");
+                    JSONObject data = (JSONObject) event.get("data");
+                    String uid = data.get("newUid").toString();
+                    accountRequestService.onAccountMerged(uid);
+                } else if (isUpdateEvent(event)) {
+                    JSONObject data = (JSONObject) event.get("data");
+                    logger.info("accountUpdate webhook event fired.");
+                    String uid = data.get("uid").toString();
+                    accountRequestService.onAccountUpdated(uid);
+                }
             }
         } catch (Exception e) {
             logger.error(String.format("onAccountsMerge error: %s. %s.", e.getMessage(), e.getCause()));
         }
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private boolean isMergeEvent(JSONObject event) throws JSONException {
+        return event.get("type").equals(WebhookEvent.MERGE.getValue());
+    }
+
+    private boolean isUpdateEvent(JSONObject event) throws JSONException {
+        return event.get("type").equals(WebhookEvent.UPDATE.getValue());
     }
 
     @PostMapping("/username/recovery")
@@ -433,6 +477,36 @@ public class AccountsController {
 
         return ResponseEntity.ok().body(response);
     }
+
+    @PutMapping("/user")
+    @ApiOperation(value = "Update User Profile in CDC.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK."),
+            @ApiResponse(code = 400, message = "Bad Request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> updateUserProfile(@RequestBody ProfileInfoDTO profileInfoDTO) {
+        try {
+            if (profileInfoDTO == null || Utils.isNullOrEmpty(profileInfoDTO.getUid())) {
+                logger.error("ProfileInfoDTO is null or UID is null/empty");
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            
+            logger.info(String.format("Starting user profile update process with UID: %s", profileInfoDTO.getUid()));
+            String uid = profileInfoDTO.getUid();
+            HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
+            if (updateUserProfileStatus == HttpStatus.OK) {
+                logger.info(String.format("User %s updated.", uid));
+                return new ResponseEntity<String>("The information was successfully updated.", updateUserProfileStatus);
+            } else {
+                logger.error(String.format("An error occurred during the user's profile update. UID: %s", uid));
+                return new ResponseEntity<>(updateUserProfileStatus);
+            }
+        } catch (JSONException ex) {
+            logger.error(String.format("Internal server error : %s", ex.getMessage()));
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }    
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)

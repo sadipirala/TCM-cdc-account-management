@@ -17,7 +17,10 @@ public class CDCAccount {
     private String UID;
 
     @JsonProperty("isRegistered")
-    private Object isRegistered;
+    private Boolean isRegistered;
+
+    @JsonProperty("isActive")
+    private Boolean isActive;
 
     @JsonProperty("emails")
     private Emails emails;

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,6 +15,7 @@ import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
+import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
@@ -114,20 +117,6 @@ public class CDCResponseHandler {
         return new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
     }
 
-    public String searchDuplicatedAccountUid(String uid, String email) throws IOException {
-        String query = String.format("SELECT UID,loginIDs FROM accounts WHERE profile.username CONTAINS '%1$s' OR profile.email CONTAINS '%1$s'", email);
-        GSResponse response = cdcAccountsService.search(query, "");
-        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-
-        for (CDCAccount result : cdcSearchResponse.getResults()) {
-            if (!uid.equals(result.getUID()) && (result.getLoginIDs().getUsername() != null || result.getLoginIDs().getEmails().length > 0 || result.getLoginIDs().getUnverifiedEmails().length > 0)) {
-                return result.getUID();
-            }
-        }
-        logger.warn(String.format("Could not match an account with that email on CDC. UID: %s. Error: %s", uid, response.getErrorMessage()));
-        return NO_RESULTS_FOUND;
-    }
-
     public boolean disableAccount(String uid) {
         boolean SUCCESSFUL_UPDATE = true;
         boolean UNSUCCESSFUL_UPDATE = false;
@@ -158,7 +147,7 @@ public class CDCResponseHandler {
 
     public String getEmailByUsername(String userName) throws IOException {
         String query = String.format("SELECT emails,loginIDs FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
-        GSResponse response = cdcAccountsService.search(query, "");
+        GSResponse response = cdcAccountsService.search(query, AccountType.FULL);
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()) {
@@ -177,7 +166,7 @@ public class CDCResponseHandler {
         String username = "";
         try {
             String query = String.format("select profile.username from accounts where emails.verified contains '%1$s' or emails.unverified contains '%1$s'", email);
-            GSResponse response = cdcAccountsService.search(query, "");
+            GSResponse response = cdcAccountsService.search(query, AccountType.FULL);
 
             if (response.getErrorCode() == 0) {
                 GSObject obj = response.getData();
@@ -197,7 +186,7 @@ public class CDCResponseHandler {
 
     public String getUIDByEmail(String email) throws IOException {
         String query = String.format("select UID from accounts where emails.verified contains '%1$s' or emails.unverified contains '%1$s'", email);
-        GSResponse response = cdcAccountsService.search(query, "");
+        GSResponse response = cdcAccountsService.search(query, AccountType.FULL);
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()) {
@@ -295,5 +284,28 @@ public class CDCResponseHandler {
             .e(gsData.getString("e"))
             .build();
         return jwtPublicKey;
+    }
+
+    public CDCSearchResponse search(String query, AccountType accountType) throws CustomGigyaErrorException, JsonParseException, JsonMappingException, IOException {
+        GSResponse response = cdcAccountsService.search(query, accountType);
+
+        if (response.getErrorCode() != 0) {
+            throw new CustomGigyaErrorException(response.getErrorMessage(), response.getErrorCode());
+        }
+
+        return new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
+    }
+
+    public CDCResponseData liteRegisterUser(String email) throws IOException, CustomGigyaErrorException {
+        GSResponse response = cdcAccountsService.setLiteReg(email);
+        CDCResponseData cdcResponseData = new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
+        
+        if (response.getErrorCode() != 0) {
+            String errorList = Utils.convertJavaToJsonString(cdcResponseData.getValidationErrors());
+            String errorDetails = String.format("%s: %s", response.getErrorMessage(), errorList);
+            throw new CustomGigyaErrorException(errorDetails, response.getErrorCode());
+        };
+
+        return cdcResponseData;
     }
 }

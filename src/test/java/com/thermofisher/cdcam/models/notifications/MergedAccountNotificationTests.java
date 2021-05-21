@@ -20,7 +20,7 @@ public class MergedAccountNotificationTests {
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
 
         // when
-        MergedAccountNotification result = MergedAccountNotification.buildFrom(accountInfo);
+        MergedAccountNotification result = MergedAccountNotification.build(accountInfo);
 
         // then
         assertEquals(result.getUid(), accountInfo.getUid());

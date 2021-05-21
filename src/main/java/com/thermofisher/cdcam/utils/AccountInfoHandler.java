@@ -77,7 +77,6 @@ public class AccountInfoHandler {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
@@ -121,7 +120,6 @@ public class AccountInfoHandler {
 
     private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("duplicatedAccountUid");
         propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");

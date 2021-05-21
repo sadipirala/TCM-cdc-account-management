@@ -3,12 +3,16 @@ package com.thermofisher.cdcam.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.JsonViewModule;
+
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collection;
+import java.util.Objects;
 
 public class Utils {
     private final static String CHINA_LOCALE = "zh-cn";
@@ -83,5 +87,17 @@ public class Utils {
             }
         }
         return object;
+    }
+
+    public static boolean isNullOrEmpty(Collection <?> collection) {
+        return Objects.isNull(collection) || collection.size() == 0;
+    }
+
+    public static boolean isNullOrEmpty(String string) {
+        return Objects.isNull(string) || StringUtils.isEmpty(string);
+    }
+
+    public static boolean hasNullOrEmptyValues(Collection<String> collection) {
+        return collection.stream().anyMatch(Utils::isNullOrEmpty);
     }
 }

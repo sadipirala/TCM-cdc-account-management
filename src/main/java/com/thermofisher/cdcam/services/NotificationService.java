@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.GsonBuilder;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
@@ -33,6 +34,12 @@ public class NotificationService {
     public void sendAccountMergedNotification(@NotNull MergedAccountNotification mergedAccountNotification) {
         Objects.requireNonNull(mergedAccountNotification);
         String notificationMessage = new GsonBuilder().create().toJson(mergedAccountNotification);
+        snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
+    }
+
+    public void sendAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
+        Objects.requireNonNull(accountUpdatedNotification);
+        String notificationMessage = new GsonBuilder().create().toJson(accountUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
     }
 

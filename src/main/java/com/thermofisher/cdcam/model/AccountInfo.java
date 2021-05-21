@@ -56,8 +56,6 @@ public class AccountInfo {
     private Boolean overseasTransferPersonalInfoMandatory;
     private Boolean overseasTransferPersonalInfoOptional;
 
-    private String duplicatedAccountUid;
-
     @JsonIgnore
     public boolean isFederatedAccount() {
         return this.socialProviders.toLowerCase().contains("saml-");

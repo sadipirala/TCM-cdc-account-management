@@ -16,6 +16,7 @@ import com.thermofisher.cdcam.model.RegistrationConfirmation;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
@@ -97,16 +98,10 @@ public class AccountRequestService {
             }
 
             if (hasFederationProvider(account)) {
-                String duplicatedAccountUid = cdcResponseHandler.searchDuplicatedAccountUid(account.getUid(), account.getEmailAddress());
-                boolean disableAccountStatus = cdcResponseHandler.disableAccount(duplicatedAccountUid);
-
-                if (disableAccountStatus){
-                    account.setDuplicatedAccountUid(duplicatedAccountUid);
-                }
-
                 if (account.getPassword().isEmpty()) {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 }
+                
                 String accountForGRP = accountHandler.buildRegistrationNotificationPayload(account);
                 snsHandler.sendNotification(accountForGRP, snsRegistrationTopic);
                 logger.info(String.format("Account Registration Notification sent successfully. UID: %s", uid));
@@ -232,23 +227,43 @@ public class AccountRequestService {
     public void onAccountMerged(@NotBlank String uid) {
         Objects.requireNonNull(uid);
 
-        logger.info(String.format("Merge update process started for UID: %s", uid));
+        logger.info(String.format("Account linking merge process started for UID: %s", uid));
         try {
             AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
             if (!accountInfo.isFederatedAccount()) {
-                logger.info(String.format("Merge process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
+                logger.info(String.format("Merge update process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
                 return;
             }
 
             logger.info("Setting random password for merged account notification.");
             accountInfo.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
             logger.info("Building MergedAccountNotification object.");
-            MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountInfo);
+            MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountInfo);
             logger.info("Sending accountMerged notification.");
             notificationService.sendAccountMergedNotification(mergedAccountNotification);
             logger.info("accountMerged notification sent.");
         } catch (Exception e) {
-            logger.error(String.format("Something went wrong. %s.", e.getMessage()));
+            logger.error(String.format("onAccountMerged - Something went wrong. %s.", e.getMessage()));
+        }
+    }
+
+    @Async
+    public void onAccountUpdated(@NotBlank String uid) {
+        logger.info(String.format("Account linking update process started for UID: %s", uid));
+        try {
+            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            if (!accountInfo.isFederatedAccount()) {
+                logger.info(String.format("Update process stopped. Account %s with UID %s is not federated. Update is only supported for federated accounts.", accountInfo.getUsername(), uid));
+                return;
+            }
+
+            logger.info("Building AccountUpdatedNotification object.");
+            AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
+            logger.info("Sending accountUpdated notification.");
+            notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+            logger.info("accountUpdated notification sent.");
+        } catch (Exception e) {
+            logger.error(String.format("onAccountUpdated - Something went wrong. %s.", e.getMessage()));
         }
     }
 }

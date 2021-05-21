@@ -1,11 +1,12 @@
 package com.thermofisher.cdcam.enums.cdc;
 
-public enum AccountTypes {
+public enum AccountType {
+    FULL("full"),
     FULL_LITE("full,lite");
 
     private String value;
 
-    AccountTypes(String value) {
+    AccountType(String value) {
         this.value = value;
     }
 

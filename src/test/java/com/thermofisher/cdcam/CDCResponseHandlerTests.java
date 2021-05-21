@@ -10,8 +10,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gigya.socialize.GSKeyNotFoundException;
@@ -20,11 +23,14 @@ import com.gigya.socialize.GSResponse;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
+import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
@@ -122,8 +128,7 @@ public class CDCResponseHandlerTests {
     }
 
     @Test
-    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned()
-            throws JSONException {
+    public void update_WhenGSResponseCodeIsZero_AnObjectNodeWith200ErrorCodeShouldBeReturned() throws JSONException {
         // given
         String message = "Success";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
@@ -193,7 +198,7 @@ public class CDCResponseHandlerTests {
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
 
-        Mockito.when(cdcAccountsService.search(anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(cdcAccountsService.search(anyString(), any())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
@@ -211,12 +216,7 @@ public class CDCResponseHandlerTests {
     public void sendVerificationEmail_whenGSResponseIsNotNull_returnResponseAsItIs() throws IOException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-
-        String mockResponseText = "{\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\"" +
-                "}";
-
+        String mockResponseText = "{\"statusCode\": 200,\"statusReason\": \"OK\"}";
         when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
         when(cdcAccountsService.sendVerificationEmail(any())).thenReturn(mockCdcResponse);
 
@@ -318,17 +318,7 @@ public class CDCResponseHandlerTests {
     @Test
     public void getEmailByUsername_whenNoResultsAreFound_returnEmptyUsername() throws Exception {
         // given
-        GSObject jsonResponse = new GSObject("{\n" +
-                "  \"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\n" +
-                "  \"errorCode\": 0,\n" +
-                "  \"apiVersion\": 2,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"time\": \"2020-08-26T18:13:18.021Z\",\n" +
-                "  \"results\": [],\n" +
-                "  \"objectsCount\": 0,\n" +
-                "  \"totalCount\": 0\n" +
-                "}");
+        GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [],\"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         when(cdcAccountsService.search(any(),any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
@@ -345,21 +335,7 @@ public class CDCResponseHandlerTests {
     public void getEmailByUsername_whenResultsAreFound_returnFirstyUsername() throws Exception {
         // given
         String testEmail = "this-is-a-test-88@mail.com";
-        GSObject jsonResponse = new GSObject("{\n" +
-                "  \"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\n" +
-                "  \"errorCode\": 0,\n" +
-                "  \"apiVersion\": 2,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"time\": \"2020-08-26T18:13:18.021Z\",\n" +
-                "  \"results\": [{\n" +
-                "      \"profile\": {\n" +
-                "        \"username\":\""+testEmail+"\"\n" +
-                "      }\n" +
-                "    }],\n" +
-                "  \"objectsCount\": 0,\n" +
-                "  \"totalCount\": 0\n" +
-                "}");
+        GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [{\"profile\": {\"username\":\"" + testEmail + "\"}}], \"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         when(cdcAccountsService.search(any(),any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
@@ -505,69 +481,67 @@ public class CDCResponseHandlerTests {
         assertTrue(e.equals(result.getE()));
     }
 
-    @Test
-    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvided_ThenReturnUidMatchInCDC() throws IOException {
-        String uid = "0001";
-        String fedEmail = "test@mail.com";
-        int successCode = 0;
-        String duplicatedAccountUid = "decb11cd6ed2442c99b380f56c4b47aa";
-        String message = "Found matching UID in CDC.";
+    @Test(expected = CustomGigyaErrorException.class)
+    public void search_GivenTheresAResponseCodeDifferentThanZero_ThenItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, JsonParseException, JsonMappingException, IOException {
+        // given
+        String query = "";
+        String message = "Error";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        String mockResponseText = "{\n" +
-                "  \"totalCount\": 1,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": [\n" +
-                "{ \"UID\": \"decb11cd6ed2442c99b380f56c4b47aa\",\n" +
-                "  \"loginIDs\": {" +
-                "  \"emails\": ["+
-                "  \"mariaguadalupe.chacon@thermofisher.com\"" +
-                "]," +
-                "  \"unverifiedEmails\": []" +
-                "} " +
-                "} " +
-                " ]\n" +
-                "}";
-
-
-        Mockito.when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockCdcResponse);
-        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
+        Mockito.when(cdcAccountsService.search(anyString(), any())).thenReturn(mockCdcResponse);
+        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
-        Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
 
         // when
-        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
-
-        // then
-        Assert.assertEquals(responseUid,duplicatedAccountUid);
+        cdcResponseHandler.search(query, AccountType.FULL_LITE);
     }
 
     @Test
-    public void searchDuplicatedAccountUid_WhenAValidUidAndFederatedEmailAreProvidedAndNoEmailWasFoundInCDC_ThenReturnEmptyString() throws IOException {
-        String uid = "0001";
-        String fedEmail = "test@mail.com";
-        int successCode = 0;
-        String noResultsFound = "";
-        String message = "Could not match an account with that email on CDC.";
-        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        String mockResponseText = "{\n" +
-                "  \"totalCount\": 0,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": [\n" +
-                "  ]\n" +
-                "}";
-
-
-        Mockito.when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockCdcResponse);
-        Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
-        Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
-        Mockito.when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
+    public void search_GivenTheresAValidResponse_ItShouldReturnTheSameNumberOfResultsAsCDCAccounts() throws CustomGigyaErrorException, JsonParseException, JsonMappingException, IOException {
+        // given
+        String query = "";
+        String uid = "18f6f06762725175ab3fa121d32d8992";
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        String searchResponseJson = "{\"totalCount\": 1,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[{\"UID\":\"" + uid + "\",\"isRegistered\":true,\"profile\":{\"username\":\"armatest\",\"country\":\"MX\"}}]}";
+        when(mockSearchResponse.getResponseText()).thenReturn(searchResponseJson);
+        when(cdcAccountsService.search(anyString(), any())).thenReturn(mockSearchResponse);
 
         // when
-        String responseUid = cdcResponseHandler.searchDuplicatedAccountUid(uid,fedEmail);
+        CDCSearchResponse searchResponse = cdcResponseHandler.search(query, AccountType.FULL_LITE);
+        List<CDCAccount> accounts = searchResponse.getResults();
 
         // then
-        Assert.assertEquals(responseUid, noResultsFound);
+        CDCAccount account = accounts.get(0);
+        assertTrue(account.getUID().equals(uid));
+        assertTrue(accounts.size() == 1);
+    }
+
+    @Test
+    public void liteRegisterUser_GivenTheresAValidResponse_ItShouldReturnTheSameNumberOfResultsAsCDCAccounts() throws CustomGigyaErrorException, JsonParseException, JsonMappingException, IOException {
+        // given
+        String uid = "9f6f2133e57144d787574d49c0b9908e";
+        GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
+        String liteRegResponse = "{\"callId\": \"5c62541d1ce341eba0faf1d14642c191\",\"UID\": \"" + uid + "\",\"apiVersion\": 2,\"statusReason\": \"OK\",\"errorCode\": 0,\"time\": \"2019-09-19T16:14:24.983Z\",\"statusCode\": 200}";
+        when(cdcMockResponse.getResponseText()).thenReturn(liteRegResponse);
+        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(cdcMockResponse);
+
+        // when
+        CDCResponseData cdcResponse = cdcResponseHandler.liteRegisterUser("");
+
+        // then
+        assertEquals(uid, cdcResponse.getUID());
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void liteRegisterUser_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, JsonParseException, JsonMappingException, IOException {
+        // given
+        int errorCode = 400;
+        GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
+        String liteRegError = "{\"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\"apiVersion\": 2,\"statusReason\": \"Bad Request\",\"errorMessage\": \"Invalid parameter value\", \"errorCode\": " + errorCode + ", \"validationErrors\": [{\"fieldName\": \"profile.email\",\"errorCode\": 400006,\"message\": \"Unallowed value for field: email\"}], \"time\": \"2019-09-19T16:15:20.508Z\",\"errorDetails\": \"Schema validation failed\", \"statusCode\":" + errorCode + "}";
+        when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
+        when(cdcMockResponse.getResponseText()).thenReturn(liteRegError);
+        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(cdcMockResponse);
+
+        // when
+        cdcResponseHandler.liteRegisterUser("");
     }
 }

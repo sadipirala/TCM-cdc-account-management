@@ -1,19 +1,49 @@
 package com.thermofisher.cdcam;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
-import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.EmailSentResponse;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
+import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.*;
+import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.EmailService;
+import com.thermofisher.cdcam.services.JWTValidator;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
 import com.thermofisher.cdcam.utils.Utils;
@@ -21,6 +51,7 @@ import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -28,7 +59,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,15 +73,6 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -62,6 +90,19 @@ public class AccountsControllerTests {
     private final String reCaptchaV3Secret = "reCaptchaV3Secret";
     private final String reCaptchaV2Secret = "reCaptchaV2Secret";
     private final String CIPHERTEXT = "VTJGc2RHVmtYMStuTTlOT3ExeHZtNG5rUHpqNjhMTmhKbHRkVkJZU0xlMnpGTm5QVk1oV0oycUhrVm1JQ2ozSXJVUWdCK2pBaDBuczMyM0ZMYkdLVm1tSzJ4R3BENmtJZ1VGbm1JeURVMUNpSkcxcU1aNzBvRjBJeG80dHVCbHhmdU02TDJFMmtLUDdvUzdGMWpidU53PT0=";
+    private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
+            .uid("1234567890")
+            .firstName("firstName")
+            .lastName("lastName")
+            .email("email@test.com")
+            .username("username")
+            .marketingConsentDTO(MarketingConsentDTO.builder()
+                    .city("city")
+                    .company("company")
+                    .country("country")
+                    .consent(true)
+                    .build())   
+            .build();
 
     @InjectMocks
     AccountsController accountsController;
@@ -73,7 +114,7 @@ public class AccountsControllerTests {
     EmailService emailService;
 
     @Mock
-    LiteRegHandler mockLiteRegHandler;
+    LiteRegHandler liteRegHandler;
 
     @Mock
     UsersHandler usersHandler;
@@ -129,10 +170,24 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
+    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() throws IOException {
         // given
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistration_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException {
+        // given
+        List<String> emails = new ArrayList<>();
+        EmailList emailList = EmailList.builder().emails(emails).build();
+        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccounts(emailList);
 
         // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
@@ -158,8 +213,8 @@ public class AccountsControllerTests {
         // given
         List<EECUser> mockResult = new ArrayList<>();
         mockResult.add(Mockito.mock(EECUser.class));
-        Mockito.when(mockLiteRegHandler.process(any())).thenReturn(mockResult);
-        mockLiteRegHandler.requestLimit = 1000;
+        Mockito.when(liteRegHandler.createLiteAccounts(any())).thenReturn(mockResult);
+        liteRegHandler.requestLimit = 1000;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -174,8 +229,8 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
         // given
-        when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
-        mockLiteRegHandler.requestLimit = 1000;
+        when(liteRegHandler.createLiteAccounts(any())).thenThrow(IOException.class);
+        liteRegHandler.requestLimit = 1000;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -190,9 +245,9 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
         // given
-        Mockito.when(mockLiteRegHandler.process(any())).thenThrow(IOException.class);
+        Mockito.when(liteRegHandler.createLiteAccounts(any())).thenThrow(IOException.class);
 
-        mockLiteRegHandler.requestLimit = 1;
+        liteRegHandler.requestLimit = 1;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
         emails.add("email1");
@@ -916,13 +971,14 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void onAccountsMerge_GivenTheMethodIsCalled_WhenJWTIsNotValid_ThenAccountRequestService_OnAccountMergedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+    public void onAccountsMerge_GivenTheMethodIsCalled_WhenJWTIsNotValid_ThenNoAccountLinkingMethodsShouldBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
         when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
         doNothing().when(accountRequestService).onAccountMerged(anyString());
+        doNothing().when(accountRequestService).onAccountUpdated(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -932,6 +988,7 @@ public class AccountsControllerTests {
 
             // then
             verify(accountRequestService, never()).onAccountMerged(anyString());
+            verify(accountRequestService, never()).onAccountUpdated(anyString());
         }
     }
 
@@ -973,5 +1030,96 @@ public class AccountsControllerTests {
             // then
             verify(accountRequestService, times(numberOfWebhookEvents)).onAccountMerged(anyString());
         }
+    }
+
+    @Test
+    public void onAccountUpdated_GivenTheMethodIsCalled_WhenNotificationTypeIsNotUpdated_ThenOnAccountUpdatedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountUpdated(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
+            
+            // when
+            accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, never()).onAccountUpdated(anyString());
+        }
+    }
+
+    @Test
+    public void onAccountUpdated_GivenTheMethodIsCalled_ThenOnAccountUpdatedMethodShouldBeCalledSameTimesAsWebhookEventsAmount() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 2;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.UPDATE, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountRequestService).onAccountUpdated(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
+            
+            // when
+            accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountUpdated(anyString());
+        }
+    }
+    
+    public void getProfileUserByUID_GivenAValidUID_ShouldReturnUserProfile() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = uids.get(0);
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.build(accountInfo);
+        Mockito.when(usersHandler.getUserProfileByUID(uid)).thenReturn(profileInfoDTO);
+
+        // when
+        ResponseEntity<ProfileInfoDTO> resp = accountsController.getUserProfileByUID(uid);
+
+        // then
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void getProfileUserByUID_GivenAnIOError_returnInternalServerError() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = uids.get(0);
+        Mockito.when(usersHandler.getUserProfileByUID(uid)).thenThrow(IOException.class);
+
+        // when
+        ResponseEntity<ProfileInfoDTO> resp = accountsController.getUserProfileByUID(uid);
+
+        // then
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void updateUserProfile_GivenNullProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnBadRequest() throws Exception {
+        // given
+        Mockito.when(updateAccountService.updateProfile(null)).thenReturn(HttpStatus.BAD_REQUEST);
+
+        // when
+        ResponseEntity<String> resp = accountsController.updateUserProfile(null);
+
+        // then
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void updateUserProfile_GivenAValidProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnOK() throws Exception {
+        // given
+        Mockito.when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.OK);
+
+        // when
+        ResponseEntity<String> resp = accountsController.updateUserProfile(profileInfoDTO);
+
+        // then
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
     }
 }

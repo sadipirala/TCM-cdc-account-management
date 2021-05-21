@@ -11,6 +11,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -49,11 +50,32 @@ public class NotificationServiceTests {
         // given
         ReflectionTestUtils.setField(notificationService, "registrationSNSTopic", "registrationSNS");
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.buildFrom(accountInfo);
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountInfo);
         doNothing().when(snsHandler).sendNotification(anyString(), anyString());
 
         // when
         notificationService.sendAccountMergedNotification(mergedAccountNotification);
+
+        // then
+        verify(snsHandler).sendNotification(anyString(), anyString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void sendAccountUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
+        // when
+        notificationService.sendAccountUpdatedNotification(null);
+    }
+
+    @Test
+    public void sendAccountUpdatedNotification_ShouldSendNotificationToRegistrationSNSTopicWithMergedAccountNotification() throws IOException {
+        // given
+        ReflectionTestUtils.setField(notificationService, "registrationSNSTopic", "registrationSNS");
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
+
+        // when
+        notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
 
         // then
         verify(snsHandler).sendNotification(anyString(), anyString());

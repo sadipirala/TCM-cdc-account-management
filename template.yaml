@@ -9,10 +9,36 @@ Resources:
             Fn::Sub: arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:tfgrp-pwd-reset-${Environments}
           Protocol: 'sqs'
       Tags:
-        - Key: application owner
-          Value: Armadillos@thermofisher.onmicrosoft.com
+        - Key: name
+          Value: tcm-cdc-account-management
+        - Key: application
+          Value: tcm-cdc-account-management
+        - Key: app role
+          Value: tcm-cdc-account-management
         - Key: team name
-          Value: Armadillos
+          Value: armadillos
+        - Key: application owner
+          Value: miguel.ramirez@thermofisher.com
+        - Key: costcenter
+          Value: "400.8620.8582 : de platform"
+        - Key: environment
+          Value: nonprod
+        - Key: project
+          Value: tcm-cdc-account-management
+        - Key: division
+          Value: digital engineering
+        - Key: businessunit
+          Value: corporate information technology
+        - Key: snow_support
+          Value: de.it.dev.registration
+        - Key: group
+          Value: corp
+        - Key: group_beneficiary
+          Value: corp
+        - Key: compliance
+          Value: n/a  
+        - Key: data_classification
+          Value: internal use
       TopicName:
         Fn::Sub: cdcam-password-reset-${Environments}
 Parameters:

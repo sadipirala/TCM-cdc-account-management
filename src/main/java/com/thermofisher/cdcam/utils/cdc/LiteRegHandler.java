@@ -1,158 +1,118 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gigya.socialize.GSResponse;
-import com.thermofisher.cdcam.enums.cdc.AccountTypes;
-import com.thermofisher.cdcam.model.*;
-import com.thermofisher.cdcam.model.cdc.*;
-import com.thermofisher.cdcam.services.CDCAccountsService;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import com.thermofisher.cdcam.enums.cdc.AccountType;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.utils.Utils;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-@Configuration
+@Service
 public class LiteRegHandler {
-
     private Logger logger = LogManager.getLogger(this.getClass());
+    private final int GENERIC_ERROR_CODE = 500;
+    private final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
 
     @Value("${eec.request.limit}")
     public int requestLimit;
 
     @Autowired
-    CDCAccountsService cdcAccountsService;
+    CDCResponseHandler cdcResponseHandler;
 
-    public List<EECUser> process(EmailList emailList) throws IOException {
-        logger.info("EEC account processing initiated.");
-        List<EECUser> users = new ArrayList<>();
+    public List<EECUser> createLiteAccounts(EmailList emailList) throws IOException {
+        List<EECUser> liteRegisteredUsers = new ArrayList<>();
         List<String> emails = emailList.getEmails();
-
-        if (emails.size() == 0) {
-            logger.warn("No accounts were sent in the request.");
-            return users;
-        }
-
+        logger.info("EEC account processing initiated.");
         logger.info(String.format("%d EEC users requested.", emails.size()));
 
-        for (String email: emails) {
-            if (email == null) {
-                EECUser failedSearchUser = EECUser.builder()
-                        .uid(null)
-                        .username(null)
-                        .email(null)
-                        .responseCode(500)
-                        .responseMessage("User requested has null email value...")
-                        .build();
+        if (Utils.hasNullOrEmptyValues(emails)) {
+            String error = "Email list has null or empty values.";
+            throw new IllegalArgumentException(error);
+        }
 
-                users.add(failedSearchUser);
-                continue;
-            }
-
+        for (String email : emails) {
             String query = String.format("SELECT * FROM accounts WHERE profile.username CONTAINS '%1$s' OR profile.email CONTAINS '%1$s'", email);
-            GSResponse response = cdcAccountsService.search(query,AccountTypes.FULL_LITE.getValue());
+            
+            try {
+                CDCSearchResponse searchResponse = cdcResponseHandler.search(query, AccountType.FULL_LITE);
+                List<CDCAccount> accounts = searchResponse.getResults();
 
-            if (response == null) {
-                logger.error(String.format("No response from CDC when searching '%s'.", email));
-
-                EECUser failedSearchUser = EECUser.builder()
-                        .uid(null)
-                        .username(null)
-                        .email(email)
-                        .responseCode(500)
-                        .responseMessage("An error occurred when retrieving user's info")
-                        .build();
-
-                users.add(failedSearchUser);
-                continue;
-            }
-
-            CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
-
-            if (cdcSearchResponse.getErrorCode() == 0) {
-                if (cdcSearchResponse.getTotalCount() > 0) {
-                    for (CDCAccount result: cdcSearchResponse.getResults()) {
-                        Profile profile = result.getProfile();
-                        Object isReg = result.getIsRegistered();
-                        EECUser user = EECUser.builder()
-                                .uid(result.getUID())
-                                .username((profile != null) ? profile.getUsername() : null)
-                                .email(email)
-                                .registered(isReg == null?false:(boolean)isReg)
-                                .responseCode(cdcSearchResponse.getStatusCode())
-                                .responseMessage(cdcSearchResponse.getStatusReason())
-                                .build();
-
-                        users.add(user);
-                    }
+                if (accounts.size() == 0) {
+                    logger.info(String.format("Registering lite account for: %s", email));
+                    EECUser user = liteRegisterUser(email);
+                    liteRegisteredUsers.add(user);
                 } else {
-                    users.add(liteRegisterUser(email));
+                    logger.info(String.format("%s already exists, getting full registered account, lite otherwise.", email));
+                    CDCAccount account = findFullRegisteredAccountOrFirstFromList(accounts);
+                    int responseCode = searchResponse.getStatusCode();
+                    String responseMessage = searchResponse.getStatusReason();
+                    EECUser user = buildValidEECUser(account, email, responseCode, responseMessage);
+                    liteRegisteredUsers.add(user);
                 }
-            } else {
-                int errorCode = cdcSearchResponse.getErrorCode();
-                String errorMessage = cdcSearchResponse.getStatusReason();
-
-                EECUser failedSearchUser = EECUser.builder()
-                        .uid(null)
-                        .username(null)
-                        .email(email)
-                        .responseCode(errorCode)
-                        .responseMessage(errorMessage)
-                        .build();
-
-                users.add(failedSearchUser);
-
-                logger.error(String.format("Failed searching account with email: %s. CDC Error code: %d. CDC Error message: %s", email, errorCode, errorMessage));
+            } catch (CustomGigyaErrorException e) {
+                logger.error(String.format("Error with email: %s. CDC Error code: %d. CDC Error message: %s", email, e.getErrorCode(), e.getMessage()));
+                EECUser invalidEECUser = buildInvalidEECUser(email, e.getErrorCode(), e.getMessage());
+                liteRegisteredUsers.add(invalidEECUser);
+            } catch (Throwable e) {
+                logger.error(String.format("Error with email: %s. Cause: %s", email, e));
+                EECUser invalidEECUser = buildInvalidEECUser(email, GENERIC_ERROR_CODE, ERROR_MSG);
+                liteRegisteredUsers.add(invalidEECUser);
             }
         }
 
-        logger.info(String.format("%d EEC users processed.", users.size()));
-        return users;
+        logger.info(String.format("%d EEC users processed.", liteRegisteredUsers.size()));
+        return liteRegisteredUsers;
     }
 
-    private EECUser liteRegisterUser(String email) throws IOException {
-        GSResponse response = cdcAccountsService.setLiteReg(email);
+    private EECUser liteRegisterUser(String email) throws IOException, CustomGigyaErrorException {
+        CDCResponseData cdcResponseData = cdcResponseHandler.liteRegisterUser(email);
+        CDCAccount account = new CDCAccount();
+        account.setUID(cdcResponseData.getUID());
+        account.setIsRegistered(false);
+        account.setIsActive(false);
 
-        if (response == null) {
-            logger.error(String.format("An error occurred during CDC email only registration for '%s'", email));
-            return EECUser.builder()
-                    .uid(null)
-                    .email(email)
-                    .responseCode(500)
-                    .responseMessage("An error occurred during CDC email only registration...")
-                    .build();
-        }
+        return buildValidEECUser(account, email, cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason());
+    }
 
-        CDCResponseData cdcData = new ObjectMapper().readValue(response.getResponseText(), CDCResponseData.class);
+    private EECUser buildValidEECUser(CDCAccount account, String email, int responseCode, String responseMessage) {
+        String username = Objects.isNull(account.getProfile()) ? null : account.getProfile().getUsername();
+        boolean isActive = Objects.isNull(account.getIsActive()) ? false : account.getIsActive();
+        boolean isRegistered = Objects.isNull(account.getIsRegistered()) ? false : account.getIsRegistered();
 
-        if(response.getErrorCode() == 0) {
-            logger.info(String.format("Successful email only registration for '%s'", email));
-            return EECUser.builder()
-                    .uid(cdcData.getUID())
-                    .username(null)
-                    .email(email)
-                    .registered(false)
-                    .responseCode(cdcData.getStatusCode())
-                    .responseMessage(cdcData.getStatusReason())
-                    .build();
-        } else {
-            String errorList = Utils.convertJavaToJsonString(cdcData.getValidationErrors());
-            String errorDetails = String.format("%s: %s -> %s",
-                    response.getErrorMessage(), response.getErrorDetails(), errorList);
+        return EECUser.builder()
+            .uid(account.getUID())
+            .username(username)
+            .email(email)
+            .registered(isRegistered)
+            // .isActive(isActive)
+            .responseCode(responseCode)
+            .responseMessage(responseMessage)
+            .build();
+    }
 
-            logger.error(String.format("Email only registration failed. Email: %s. Error details: %s", email, errorDetails));
+    private EECUser buildInvalidEECUser(String email, int errorCode, String errorMessage) {
+        return EECUser.builder()
+            .email(email)
+            .responseCode(errorCode)
+            .responseMessage(errorMessage)
+            .build();
+    }
 
-            return EECUser.builder()
-                    .uid(null)
-                    .email(email)
-                    .responseCode(response.getErrorCode())
-                    .responseMessage(errorDetails)
-                    .build();
-        }
+    private CDCAccount findFullRegisteredAccountOrFirstFromList(List<CDCAccount> accounts) {
+        return accounts.stream().filter(account -> BooleanUtils.isTrue(account.getIsRegistered())).findFirst().orElse(accounts.get(0));
     }
 }

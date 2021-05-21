@@ -1,282 +1,226 @@
 package com.thermofisher.cdcam;
 
-import com.gigya.socialize.GSResponse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.Profile;
+import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class LiteRegHandlerTests {
+    private final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
+    private final String uid = "59b44e6023214be5846c9cbd4cedfe93";
 
     @InjectMocks
     LiteRegHandler liteRegHandler;
 
     @Mock
-    CDCAccountsService cdcAccountsService;
+    CDCResponseHandler cdcResponseHandler;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createLiteAccounts_GivenTheEmailListContainsAnyNullEmail_ThrowIllegalArgumentException() throws IOException {
+        // given
+        ArrayList<String> emails = new ArrayList<String>();
+        emails.add(null);
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        liteRegHandler.createLiteAccounts(emailList);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createLiteAccounts_GivenTheEmailListContainsAnyEmptyEmail_ThrowIllegalArgumentException() throws IOException {
+        // given
+        ArrayList<String> emails = new ArrayList<String>();
+        emails.add("");
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        liteRegHandler.createLiteAccounts(emailList);
     }
 
     @Test
-    public void process_givenEmailListEmpty_returnEmptyEECUserList() throws IOException {
+    public void createLiteAccounts_givenEmailListEmpty_returnEmptyEECUserList() throws IOException {
+        // given
         EmailList emailList = EmailList.builder().emails(new ArrayList<>()).build();
-        List<EECUser> output = liteRegHandler.process(emailList);
+
+        // when
+        List<EECUser> output = liteRegHandler.createLiteAccounts(emailList);
+
+        // then
         Assert.assertTrue(output.isEmpty());
     }
 
     @Test
-    public void process_givenEmailList_ReturnEECUserList() throws IOException {
-        String uid = "test123";
-
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 1,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": [\n" +
-                "  \t{\n" +
-                "  \t\t\"UID\": \"" + uid + "\",\n" +
-                "  \t\t\"isRegistered\": true,\n" +
-                "  \t\t\"profile\": {\n" +
-                "  \t\t\t\"username\": \"armatest\",\n" +
-                "  \t\t\t\"country\": \"MX\"\n" +
-                "  \t\t}\n" +
-                "  \t}\n" +
-                "  ]\n" +
-                "}";
-
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+    public void createLiteAccounts_givenAnEmailListIsPassed_ThenTheResultShouldContainTheSameAmountOfItems() throws IOException, CustomGigyaErrorException {
+        // given
+        final Boolean isActive = false;
+        final Boolean isRegistered = false;
+        CDCAccount account = new CDCAccount();
+        account.setUID(uid);
+        account.setIsActive(isActive);
+        account.setIsRegistered(isRegistered);
+        List<CDCAccount> accounts = new ArrayList<CDCAccount>();
+        accounts.add(account);
+        CDCSearchResponse searchResponse = new CDCSearchResponse();
+        searchResponse.setResults(accounts);
+        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
         emails.add("test2");
-
+        emails.add("test3");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        List<EECUser> output = liteRegHandler.process(emailList);
-        EECUser user = output.get(0);
+        // when
+        List<EECUser> result = liteRegHandler.createLiteAccounts(emailList);
 
-        Assert.assertEquals(user.getUid(), uid);
-        Assert.assertEquals(output.size(), emails.size());
+        // then
+        assertEquals(result.size(), emails.size());
     }
 
     @Test
-    public void process_givenEmailListFoundUserButItsLite_ReturnEECUserListWithRegisteredFlagFalse() throws IOException {
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 1,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": [\n" +
-                "  \t{\n" +
-                "  \t\t\"UID\": \"abc123\"\n" +
-                "  \t}\n" +
-                "  ]\n" +
-                "}";
+    public void createLiteAccounts_givenAnEmailAlreadyExists_ThenResultShouldContainTheFoundAccountData() throws IOException, CustomGigyaErrorException {
+        // given
+        final Boolean isActive = true;
+        final Boolean isRegistered = true;
+        final String username = "test@mail.com";
+        Profile profile = Profile.builder().username(username).build();
+        CDCAccount account = new CDCAccount();
+        account.setUID(uid);
+        account.setProfile(profile);
+        account.setIsActive(isActive);
+        account.setIsRegistered(isRegistered);
+        List<CDCAccount> accounts = new ArrayList<CDCAccount>();
+        accounts.add(account);
+        CDCSearchResponse searchResponse = new CDCSearchResponse();
+        searchResponse.setResults(accounts);
+        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+        
+        List<String> emails = new ArrayList<String>();
+        emails.add("test1");
+        EmailList emailList = EmailList.builder().emails(emails).build();
 
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
+        // when
+        List<EECUser> result = liteRegHandler.createLiteAccounts(emailList);
+        
+        // then
+        EECUser user = result.get(0);
+        assertEquals(uid, user.getUid());
+        assertEquals(username, user.getUsername());
+        assertEquals(isRegistered, user.getRegistered());
+        // assertEquals(isActive, user.getIsActive());
+    }
+
+    @Test
+    public void createLiteAccounts_givenEmailIsNotFound_ThenItShouldBeLiteRegisteredAndOnlyContainItsUID_IsRegisteredAsFalse_AndIsActiveAsFalse() throws IOException, CustomGigyaErrorException {
+        // given
+        final Boolean isActive = true;
+        final Boolean isRegistered = true;
+        final String username = "test@mail.com";
+        Profile profile = Profile.builder().username(username).build();
+        CDCAccount account = new CDCAccount();
+        account.setUID(uid);
+        account.setProfile(profile);
+        account.setIsActive(isActive);
+        account.setIsRegistered(isRegistered);
+
+        List<CDCAccount> accounts = new ArrayList<CDCAccount>();
+        CDCSearchResponse searchResponse = new CDCSearchResponse();
+        searchResponse.setResults(accounts);
+        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID(uid);
+        when(cdcResponseHandler.liteRegisterUser(anyString())).thenReturn(cdcResponseData);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
-
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        List<EECUser> output = liteRegHandler.process(emailList);
+        // when
+        List<EECUser> output = liteRegHandler.createLiteAccounts(emailList);
+        
+        // then
         EECUser user = output.get(0);
-
-        Assert.assertNotNull(user.getUid());
-        Assert.assertFalse(user.isRegistered());
+        assertEquals(uid, user.getUid());
+        assertNull(user.getUsername());
+        assertFalse(user.getRegistered());
+        // assertFalse(user.getIsActive());
+        verify(cdcResponseHandler).liteRegisterUser(anyString());
     }
 
     @Test
-    public void process_givenEmailsNotFound_LiteRegisterAndReturnEECUserListWithNoUsername() throws IOException {
-        String email = "test1";
-
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 0,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": []\n" +
-                "}";
-
-        GSResponse mockLiteRegResponse = Mockito.mock(GSResponse.class);
-        String liteRegResponse = "{\n" +
-                "    \"callId\": \"5c62541d1ce341eba0faf1d14642c191\",\n" +
-                "    \"UID\": \"9f6f2133e57144d787574d49c0b9908e\",\n" +
-                "    \"apiVersion\": 2,\n" +
-                "    \"statusReason\": \"OK\",\n" +
-                "    \"errorCode\": 0,\n" +
-                "    \"time\": \"2019-09-19T16:14:24.983Z\",\n" +
-                "    \"statusCode\": 200\n" +
-                "}";
-
-        when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
-        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
-
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
-
-        List<String> emails = new ArrayList<String>();
-        emails.add(email);
-
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        List<EECUser> output = liteRegHandler.process(emailList);
-        EECUser user = output.get(0);
-
-        Assert.assertNotNull(user.getUid());
-        Assert.assertNull(user.getUsername());
-        Assert.assertEquals(user.getEmail(), email);
-        Assert.assertFalse(user.isRegistered());
-    }
-
-    @Test
-    public void process_givenSearchReturnsNull_returnEECUserWith500Error() throws IOException {
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(null);
-
+    public void createLiteAccounts_givenSearchThrowsCustomGigyaErrorException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
+        // given
+        final String errorMessage = "Error";
+        final int errorCode = 400;
+        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
+        
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
-
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        List<EECUser> output = liteRegHandler.process(emailList);
+        // when
+        List<EECUser> output = liteRegHandler.createLiteAccounts(emailList);
 
+        // then
         EECUser user = output.get(0);
-        Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getResponseCode(), 500);
+        assertEquals(errorMessage, user.getResponseMessage());
+        assertEquals(errorCode, user.getResponseCode());
     }
 
     @Test
-    public void process_givenSearchReturnsErrorCodeMoreThanZero_returnEECUserWithErrorDetails() throws IOException {
-        int errorCode = 500;
-        String errorMessage = "An error occurred";
-
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 0,\n" +
-                "  \"errorCode\": " + errorCode + ",\n" +
-                "  \"statusCode\": " + errorCode + ",\n" +
-                "  \"statusReason\": \"" + errorMessage + "\",\n" +
-                "  \"results\": []\n" +
-                "}";
-
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
-
+    public void createLiteAccounts_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
+        // given
+        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new IOException());
+        
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
-
         EmailList emailList = EmailList.builder().emails(emails).build();
 
-        List<EECUser> output = liteRegHandler.process(emailList);
+        // when
+        List<EECUser> output = liteRegHandler.createLiteAccounts(emailList);
 
+        // then
         EECUser user = output.get(0);
-        Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getResponseCode(), errorCode);
-        Assert.assertEquals(user.getResponseMessage(), errorMessage);
-    }
-
-    @Test
-    public void process_givenLiteRegReturnsNull_returnEECUserWithErrorDetails() throws IOException {
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 0,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": []\n" +
-                "}";
-
-        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(null);
-
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
-
-        List<String> emails = new ArrayList<String>();
-        emails.add("test1");
-
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        List<EECUser> output = liteRegHandler.process(emailList);
-
-        EECUser user = output.get(0);
-        Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getResponseCode(), 500);
-    }
-
-    @Test
-    public void process_givenLiteRegReturnsErrorCodeMoreThanZero_returnEECUserWithErrorDetails() throws IOException {
-        int errorCode = 400;
-
-        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" +
-                "  \"totalCount\": 0,\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusReason\": \"OK\",\n" +
-                "  \"results\": []\n" +
-                "}";
-
-        GSResponse mockLiteRegResponse = Mockito.mock(GSResponse.class);
-        String liteRegResponse = "{\n" +
-                "    \"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\n" +
-                "    \"apiVersion\": 2,\n" +
-                "    \"statusReason\": \"Bad Request\",\n" +
-                "    \"errorMessage\": \"Invalid parameter value\",\n" +
-                "    \"errorCode\": " + errorCode + ",\n" +
-                "    \"validationErrors\": [\n" +
-                "      {\n" +
-                "        \"fieldName\": \"profile.email\",\n" +
-                "        \"errorCode\": 400006,\n" +
-                "        \"message\": \"Unallowed value for field: email\"\n" +
-                "      }\n" +
-                "    ],\n" +
-                "    \"time\": \"2019-09-19T16:15:20.508Z\",\n" +
-                "    \"errorDetails\": \"Schema validation failed\",\n" +
-                "    \"statusCode\": " + errorCode + "\n" +
-                "  }";
-
-        when(mockLiteRegResponse.getResponseText()).thenReturn(liteRegResponse);
-        when(mockLiteRegResponse.getErrorCode()).thenReturn(errorCode);
-        when(cdcAccountsService.setLiteReg(anyString())).thenReturn(mockLiteRegResponse);
-
-        when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(),anyString())).thenReturn(mockSearchResponse);
-
-        List<String> emails = new ArrayList<String>();
-        emails.add("test1");
-
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        List<EECUser> output = liteRegHandler.process(emailList);
-
-        EECUser user = output.get(0);
-        Assert.assertNull(user.getUid());
-        Assert.assertEquals(user.getResponseCode(), errorCode);
+        assertNull(user.getUid());
+        assertEquals(ERROR_MSG, user.getResponseMessage());
+        assertEquals(500, user.getResponseCode());
     }
 }

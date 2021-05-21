@@ -199,7 +199,6 @@ public class AccountUtils {
     public static Work getWork() {
         return Work.builder()
             .company(company)
-            .location(location)
             .build();
     }
 

@@ -5,6 +5,7 @@ import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
+import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 
 import org.apache.logging.log4j.LogManager;
@@ -130,33 +131,26 @@ public class CDCAccountsService {
     }
 
     public GSResponse setLiteReg(String email) {
-        try {
-            String apiMethod = APIMethods.SETINFO.getValue();
-            logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
+        final boolean isLiteRegistration = true;
+        String apiMethod = APIMethods.SETINFO.getValue();
+        logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
-            request.setAPIDomain(mainApiDomain);
-            request.setParam("regToken", getRegToken(true));
-            request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
-            return request.send();
-        } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating email only account. Email: %s. Error: %s", email, Utils.stackTraceToString(e)));
-            return null;
-        }
+        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        request.setAPIDomain(mainApiDomain);
+        request.setParam("regToken", getRegToken(isLiteRegistration));
+        request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
+        return request.send();
     }
 
-    public GSResponse search(String query, String accountTypes) {
+    public GSResponse search(String query, AccountType accountType) {
         final boolean USE_HTTPS = true;
 
         String apiMethod = APIMethods.SEARCH.getValue();
         logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
 
-        if (query == null)
-            return null;
-
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
         request.setAPIDomain(mainApiDomain);
-        request.setParam("accountTypes", accountTypes);
+        request.setParam("accountTypes", accountType.getValue());
         request.setParam("query", query);
         return request.send();
     }
