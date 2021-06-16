@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -25,10 +26,13 @@ import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.UsernameRecoveryEmailRequest;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountRequestService;
@@ -37,7 +41,10 @@ import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.hashing.HashingService;
+import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
@@ -50,7 +57,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -78,38 +84,65 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
-    @Value("${identity.recaptcha.secret.v3}")
-    private String identityReCaptchaSecretV3;
-
-    @Value("${identity.recaptcha.secret.v2}")
-    private String identityReCaptchaSecretV2;
-
-    @Autowired
-    LiteRegHandler liteRegHandler;
-
-    @Autowired
-    UsersHandler usersHandler;
-
     @Autowired
     AccountRequestService accountRequestService;
-
-    @Autowired
-    UpdateAccountService updateAccountService;
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
     @Autowired
+    DataProtectionService dataProtectionService;
+
+    @Autowired
     EmailService emailService;
+
+    @Autowired
+    LiteRegHandler liteRegHandler;
+
+    @Autowired
+    NotificationService notificationService;
 
     @Autowired
     ReCaptchaService reCaptchaService;
 
     @Autowired
-    DataProtectionService dataProtectionService;
+    SecretsService secretsService;
 
     @Autowired
-    NotificationService notificationService;
+    UpdateAccountService updateAccountService;
+
+    @Autowired
+    UsersHandler usersHandler;
+
+    @PutMapping("/{uid}/password")
+    @ApiOperation(value = "Updates user's password.")
+    @ApiResponses({
+        @ApiResponse(code = 204, message = "Password updated successfully."),
+        @ApiResponse(code = 400, message = "Either the new password does not comply with the password requirements or the old password is incorrect."),
+        @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParam(name = "uid", value = "To be updated user's UID.", required = true)
+    public ResponseEntity<?> changePassword(@Valid @PathVariable String uid, @Valid @RequestBody ChangePasswordDTO body) {
+        logger.info(String.format("Attempting password change for %s", uid));
+        try {
+            if (!PasswordUtils.isPasswordValid(body.getNewPassword())) {
+                throw new IllegalArgumentException("Invalid password. Bad request.");
+            }
+            cdcResponseHandler.changePassword(uid, body.getNewPassword(), body.getPassword());
+            logger.info(String.format("Password updated successfully for %s. Sending SNS notification.", uid));
+            String hashedPassword = HashingService.toMD5(body.getNewPassword());
+            PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder().uid(uid).newPassword(hashedPassword).build();
+            notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
+            logger.info("Update password SNS notification sent.");
+            return ResponseEntity.noContent().build();
+        } catch (CustomGigyaErrorException | IllegalArgumentException e) {
+            logger.info(String.format("Error during password update for %s. %s", uid, e.getMessage()));
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.info(String.format("Error during password update for %s. %s", uid, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/email-only/users")
     @ApiOperation(value = "Request email-only registration from a list of email addresses.")
@@ -137,7 +170,46 @@ public class AccountsController {
         }
         
         try {
-            List<EECUser> response = liteRegHandler.createLiteAccounts(emailList);
+            List<EECUser> response = liteRegHandler.createLiteAccountsV1(emailList);
+            return ResponseEntity.ok().body(response);
+        } catch (IllegalArgumentException e) {
+            String error = e.getMessage();
+            logger.error(error);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, error).body(null);
+        } catch (Exception e) {
+            String error = String.format("An error occurred during email only registration process... %s", e.getMessage());
+            logger.error(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, error).body(null);
+        }
+    }
+
+    @PostMapping("/v2/email-only/users")
+    @ApiOperation(value = "Request email-only registration from a list of email addresses. V2")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Invalid request. Either no list elements were sent or limit was exceeded.", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        }),
+        @ApiResponse(code = 500, message = "Internal server error", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        })
+    })
+    @ApiImplicitParam(name = "emailList", value = "List of emails to 'email-only' register", required = true, dataType = "EmailList", paramType = "body")
+    public ResponseEntity<List<EECUser>> emailOnlyRegistrationV2(@Valid @RequestBody EmailList emailList) {
+        logger.info("Email only registration initiated.");
+
+        if (Utils.isNullOrEmpty(emailList.getEmails())) {
+            String errorMessage = "No users requested.";
+            logger.error(errorMessage);
+            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+        } else if (emailList.getEmails().size() > liteRegHandler.requestLimit) {
+            String errorMessage = String.format("Requested users exceed request limit: %s.", liteRegHandler.requestLimit);
+            logger.error(errorMessage);
+            return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
+        }
+        
+        try {
+            List<EECUser> response = liteRegHandler.createLiteAccountsV2(emailList);
             return ResponseEntity.ok().body(response);
         } catch (IllegalArgumentException e) {
             String error = e.getMessage();
@@ -256,7 +328,8 @@ public class AccountsController {
         }
         
         try {
-            String reCaptchaSecret = accountInfo.getIsReCaptchaV2() ? identityReCaptchaSecretV2 : identityReCaptchaSecretV3;
+            String reCaptchaSecretKey = accountInfo.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
+            String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), reCaptchaSecret);
             logger.info(String.format("reCaptcha response for %s: %s", accountInfo.getUsername(), reCaptchaResponse.toString()));
         } catch (ReCaptchaLowScoreException v3Exception) {

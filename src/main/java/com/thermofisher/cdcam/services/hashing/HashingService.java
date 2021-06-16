@@ -1,16 +1,21 @@
 package com.thermofisher.cdcam.services.hashing;
 
-import com.google.common.base.Preconditions;
-
-import javax.validation.constraints.NotNull;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class HashingService {
+import javax.validation.constraints.NotNull;
 
+import com.google.common.base.Preconditions;
+
+public class HashingService {
     private static String PASSWORD_ALGORITHM = "MD5";
 
-    public static String hash(@NotNull String value) throws NoSuchAlgorithmException {
+    public static String toMD5(String value) throws NoSuchAlgorithmException {
+        String hashedValue = hash(value);
+        return concat(hashedValue);
+    }
+
+    private static String hash(@NotNull String value) throws NoSuchAlgorithmException {
         Preconditions.checkArgument(value != null, "Value cannot be null");
         MessageDigest messageDigest = null;
 
@@ -26,7 +31,7 @@ public class HashingService {
         return stringBuilder.toString();
     }
 
-    public static String concat(String value) {
-        return (String.format("%1$s:%2$s", PASSWORD_ALGORITHM, value)).toUpperCase();
+    private static String concat(String value) {
+        return String.format("%1$s:%2$s", PASSWORD_ALGORITHM, value).toUpperCase();
     }
 }

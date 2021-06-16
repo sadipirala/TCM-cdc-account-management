@@ -21,6 +21,7 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -32,6 +33,7 @@ import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
@@ -43,15 +45,19 @@ import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
+import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -72,7 +78,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -87,8 +92,6 @@ public class AccountsControllerTests {
     private final UserTimezone invalidUserTimezone = UserTimezone.builder().uid("1234567890").timezone(null).build();
     private final UsernameRecoveryDTO usernameRecoveryDTO = EmailRequestBuilderUtils.buildUsernameRecoveryDTO();
     private final int associatedAccounts = 1;
-    private final String reCaptchaV3Secret = "reCaptchaV3Secret";
-    private final String reCaptchaV2Secret = "reCaptchaV2Secret";
     private final String CIPHERTEXT = "VTJGc2RHVmtYMStuTTlOT3ExeHZtNG5rUHpqNjhMTmhKbHRkVkJZU0xlMnpGTm5QVk1oV0oycUhrVm1JQ2ozSXJVUWdCK2pBaDBuczMyM0ZMYkdLVm1tSzJ4R3BENmtJZ1VGbm1JeURVMUNpSkcxcU1aNzBvRjBJeG80dHVCbHhmdU02TDJFMmtLUDdvUzdGMWpidU53PT0=";
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
             .uid("1234567890")
@@ -96,19 +99,27 @@ public class AccountsControllerTests {
             .lastName("lastName")
             .email("email@test.com")
             .username("username")
-            .marketingConsentDTO(MarketingConsentDTO.builder()
+            .marketingConsentDTO(
+                MarketingConsentDTO.builder()
                     .city("city")
                     .company("company")
                     .country("country")
                     .consent(true)
-                    .build())   
+                    .build()
+            )
             .build();
 
     @InjectMocks
     AccountsController accountsController;
 
     @Mock
+    AccountRequestService accountRequestService;
+
+    @Mock
     CDCResponseHandler cdcResponseHandler;
+
+    @Mock
+    DataProtectionService dataProtectionService;
 
     @Mock
     EmailService emailService;
@@ -117,22 +128,19 @@ public class AccountsControllerTests {
     LiteRegHandler liteRegHandler;
 
     @Mock
-    UsersHandler usersHandler;
-
-    @Mock
-    AccountRequestService accountRequestService;
-
-    @Mock
     NotificationService notificationService;
 
     @Mock
     ReCaptchaService reCaptchaService;
 
     @Mock
-    DataProtectionService dataProtectionService;
+    SecretsService secretsService;
 
     @Mock
     UpdateAccountService updateAccountService;
+
+    @Mock
+    UsersHandler usersHandler;
 
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
@@ -165,8 +173,6 @@ public class AccountsControllerTests {
         uids.add("001");
         uids.add("002");
         uids.add("003");
-        ReflectionTestUtils.setField(accountsController, "identityReCaptchaSecretV3", reCaptchaV3Secret);
-        ReflectionTestUtils.setField(accountsController, "identityReCaptchaSecretV2", reCaptchaV2Secret);
     }
 
     @Test
@@ -187,7 +193,7 @@ public class AccountsControllerTests {
         // given
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
-        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccounts(emailList);
+        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccountsV1(emailList);
 
         // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
@@ -213,7 +219,7 @@ public class AccountsControllerTests {
         // given
         List<EECUser> mockResult = new ArrayList<>();
         mockResult.add(Mockito.mock(EECUser.class));
-        Mockito.when(liteRegHandler.createLiteAccounts(any())).thenReturn(mockResult);
+        Mockito.when(liteRegHandler.createLiteAccountsV1(any())).thenReturn(mockResult);
         liteRegHandler.requestLimit = 1000;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
@@ -229,7 +235,7 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
         // given
-        when(liteRegHandler.createLiteAccounts(any())).thenThrow(IOException.class);
+        when(liteRegHandler.createLiteAccountsV1(any())).thenThrow(IOException.class);
         liteRegHandler.requestLimit = 1000;
         List<String> emails = new ArrayList<>();
         emails.add("email1");
@@ -245,7 +251,7 @@ public class AccountsControllerTests {
     @Test
     public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
         // given
-        Mockito.when(liteRegHandler.createLiteAccounts(any())).thenThrow(IOException.class);
+        Mockito.when(liteRegHandler.createLiteAccountsV1(any())).thenThrow(IOException.class);
 
         liteRegHandler.requestLimit = 1;
         List<String> emails = new ArrayList<>();
@@ -267,6 +273,109 @@ public class AccountsControllerTests {
 
         // when
         ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenEmailListEmpty_returnBadRequest() throws IOException {
+        // given
+        List<String> emails = new ArrayList<>();
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException {
+        // given
+        List<String> emails = new ArrayList<>();
+        EmailList emailList = EmailList.builder().emails(emails).build();
+        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccountsV2(emailList);
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenEmailListNull_returnBadRequest() {
+        // given
+        EmailList emailList = EmailList.builder().emails(null).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenEmailListHasValues_returnOK() throws IOException {
+        // given
+        List<EECUser> mockResult = new ArrayList<>();
+        mockResult.add(Mockito.mock(EECUser.class));
+        Mockito.when(liteRegHandler.createLiteAccountsV2(any())).thenReturn(mockResult);
+        liteRegHandler.requestLimit = 1000;
+        List<String> emails = new ArrayList<>();
+        emails.add("email1");
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
+        // given
+        when(liteRegHandler.createLiteAccountsV2(any())).thenThrow(IOException.class);
+        liteRegHandler.requestLimit = 1000;
+        List<String> emails = new ArrayList<>();
+        emails.add("email1");
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
+        // given
+        Mockito.when(liteRegHandler.createLiteAccountsV2(any())).thenThrow(IOException.class);
+
+        liteRegHandler.requestLimit = 1;
+        List<String> emails = new ArrayList<>();
+        emails.add("email1");
+        emails.add("email1");
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
+
+        // then
+        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void emailOnlyRegistrationV2_WhenRequestHeaderInvalid_returnBadRequest() {
+        // given
+        EmailList emailList = EmailList.builder().emails(null).build();
+
+        // when
+        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
 
         // then
         Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -368,7 +477,6 @@ public class AccountsControllerTests {
         }
     }
 
-
     @Test
     public void onAccountRegistered_GivenTheMethodIsCalled_ThenAccountsRequestService_onAccountRegisteredMethodShouldBeCalledSameTimesAsWebhookEventsAmount() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
@@ -393,33 +501,37 @@ public class AccountsControllerTests {
     public void newAccount_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
+        String expectedReCaptchaV2Secret = RandomStringUtils.random(10);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setIsReCaptchaV2(true);
+        when(secretsService.get(CdcamSecrets.RECAPTCHAV2.getKey())).thenReturn(expectedReCaptchaV2Secret);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
         accountsController.newAccount(accountDTO);
 
         // then
-        Mockito.verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
         String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(reCaptchaSecret, reCaptchaV2Secret);
+        assertEquals(expectedReCaptchaV2Secret, reCaptchaSecret);
     }
 
     @Test
     public void newAccount_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
+        String expectedReCaptchaV3Secret = RandomStringUtils.random(10);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(secretsService.get(CdcamSecrets.RECAPTCHAV3.getKey())).thenReturn(expectedReCaptchaV3Secret);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
         accountsController.newAccount(accountDTO);
 
         // then
-        Mockito.verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
+        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
         String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(reCaptchaSecret, reCaptchaV3Secret);
+        assertEquals(expectedReCaptchaV3Secret, reCaptchaSecret);
     }
 
     @Test
@@ -1121,5 +1233,138 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void changePassword_whenNoExceptionIsThrown_returnOkNoContent() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+
+        try (MockedStatic<PasswordUtils> passwordUtilsMock = Mockito.mockStatic(PasswordUtils.class)) {
+            passwordUtilsMock.when(() -> PasswordUtils.isPasswordValid(anyString())).thenReturn(true);
+
+            // when
+            ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
+
+            // then
+            Assert.assertEquals(response.getStatusCode(), HttpStatus.NO_CONTENT);
+        }
+    }
+
+    @Test
+    public void changePassword_whenPasswordIsInvalid_returnBadRequest() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+
+        // when
+        ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordShouldBeHashed() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("P@ssw0rd");
+        changePasswordDTO.setPassword("World");
+        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(notificationService).sendPasswordUpdateNotification(any());
+
+        // when
+
+        try (MockedStatic<HashingService> hashing = Mockito.mockStatic(HashingService.class)) {
+            hashing.when(() -> HashingService.toMD5(anyString())).thenCallRealMethod();
+
+            // when
+            accountsController.changePassword(uid, changePasswordDTO);
+
+            // then
+            hashing.verify(() -> HashingService.toMD5(changePasswordDTO.getNewPassword()));
+        }
+    }
+
+    @Test
+    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordUpdateNotificationShouldBeSent() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(notificationService).sendPasswordUpdateNotification(any());
+
+        // when
+
+        try (MockedStatic<PasswordUtils> passwordUtilsMock = Mockito.mockStatic(PasswordUtils.class)) {
+            passwordUtilsMock.when(() -> PasswordUtils.isPasswordValid(anyString())).thenReturn(true);
+
+            // when
+            accountsController.changePassword(uid, changePasswordDTO);
+
+            // then
+            verify(notificationService).sendPasswordUpdateNotification(any());
+        }
+    }
+
+    @Test
+    public void changePassword_whenCustomGigyaExceptionIsThrown_returnBadRequest() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        doThrow(new CustomGigyaErrorException("")).when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+
+        // when
+        ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void changePassword_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        doThrow(new IllegalArgumentException()).when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+
+        // when
+        ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void changePassword_whenOtherExceptionIsThrown_returnInternalServerError() throws IOException, CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setNewPassword("Hello");
+        changePasswordDTO.setPassword("World");
+        
+        try (MockedStatic<PasswordUtils> passwordUtilsMock = Mockito.mockStatic(PasswordUtils.class)) {
+            passwordUtilsMock.when(() -> PasswordUtils.isPasswordValid(anyString())).thenThrow(new NullPointerException());
+
+            // when
+            ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
+
+            // then
+            Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

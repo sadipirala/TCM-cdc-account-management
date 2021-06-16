@@ -3,22 +3,16 @@ package com.thermofisher.cdcam.utils.cdc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.cdc.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
-/**
- * RegistrationAttributesHandlerTests
- */
+
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+@RunWith(SpringRunner.class)
 public class RegistrationAttributesHandlerTests {
-
     private RegistrationAttributesHandler registrationAttributesHandler;
 
     @Test

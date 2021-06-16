@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SNSHandler;
-import com.thermofisher.cdcam.aws.SecretsManager;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.RegistrationConfirmation;
@@ -40,9 +40,6 @@ public class AccountRequestService {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final int FED_PASSWORD_LENGTH = 10;
 
-    @Value("${aws.quick.sight.role}")
-    String awsQuickSightRoleSecret;
-
     @Value("${aws.sns.reg.topic}")
     private String snsRegistrationTopic;
 
@@ -71,7 +68,7 @@ public class AccountRequestService {
     NotificationService notificationService;
 
     @Autowired
-    SecretsManager secretsManager;
+    SecretsService secretsService;
 
     @Autowired
     SNSHandler snsHandler;
@@ -120,7 +117,8 @@ public class AccountRequestService {
             if (cdcResponseData != null) {
                 if (cdcResponseData.getValidationErrors() != null ? cdcResponseData.getValidationErrors().size() == 0 : HttpStatus.valueOf(cdcResponseData.getStatusCode()).is2xxSuccessful()) {
                     accountInfo.setUid(cdcResponseData.getUID());
-                    accountInfo.setPassword(HashingService.concat(HashingService.hash(accountInfo.getPassword())));
+                    String hashedPassword = HashingService.toMD5(accountInfo.getPassword());
+                    accountInfo.setPassword(hashedPassword);
 
                     logger.info(String.format("Account registration successful. Username: %s. UID: %s.", accountInfo.getUsername(), accountInfo.getUid()));
 
@@ -173,24 +171,24 @@ public class AccountRequestService {
     }
 
     @Async
-    public void setAwsQuickSightRole(String uid){
+    public void setAwsQuickSightRole(String uid) {
         String EMPTY_PROFILE = "";
-        String QUICK_SIGHT_ROLE_PROPERTY = "awsQuickSightRole";
+
         logger.info("Async process for update aws quick sight role.");
         try {
-            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(awsQuickSightRoleSecret));
-            String awsQuickSightRole = secretsManager.getProperty(secretProperties, QUICK_SIGHT_ROLE_PROPERTY);
+            String awsQuickSightRole = secretsService.get(CdcamSecrets.QUICKSIGHT_ROLE.getKey());
             Data data = Data.builder().awsQuickSightRole(awsQuickSightRole).build();
             JSONObject jsonData = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
-            GSResponse response = cdcAccountsService.setUserInfo(uid,jsonData.toString(),EMPTY_PROFILE);
+            
+            GSResponse response = cdcAccountsService.setUserInfo(uid, jsonData.toString(), EMPTY_PROFILE);
+            
             if (response.getErrorCode() == 0) {
                 logger.info("update aws quick sight role finished.");
             } else {
                 logger.error(String.format("An error occurred while updating aws quick sight role finished. UID: %s. Error: %s", uid, response.getErrorDetails()));
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             logger.error(Utils.stackTraceToString(ex));
         }
     }

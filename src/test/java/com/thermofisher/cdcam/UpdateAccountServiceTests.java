@@ -21,28 +21,28 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class UpdateAccountServiceTests {
-
     private final String uid = "1234567890";
     private final String timezone = "America/Tijuana";
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
-            .uid(uid)
-            .firstName("firstName")
-            .lastName("lastName")
-            .email("email@test.com")
-            .username("username")
-            .marketingConsentDTO(MarketingConsentDTO.builder()
-                    .city("city")
-                    .company("company")
-                    .country("country")
-                    .consent(true)
-                    .build())   
-            .build();
+        .uid(uid)
+        .firstName("firstName")
+        .lastName("lastName")
+        .email("email@test.com")
+        .username("username")
+        .marketingConsentDTO(
+            MarketingConsentDTO.builder()
+                .city("city")
+                .company("company")
+                .country("country")
+                .consent(true)
+                .build()
+        ).build();
     
     @InjectMocks
     private UpdateAccountService updateAccountService;

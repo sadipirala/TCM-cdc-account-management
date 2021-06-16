@@ -7,6 +7,8 @@ import java.util.Objects;
 
 import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EECUserV1;
+import com.thermofisher.cdcam.model.EECUserV2;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
@@ -33,7 +35,7 @@ public class LiteRegHandler {
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
-    public List<EECUser> createLiteAccounts(EmailList emailList) throws IOException {
+    public List<EECUser> createLiteAccountsV2(EmailList emailList) throws IOException {
         List<EECUser> liteRegisteredUsers = new ArrayList<>();
         List<String> emails = emailList.getEmails();
         logger.info("EEC account processing initiated.");
@@ -78,6 +80,16 @@ public class LiteRegHandler {
         return liteRegisteredUsers;
     }
 
+    public List<EECUser> createLiteAccountsV1(EmailList emailList) throws IOException {
+        List<EECUser> liteRegisteredUsersV2 = createLiteAccountsV2(emailList);
+        List<EECUser> liteRegisteredUsersV1 = new ArrayList<>();
+
+        for(EECUser eecuser : liteRegisteredUsersV2) {
+            liteRegisteredUsersV1.add(EECUserV1.build((EECUserV2) eecuser));
+        }
+        return liteRegisteredUsersV1;
+    }
+
     private EECUser liteRegisterUser(String email) throws IOException, CustomGigyaErrorException {
         CDCResponseData cdcResponseData = cdcResponseHandler.liteRegisterUser(email);
         CDCAccount account = new CDCAccount();
@@ -93,19 +105,19 @@ public class LiteRegHandler {
         boolean isActive = Objects.isNull(account.getIsActive()) ? false : account.getIsActive();
         boolean isRegistered = Objects.isNull(account.getIsRegistered()) ? false : account.getIsRegistered();
 
-        return EECUser.builder()
+        return EECUserV2.builder()
             .uid(account.getUID())
             .username(username)
             .email(email)
-            .registered(isRegistered)
-            // .isActive(isActive)
+            .isRegistered(isRegistered)
+            .isActive(isActive)
             .responseCode(responseCode)
             .responseMessage(responseMessage)
             .build();
     }
 
     private EECUser buildInvalidEECUser(String email, int errorCode, String errorMessage) {
-        return EECUser.builder()
+        return EECUserV2.builder()
             .email(email)
             .responseCode(errorCode)
             .responseMessage(errorMessage)

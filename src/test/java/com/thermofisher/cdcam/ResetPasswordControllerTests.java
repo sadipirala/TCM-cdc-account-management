@@ -14,6 +14,7 @@ import java.io.IOException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
@@ -21,11 +22,14 @@ import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
+import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -40,16 +44,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class ResetPasswordControllerTests {
-    private final String reCaptchaV3Secret = "reCaptchaV3Secret";
-    private final String reCaptchaV2Secret = "reCaptchaV2Secret";
-
     String username = "armadillo@mail.com";
     String email = "armadillo@mail.com";
     JSONObject reCaptchaResponse;
@@ -60,17 +60,23 @@ public class ResetPasswordControllerTests {
     ResetPasswordController resetPasswordController;
 
     @Mock
-    ReCaptchaService reCaptchaService;
-
-    @Mock
     CDCResponseHandler cdcResponseHandler;
 
     @Mock
-    SNSHandler snsHandler;
+    NotificationService notificationService;
+
+    @Mock
+    ReCaptchaService reCaptchaService;
 
     @Mock
     ResetPasswordService resetPasswordService;
 
+    @Mock
+    SecretsService secretsService;
+    
+    @Mock
+    SNSHandler snsHandler;
+    
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
 
@@ -80,12 +86,9 @@ public class ResetPasswordControllerTests {
         reCaptchaResponse = new JSONObject();
         resetPasswordRequestBody = mock(ResetPasswordRequest.class);
         resetPasswordResponseMock = mock(ResetPasswordResponse.class);
-        ReflectionTestUtils.setField(resetPasswordController, "identityReCaptchaSecretV3", reCaptchaV3Secret);
-        ReflectionTestUtils.setField(resetPasswordController, "identityReCaptchaSecretV2", reCaptchaV2Secret);
     }
 
-    private void setSendResetPasswordEmailMocks()
-            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    private void setSendResetPasswordEmailMocks() throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         when(resetPasswordRequestBody.getUsername()).thenReturn(username);
         when(resetPasswordRequestBody.getCaptchaToken()).thenReturn("token");
     }
@@ -94,6 +97,8 @@ public class ResetPasswordControllerTests {
     public void sendResetPasswordEmail_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
+        String expectedReCaptchaV2Secret = RandomStringUtils.random(10);
+        when(secretsService.get(CdcamSecrets.RECAPTCHAV2.getKey())).thenReturn(expectedReCaptchaV2Secret);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         when(resetPasswordRequestBody.getIsReCaptchaV2()).thenReturn(true);
         setSendResetPasswordEmailMocks();
@@ -104,13 +109,15 @@ public class ResetPasswordControllerTests {
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
         String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(reCaptchaSecret, reCaptchaV2Secret);
+        assertEquals(expectedReCaptchaV2Secret, reCaptchaSecret);
     }
 
     @Test
     public void sendResetPasswordEmail_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
+        String expectedReCaptchaV3Secret = RandomStringUtils.random(10);
+        when(secretsService.get(CdcamSecrets.RECAPTCHAV3.getKey())).thenReturn(expectedReCaptchaV3Secret);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         setSendResetPasswordEmailMocks();
 
@@ -120,7 +127,7 @@ public class ResetPasswordControllerTests {
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
         String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(reCaptchaSecret, reCaptchaV3Secret);
+        assertEquals(expectedReCaptchaV3Secret, reCaptchaSecret);
     }
 
     @Test
@@ -202,11 +209,12 @@ public class ResetPasswordControllerTests {
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
             .newPassword("testPassword1")
             .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+            .uid("62623d97356b4815a9965d912fa3331a")
+            .build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(snsHandler).sendNotification(any(),any());
+        doNothing().when(notificationService).sendPasswordUpdateNotification(any());
         doNothing().when(resetPasswordService).sendResetPasswordConfirmation(any());
 
         //when
@@ -226,7 +234,7 @@ public class ResetPasswordControllerTests {
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
-        doThrow(NullPointerException.class).when(snsHandler).sendNotification(any(), any());
+        doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
 
         // when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
@@ -244,7 +252,7 @@ public class ResetPasswordControllerTests {
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
-        doThrow(NullPointerException.class).when(snsHandler).sendNotification(any(), any());
+        doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
 
         //when
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);

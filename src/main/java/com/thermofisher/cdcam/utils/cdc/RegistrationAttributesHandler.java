@@ -6,7 +6,6 @@ import com.thermofisher.cdcam.model.cdc.Korea;
 import com.thermofisher.cdcam.model.cdc.Registration;
 
 public class RegistrationAttributesHandler {
-
     private final China china;
     private final Japan japan;
     private final Korea korea;

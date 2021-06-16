@@ -10,7 +10,7 @@ public enum APIMethods {
     RESET_PASSWORD("accounts.resetPassword"),
     SEARCH("accounts.search"),
     SEND_VERIFICATION_EMAIL("accounts.resendVerificationCode"),
-    SETINFO("accounts.setAccountInfo");
+    SET_ACCOUNT_INFO("accounts.setAccountInfo");
 
     private String value;
 

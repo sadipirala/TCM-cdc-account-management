@@ -1,6 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
@@ -21,18 +20,10 @@ public class ReCaptchaService {
     private double RECAPTCHA_MIN_THRESHOLD;
 
     @Autowired
-    SecretsManager secretsManager;
-
-    @Autowired
     HttpService httpService;
 
     public JSONObject verifyToken(String reCaptchaToken, String reCaptchaSecret) throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
-        final String CAPTCHA_SECRET_PROPERTY = "secret-key";
-
-        JSONObject secretProperties = new JSONObject(secretsManager.getSecret(reCaptchaSecret));
-        String captchaSecretKeyValue = secretsManager.getProperty(secretProperties, CAPTCHA_SECRET_PROPERTY);
-
-        String url = String.format("%s?secret=%s&response=%s", siteVerifyUrl, captchaSecretKeyValue, reCaptchaToken);
+        String url = String.format("%s?secret=%s&response=%s", siteVerifyUrl, reCaptchaSecret, reCaptchaToken);
         HttpServiceResponse response = httpService.post(url);
 
         JSONObject reCaptchaResponse = response.getResponseBody();

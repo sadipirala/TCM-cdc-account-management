@@ -10,6 +10,7 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
+import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class NotificationService {
 
     @Value("${aws.sns.aspire.reg.topic}")
     private String aspireRegistrationSNSTopic;
+
+    @Value("${aws.sns.password.update}")
+    private String passwordUpdateSNSTopic;
 
     @Value("${aws.sns.reg.topic}")
     private String registrationSNSTopic;
@@ -47,5 +51,11 @@ public class NotificationService {
         Objects.requireNonNull(accountInfo);
         String accountForAspire = accountHandler.prepareForAspireNotification(accountInfo);
         snsHandler.sendNotification(accountForAspire, aspireRegistrationSNSTopic);
+    }
+
+    public void sendPasswordUpdateNotification(@NotNull PasswordUpdateNotification passwordUpdateNotification) {
+        Objects.requireNonNull(passwordUpdateNotification);
+        String notificationMessage = new GsonBuilder().create().toJson(passwordUpdateNotification);
+        snsHandler.sendNotification(notificationMessage, passwordUpdateSNSTopic);
     }
 }

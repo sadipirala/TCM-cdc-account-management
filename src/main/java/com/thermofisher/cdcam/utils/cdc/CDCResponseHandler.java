@@ -67,6 +67,15 @@ public class CDCResponseHandler {
     @Value("${env.name}")
     private String env;
 
+    public void changePassword(String uid, String newPassword, String oldPassword) throws CustomGigyaErrorException {
+        GSResponse response = cdcAccountsService.changePassword(uid, newPassword, oldPassword);
+
+        if (response.getErrorCode() != 0) {
+            String error = String.format("%s, %s. Error code: %d", response.getErrorMessage(), response.getErrorDetails(), response.getErrorCode());
+            throw new CustomGigyaErrorException(error);
+        }
+    }
+
     public AccountInfo getAccountInfo(String uid) throws CustomGigyaErrorException {
         GSResponse response = cdcAccountsService.getAccount(uid);
         if (response.getErrorCode() == 0) {

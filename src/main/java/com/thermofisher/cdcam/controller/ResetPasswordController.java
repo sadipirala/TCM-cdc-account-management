@@ -8,18 +8,20 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
-import com.thermofisher.cdcam.aws.SNSHandler;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.ResetPasswordNotification;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
+import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
@@ -46,26 +48,23 @@ import io.swagger.annotations.ApiResponses;
 public class ResetPasswordController {
     private Logger logger = LogManager.getLogger(this.getClass());
 
-    @Value("${aws.sns.reset.password}")
-    private String resetPasswordTopic;
-
-    @Value("${identity.recaptcha.secret.v3}")
-    private String identityReCaptchaSecretV3;
-
-    @Value("${identity.recaptcha.secret.v2}")
-    private String identityReCaptchaSecretV2;
-
-    @Autowired
-    ReCaptchaService reCaptchaService;
+    @Value("${aws.sns.password.update}")
+    private String passwordUpdateTopic;
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
     @Autowired
-    SNSHandler snsHandler;
+    NotificationService notificationService;
+
+    @Autowired
+    ReCaptchaService reCaptchaService;
 
     @Autowired
     ResetPasswordService resetPasswordService;
+
+    @Autowired
+    SecretsService secretsService;
 
     @PostMapping("/email")
     @ApiOperation(value = "sends the request to reset a password.")
@@ -78,7 +77,8 @@ public class ResetPasswordController {
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
 
         try {
-            String reCaptchaSecret = body.getIsReCaptchaV2() ? identityReCaptchaSecretV2 : identityReCaptchaSecretV3;
+            String reCaptchaSecretKey = body.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
+            String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
             logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
             cdcResponseHandler.resetPasswordRequest(body.getUsername());
@@ -136,15 +136,12 @@ public class ResetPasswordController {
                 }
             }
 
-            String hashedPassword = HashingService.concat(HashingService.hash(body.getNewPassword()));
-
-            ResetPasswordNotification resetPasswordNotification = ResetPasswordNotification.builder()
+            String hashedPassword = HashingService.toMD5(body.getNewPassword());
+            PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder()
                 .newPassword(hashedPassword)
                 .uid(body.getUid())
                 .build();
-
-            String message = (new JSONObject(resetPasswordNotification)).toString();
-            snsHandler.sendNotification(message, resetPasswordTopic);
+            notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
             sendResetPasswordConfirmationEmail(body.getUid());
             
             return new ResponseEntity<>(response, HttpStatus.OK);

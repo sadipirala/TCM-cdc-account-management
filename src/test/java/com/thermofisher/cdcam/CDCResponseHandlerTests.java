@@ -544,4 +544,21 @@ public class CDCResponseHandlerTests {
         // when
         cdcResponseHandler.liteRegisterUser("");
     }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void changePassword_givenTheresAnError_ThenCustomGigyaErrorExceptionShouldBeThrown() throws CustomGigyaErrorException {
+        // given
+        String uid = Long.toString(1L);
+        String oldPassword = "Hello there";
+        String newPassword = "General Kenobi";
+        int errorCode = 400;
+        GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
+        String gsResponse = "{\"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\"apiVersion\": 2,\"statusReason\": \"Bad Request\",\"errorMessage\": \"Invalid parameter value\", \"errorCode\": " + errorCode + ", \"validationErrors\": [{\"fieldName\": \"profile.email\",\"errorCode\": 400006,\"message\": \"Unallowed value for field: email\"}], \"time\": \"2019-09-19T16:15:20.508Z\",\"errorDetails\": \"Schema validation failed\", \"statusCode\":" + errorCode + "}";
+        when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
+        when(cdcMockResponse.getResponseText()).thenReturn(gsResponse);
+        when(cdcAccountsService.changePassword(anyString(), anyString(), anyString())).thenReturn(cdcMockResponse);
+
+        // when
+        cdcResponseHandler.changePassword(uid, newPassword, oldPassword);
+    }
 }

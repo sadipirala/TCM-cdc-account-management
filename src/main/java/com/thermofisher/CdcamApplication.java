@@ -1,4 +1,5 @@
 package com.thermofisher;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -29,20 +30,32 @@ public class CdcamApplication {
 	@Bean
 	public Docket newsApi() {
 		return new Docket(DocumentationType.SWAGGER_2)
-				.useDefaultResponseMessages(false)
-				.apiInfo(apiInfo())
-				.select()
-				.apis(RequestHandlerSelectors.basePackage(messageSource().getMessage("swagger.base.package", null,null)))
-				.paths(PathSelectors.any())
-				.build();
+			.useDefaultResponseMessages(false)
+			.groupName("CDCAM V1")
+			.apiInfo(apiInfo("1.2"))
+			.select()
+			.apis(RequestHandlerSelectors.basePackage(messageSource().getMessage("swagger.base.package", null,null)))
+			.paths(PathSelectors.regex("^((?!v2).)*$"))
+			.build();
+	}
+	
+	@Bean
+	public Docket newsApiV2() {
+		return new Docket(DocumentationType.SWAGGER_2)
+			.groupName("CDCAM V2")
+			.select()
+			.apis(RequestHandlerSelectors.basePackage(messageSource().getMessage("swagger.base.package", null,null)))
+			.paths(PathSelectors.regex("/accounts/v2/.*"))
+			.build()
+			.apiInfo(apiInfo("2.0"));
 	}
 
-	private ApiInfo apiInfo() {
+	private ApiInfo apiInfo(String apiVersion) {
 		return new ApiInfoBuilder()
-				.title(messageSource().getMessage("swagger.api.title", null,null) + " (" + envName + ")")
-				.description(messageSource().getMessage("swagger.api.description", null,null))
-				.version("1.2")
-				.build();
+			.title(messageSource().getMessage("swagger.api.title", null,null) + " (" + envName + ")")
+			.description(messageSource().getMessage("swagger.api.description", null,null))
+			.version(apiVersion)
+			.build();
 	}
 
 	@Bean

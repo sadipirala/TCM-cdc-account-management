@@ -2,10 +2,8 @@ package com.thermofisher.cdcam.services;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SecretsManager;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
@@ -20,12 +18,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@SpringBootTest(classes = CdcamApplication.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {
+    ReCaptchaService.class,
+    HttpService.class,
+    SecretsService.class,
+    SecretsManager.class
+})
 public class ReCaptchaServiceTests {
     private final String reCaptchaToken = "";
     private final String reCaptchaSecret = "";
@@ -37,13 +40,11 @@ public class ReCaptchaServiceTests {
     HttpService httpService;
 
     @Mock
-    SecretsManager secretsManager;
+    SecretsService secretsService;
 
     @Before
     public void init() throws JSONException {
         ReflectionTestUtils.setField(reCaptchaService, "RECAPTCHA_MIN_THRESHOLD", 0.5);
-        when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
-        when(secretsManager.getProperty(any(), anyString())).thenReturn("Test");
     }
 
     @Test

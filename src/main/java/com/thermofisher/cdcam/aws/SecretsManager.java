@@ -16,15 +16,15 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
-@Configuration
+@Service
 public class SecretsManager {
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${aws.sns.client.region}")
     private String region;
 
-    private Logger logger = LogManager.getLogger(this.getClass());
 
     public String getSecret(String secretName) {
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()

@@ -1,53 +1,44 @@
 package com.thermofisher.cdcam.services;
 
+import javax.annotation.PostConstruct;
+
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
-import com.thermofisher.cdcam.aws.SecretsManager;
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-
-import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCUtils;
-
 @Service
 public class CDCAccountsService {
     private Logger logger = LogManager.getLogger(this.getClass());
-    private String userKey;
-    private String secretKey;
+    private String mainCdcSecretKey;
     private String secondaryDCSecretKey;
-    private String secondaryDCUserKey;
+    private final boolean useHTTPS = true;
 
     @Value("${cdc.main.apiKey}")
-    private String apiKey;
+    private String mainApiKey;
     
     @Value("${cdc.main.datacenter}")
     private String mainApiDomain;
 
-    @Value("${cdc.main.credentials}")
-    private String cdcKey;
-
     @Value("${cdc.secondary.apiKey}")
     private String secondaryApiKey;
-
-    @Value("${cdc.secondary.credentials}")
-    private String secondaryDCSecretName;
 
     @Value("${env.name}")
     private String env;
 
     @Autowired
-    SecretsManager secretsManager;
+    SecretsService secretsService;
 
     @PostConstruct
     public void setCredentials() {
@@ -55,19 +46,27 @@ public class CDCAccountsService {
             if (env.equals("local") || env.equals("test")) return;
 
             logger.info("Setting up CDC credentials.");
-            JSONObject secretProperties = new JSONObject(secretsManager.getSecret(cdcKey));
-            secretKey = secretsManager.getProperty(secretProperties, "secretKey");
-            userKey = secretsManager.getProperty(secretProperties, "userKey");
+            mainCdcSecretKey = secretsService.get(CdcamSecrets.MAIN_DC.getKey());
 
             if (CDCUtils.isSecondaryDCSupported(env)) {
                 logger.info("Setting up Secondary DC Credentials");
-                JSONObject secondaryDCSecretProperties = new JSONObject(secretsManager.getSecret(secondaryDCSecretName));
-                secondaryDCSecretKey = secretsManager.getProperty(secondaryDCSecretProperties, "secretKey");
-                secondaryDCUserKey = secretsManager.getProperty(secondaryDCSecretProperties, "userKey");
+                secondaryDCSecretKey = secretsService.get(CdcamSecrets.SECONDARY_DC.getKey());
             }
         } catch (Exception e) {
             logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
         }
+    }
+
+    public GSResponse changePassword(String uid, String newPassword, String oldPassword) {
+        final String setAccountInfo = APIMethods.SET_ACCOUNT_INFO.getValue();
+        
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, setAccountInfo, useHTTPS);
+        request.setParam("UID", uid);
+        request.setParam("newPassword", newPassword);
+        request.setParam("password", oldPassword);
+        request.setAPIDomain(mainApiDomain);
+        
+        return request.send();
     }
 
     public GSResponse getAccount(String uid) {
@@ -75,7 +74,7 @@ public class CDCAccountsService {
             String apiMethod = APIMethods.GET.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("UID", uid);
             request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
@@ -91,18 +90,18 @@ public class CDCAccountsService {
         String apiMethod = APIMethods.GET_JWT_PUBLIC_KEY.getValue();
         logger.info(String.format("%s triggered.", apiMethod));
 
-        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
         request.setAPIDomain(mainApiDomain);
-        request.setParam("apiKey", apiKey);
+        request.setParam("mainApiKey", mainApiKey);
         return request.send();
     }
 
     public GSResponse setUserInfo(String uid, String data, String profile) {
         try {
-            String apiMethod = APIMethods.SETINFO.getValue();
+            String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("UID", uid);
             request.setParam("data", data);
@@ -116,10 +115,10 @@ public class CDCAccountsService {
 
     public GSResponse changeAccountStatus(String uid, boolean status) {
         try {
-            String apiMethod = APIMethods.SETINFO.getValue();
+            String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
-            GSRequest request = new GSRequest(apiKey,secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey,mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("UID", uid);
             request.setParam("isActive", status);
@@ -132,10 +131,10 @@ public class CDCAccountsService {
 
     public GSResponse setLiteReg(String email) {
         final boolean isLiteRegistration = true;
-        String apiMethod = APIMethods.SETINFO.getValue();
+        String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
         logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
 
-        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
         request.setAPIDomain(mainApiDomain);
         request.setParam("regToken", getRegToken(isLiteRegistration));
         request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
@@ -143,12 +142,10 @@ public class CDCAccountsService {
     }
 
     public GSResponse search(String query, AccountType accountType) {
-        final boolean USE_HTTPS = true;
-
         String apiMethod = APIMethods.SEARCH.getValue();
         logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
 
-        GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, USE_HTTPS, userKey);
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
         request.setAPIDomain(mainApiDomain);
         request.setParam("accountTypes", accountType.getValue());
         request.setParam("query", query);
@@ -160,7 +157,7 @@ public class CDCAccountsService {
             String apiMethod = APIMethods.REGISTER.getValue();
             logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("username", newAccount.getUsername());
             request.setParam("email", newAccount.getEmail());
@@ -180,7 +177,7 @@ public class CDCAccountsService {
             String apiMethod = APIMethods.SEND_VERIFICATION_EMAIL.getValue();
             logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("UID", uid);
 
@@ -196,7 +193,7 @@ public class CDCAccountsService {
             String apiMethod = APIMethods.RESET_PASSWORD.getValue();
             logger.info(String.format("%s triggered.", apiMethod));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, params, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, params, useHTTPS);
             request.setAPIDomain(mainApiDomain);
 
             return request.send();
@@ -211,7 +208,7 @@ public class CDCAccountsService {
             String apiMethod = APIMethods.INITREG.getValue();
             logger.info(String.format("%s triggered. Email-only: %s", apiMethod, Boolean.toString(isLite)));
 
-            GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
             request.setAPIDomain(mainApiDomain);
             request.setParam("isLite", isLite);
 
@@ -246,10 +243,10 @@ public class CDCAccountsService {
         GSRequest request;
         if (isMainApiDomain(apiDomain)) {
             logger.info("CDC request built for main domain");
-            request =  new GSRequest(apiKey, secretKey, apiMethod, null, true, userKey);
+            request =  new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
         } else {
             logger.info("CDC request built for secondary domain");
-            request =  new GSRequest(secondaryApiKey, secondaryDCSecretKey, apiMethod, null, true, secondaryDCUserKey);
+            request =  new GSRequest(secondaryApiKey, secondaryDCSecretKey, apiMethod, useHTTPS);
         }
         request.setAPIDomain(apiDomain);
         return request;

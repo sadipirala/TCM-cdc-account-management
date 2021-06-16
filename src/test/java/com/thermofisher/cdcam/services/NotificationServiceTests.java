@@ -13,6 +13,7 @@ import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
+import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
@@ -97,6 +98,26 @@ public class NotificationServiceTests {
 
         // when
         notificationService.sendAspireRegistrationNotification(accountInfo);
+
+        // then
+        verify(snsHandler).sendNotification(anyString(), anyString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void sendPasswordUpdateNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
+        // when
+        notificationService.sendPasswordUpdateNotification(null);
+    }
+
+    @Test
+    public void sendPasswordUpdateNotification_ShouldSendPasswordUpdateNotification() throws IOException {
+        // given
+        ReflectionTestUtils.setField(notificationService, "passwordUpdateSNSTopic", "passwordUpdateSNS");
+        PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder().build();
+        doNothing().when(snsHandler).sendNotification(anyString(), anyString());
+
+        // when
+        notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
 
         // then
         verify(snsHandler).sendNotification(anyString(), anyString());
