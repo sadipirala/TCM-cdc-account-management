@@ -128,59 +128,31 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getWebsiteTermsOfUse_IfKoreaObjectIsNull_ShouldReturnWebsiteTermsOfUseNull() {
+    public void getReceiveMarketingInformation_IfKoreaObjectIsNull_ShouldReturnReceiveMarketingInformationNull() {
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean websiteTermsOfUse = registrationAttributesHandler.getWebsiteTermsOfUse();
+        Boolean receiveMarketingInformation = registrationAttributesHandler.getReceiveMarketingInformation();
 
         // then
-        assertNull(websiteTermsOfUse);
+        assertNull(receiveMarketingInformation);
     }
 
     @Test
-    public void getWebsiteTermsOfUse_IfKoreaObjectIsNotNull_ShouldReturnWebsiteTermsOfUse() {
+    public void getReceiveMarketingInformation_IfKoreaObjectIsNotNull_ShouldReturnReceiveMarketingInformation() {
         // given
-        Korea mockKorea = Korea.builder().websiteTermsOfUse(true).build();
+        Korea mockKorea = Korea.builder().receiveMarketingInformation(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();
         registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
         // when
-        Boolean websiteTermsOfUse = registrationAttributesHandler.getWebsiteTermsOfUse();
+        Boolean receiveMarketingInformation = registrationAttributesHandler.getReceiveMarketingInformation();
 
         // then
-        assertEquals(websiteTermsOfUse, mockKorea.getWebsiteTermsOfUse());
-    }
-
-    @Test
-    public void getECommerceTermsOfUse_IfKoreaObjectIsNull_ShouldReturnECommerceTermsOfUseNull() {
-        // given
-        Korea mockKorea = null;
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean eCommerceTermsOfUse = registrationAttributesHandler.getECommerceTermsOfUse();
-
-        // then
-        assertNull(eCommerceTermsOfUse);
-    }
-
-    @Test
-    public void getECommerceTermsOfUse_IfKoreaObjectIsNotNull_ShouldReturnECommerceTermsOfUse() {
-        // given
-        Korea mockKorea = Korea.builder().eCommerceTermsOfUse(true).build();
-        Registration registration = Registration.builder().korea(mockKorea).build();
-        registrationAttributesHandler = new RegistrationAttributesHandler(registration);
-
-        // when
-        Boolean eCommerceTermsOfUse = registrationAttributesHandler.getECommerceTermsOfUse();
-
-        // then
-        assertEquals(eCommerceTermsOfUse, mockKorea.getECommerceTermsOfUse());
+        assertEquals(receiveMarketingInformation, mockKorea.getReceiveMarketingInformation());
     }
 
     @Test

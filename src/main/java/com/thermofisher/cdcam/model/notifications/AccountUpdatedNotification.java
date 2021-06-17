@@ -18,6 +18,8 @@ public class AccountUpdatedNotification {
     private String city;
     private String country;
     private String member;
+    private String firstName;
+    private String lastName;
 
     public static AccountUpdatedNotification build(AccountInfo accountInfo) {
         return AccountUpdatedNotification.builder()
@@ -26,6 +28,8 @@ public class AccountUpdatedNotification {
             .city(accountInfo.getCity())
             .country(accountInfo.getCountry())
             .member(accountInfo.getMember())
+            .firstName(accountInfo.getFirstName())
+            .lastName(accountInfo.getLastName())
             .build();
     }
 }

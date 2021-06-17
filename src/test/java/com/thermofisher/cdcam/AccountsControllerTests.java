@@ -1226,13 +1226,16 @@ public class AccountsControllerTests {
     @Test
     public void updateUserProfile_GivenAValidProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnOK() throws Exception {
         // given
-        Mockito.when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.OK);
+        when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.OK);
+        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        doNothing().when(notificationService).sendAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = accountsController.updateUserProfile(profileInfoDTO);
 
         // then
-        Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
+        verify(notificationService).sendAccountUpdatedNotification(any());
+        assertEquals(resp.getStatusCode(),HttpStatus.OK);
     }
 
     @Test

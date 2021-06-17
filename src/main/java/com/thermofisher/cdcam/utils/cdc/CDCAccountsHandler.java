@@ -80,8 +80,7 @@ public class CDCAccountsHandler {
 
         if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
             korea = Korea.builder()
-                .websiteTermsOfUse(accountInfo.getWebsiteTermsOfUse())
-                .eCommerceTermsOfUse(accountInfo.getECommerceTermsOfUse())
+                .receiveMarketingInformation(accountInfo.getReceiveMarketingInformation())
                 .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
                 .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
                 .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())

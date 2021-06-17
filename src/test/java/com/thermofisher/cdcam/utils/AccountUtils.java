@@ -49,8 +49,7 @@ public class AccountUtils {
     public static final String phoneNumber = "6648675309";
     
     // Korea
-    public static final Boolean websiteTermsOfUse = true;
-    public static final Boolean eCommerceTermsOfUse = true;
+    public static final Boolean receiveMarketingInformation = true;
     public static final Boolean thirdPartyTransferPersonalInfoMandatory = true;
     public static final Boolean thirdPartyTransferPersonalInfoOptional = true;
     public static final Boolean collectionAndUsePersonalInfoMandatory = true;
@@ -105,8 +104,7 @@ public class AccountUtils {
                 .socialProviders("site")
                 .regAttempts(0)
                 .hiraganaName(hiraganaName)
-                .websiteTermsOfUse(websiteTermsOfUse)
-                .eCommerceTermsOfUse(eCommerceTermsOfUse)
+                .receiveMarketingInformation(receiveMarketingInformation)
                 .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
                 .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
                 .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
@@ -256,8 +254,7 @@ public class AccountUtils {
 
         if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
             korea = Korea.builder()
-                .websiteTermsOfUse(accountInfo.getWebsiteTermsOfUse())
-                .eCommerceTermsOfUse(accountInfo.getECommerceTermsOfUse())
+                .receiveMarketingInformation(accountInfo.getReceiveMarketingInformation())
                 .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
                 .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
                 .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())

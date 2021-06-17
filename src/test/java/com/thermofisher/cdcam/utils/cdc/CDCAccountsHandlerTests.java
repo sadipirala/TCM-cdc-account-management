@@ -197,8 +197,7 @@ public class CDCAccountsHandlerTests {
         CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
 
         // then
-        assertTrue(result.getData().contains(String.format("\"websiteTermsOfUse\":%s", accountInfo.getWebsiteTermsOfUse())));
-        assertTrue(result.getData().contains(String.format("\"eCommerceTermsOfUse\":%s", accountInfo.getECommerceTermsOfUse())));
+        assertTrue(result.getData().contains(String.format("\"receiveMarketingInformation\":%s", accountInfo.getReceiveMarketingInformation())));
         assertTrue(result.getData().contains(String.format("\"thirdPartyTransferPersonalInfoMandatory\":%s", accountInfo.getThirdPartyTransferPersonalInfoMandatory())));
         assertTrue(result.getData().contains(String.format("\"thirdPartyTransferPersonalInfoOptional\":%s", accountInfo.getThirdPartyTransferPersonalInfoOptional())));
         assertTrue(result.getData().contains(String.format("\"collectionAndUsePersonalInfoMandatory\":%s", accountInfo.getCollectionAndUsePersonalInfoMandatory())));

@@ -133,29 +133,16 @@ public class AccountBuilderTests {
     }
 
     @Test
-    public void getAccountInfo_ifGivenSiteUserWithWebsiteTermsOfUse_returnAccountInfoWithWebsiteTermsOfUse() throws Exception {
+    public void getAccountInfo_ifGivenSiteUserWithReceiveMarketingInformation_returnAccountInfoWithReceiveMarketingInformation() throws Exception {
         // given
-        Boolean websiteTermsOfUse = AccountUtils.websiteTermsOfUse;
+        Boolean receiveMarketingInformation = AccountUtils.receiveMarketingInformation;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo response = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getWebsiteTermsOfUse(), websiteTermsOfUse);
-    }
-
-    @Test
-    public void getAccountInfo_ifGivenSiteUserWithECommerceTermsOfUse_returnAccountInfoWithECommerceTermsOfUse() throws Exception {
-        // given
-        Boolean eCommerceTermsOfUse = AccountUtils.eCommerceTermsOfUse;
-        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
-
-        // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
-
-        // then
-        assertEquals(res.getECommerceTermsOfUse(), eCommerceTermsOfUse);
+        assertEquals(receiveMarketingInformation, response.getReceiveMarketingInformation());
     }
 
     @Test

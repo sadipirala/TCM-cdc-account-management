@@ -70,8 +70,7 @@
                 "hiraganaName": "ひらがな"
             },
             "korea": {
-                "websiteTermsOfUse": "true",
-                "eCommerceTermsOfUse": "true",
+                "receiveMarketingInformation": "true",
                 "thirdPartyTransferPersonalInfoMandatory": "true",
                 "thirdPartyTransferPersonalInfoOptional": "true",
                 "collectionAndUsePersonalInfoMandatory": "true",

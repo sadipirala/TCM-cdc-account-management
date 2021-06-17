@@ -13,8 +13,7 @@ import lombok.Setter;
 @Builder
 @JsonDeserialize(builder = Korea.KoreaBuilder.class)
 public class Korea {
-    private Boolean websiteTermsOfUse;
-    private Boolean eCommerceTermsOfUse;
+    private Boolean receiveMarketingInformation;
     private Boolean thirdPartyTransferPersonalInfoMandatory;
     private Boolean thirdPartyTransferPersonalInfoOptional;
     private Boolean collectionAndUsePersonalInfoMandatory;

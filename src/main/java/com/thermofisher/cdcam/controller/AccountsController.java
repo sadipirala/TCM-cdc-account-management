@@ -32,6 +32,7 @@ import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
@@ -558,7 +559,7 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad Request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateUserProfile(@RequestBody ProfileInfoDTO profileInfoDTO) {
+    public ResponseEntity<String> updateUserProfile(@RequestBody ProfileInfoDTO profileInfoDTO) throws CustomGigyaErrorException {
         try {
             if (profileInfoDTO == null || Utils.isNullOrEmpty(profileInfoDTO.getUid())) {
                 logger.error("ProfileInfoDTO is null or UID is null/empty");
@@ -570,6 +571,13 @@ public class AccountsController {
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
+
+                AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+                logger.info("Building AccountUpdatedNotification object.");
+                AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
+                logger.info("Sending accountUpdated notification.");
+                notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+                logger.info("accountUpdated notification sent.");
                 return new ResponseEntity<String>("The information was successfully updated.", updateUserProfileStatus);
             } else {
                 logger.error(String.format("An error occurred during the user's profile update. UID: %s", uid));
@@ -579,7 +587,7 @@ public class AccountsController {
             logger.error(String.format("Internal server error : %s", ex.getMessage()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }    
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)

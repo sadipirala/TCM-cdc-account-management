@@ -46,8 +46,7 @@ public class AccountInfo {
     private Boolean acceptsAspireTermsAndConditions;
 
     // korea
-    private Boolean websiteTermsOfUse;
-    private Boolean eCommerceTermsOfUse;
+    private Boolean receiveMarketingInformation;
     private Boolean thirdPartyTransferPersonalInfoMandatory;
     private Boolean thirdPartyTransferPersonalInfoOptional;
     private Boolean collectionAndUsePersonalInfoMandatory;

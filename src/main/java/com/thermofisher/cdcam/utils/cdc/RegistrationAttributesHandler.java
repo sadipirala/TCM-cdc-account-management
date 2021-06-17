@@ -33,13 +33,8 @@ public class RegistrationAttributesHandler {
     }
 
     // Korea
-
-    public Boolean getWebsiteTermsOfUse() {
-        return korea != null ? korea.getWebsiteTermsOfUse() : null;
-    }
-
-    public Boolean getECommerceTermsOfUse() {
-        return korea != null ? korea.getECommerceTermsOfUse() : null;
+    public Boolean getReceiveMarketingInformation() {
+        return korea != null ? korea.getReceiveMarketingInformation() : null;
     }
 
     public Boolean getThirdPartyTransferPersonalInfoMandatory() {

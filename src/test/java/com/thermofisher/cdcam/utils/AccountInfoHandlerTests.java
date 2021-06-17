@@ -60,8 +60,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("password");
         propertiesToRemove.add("registrationType");
         propertiesToRemove.add("timezone");
-        propertiesToRemove.add("websiteTermsOfUse");
-        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("receiveMarketingInformation");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
         propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
@@ -89,8 +88,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("phoneNumber");
         propertiesToRemove.add("interest");
-        propertiesToRemove.add("websiteTermsOfUse");
-        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("receiveMarketingInformation");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
         propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
@@ -119,8 +117,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("cipdc");
         propertiesToRemove.add("regAttempts");
         propertiesToRemove.add("password");
-        propertiesToRemove.add("websiteTermsOfUse");
-        propertiesToRemove.add("eCommerceTermsOfUse");
+        propertiesToRemove.add("receiveMarketingInformation");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoMandatory");
         propertiesToRemove.add("thirdPartyTransferPersonalInfoOptional");
         propertiesToRemove.add("collectionAndUsePersonalInfoMandatory");
