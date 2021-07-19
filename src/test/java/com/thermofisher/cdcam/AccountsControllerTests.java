@@ -78,6 +78,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -169,6 +170,7 @@ public class AccountsControllerTests {
     @Before
     public void setup() {
         MockitoAnnotations.openMocks(this);
+        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", true);
         reCaptchaResponse = new JSONObject();
         uids.add("001");
         uids.add("002");
@@ -716,9 +718,10 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenRegistrationSuccessful_sendVerificationEmailShouldBeCalled() throws IOException,
+    public void newAccount_givenRegistrationSuccessfulAndEmailVerificationIsEnabled_sendVerificationEmailShouldBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
+        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", true);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -737,6 +740,27 @@ public class AccountsControllerTests {
     public void newAccount_givenRegistrationNotSuccessful_sendVerificationEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setStatusCode(400);
+        cdcResponseData.setStatusReason("");
+        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO);
+
+        // then
+        verify(accountRequestService, times(0)).sendVerificationEmail(any());
+    }
+
+    @Test
+    public void newAccount_givenRegistrationNotSuccessfulAndEmailVerificationIsDisabled_sendVerificationEmailShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", false);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();

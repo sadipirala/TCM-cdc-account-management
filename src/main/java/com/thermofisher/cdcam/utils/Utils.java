@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.JsonViewModule;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -99,5 +100,15 @@ public class Utils {
 
     public static boolean hasNullOrEmptyValues(Collection<String> collection) {
         return collection.stream().anyMatch(Utils::isNullOrEmpty);
+    }
+
+    public static byte[] encodeBase64(String encodeMe){
+        byte[] encodedBytes = Base64.encodeBase64(encodeMe.getBytes());
+        return encodedBytes;
+    } 
+
+    public static String decodeBase64(byte[] encodedBytes){
+        byte[] decodedBytes = Base64.decodeBase64(encodedBytes);
+        return new String(decodedBytes);
     }
 }

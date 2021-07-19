@@ -58,6 +58,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -84,6 +85,9 @@ import io.swagger.annotations.ResponseHeader;
 public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
+
+    @Value("${email-verification.enabled}")
+    Boolean isEmailVerificationEnabled;
 
     @Autowired
     AccountRequestService accountRequestService;
@@ -379,8 +383,10 @@ public class AccountsController {
                     accountRequestService.sendConfirmationEmail(account);
                 }
 
-                logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
-                accountRequestService.sendVerificationEmail(uid);
+                if (isEmailVerificationEnabled) {
+                    logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
+                    accountRequestService.sendVerificationEmail(uid);
+                }
             } else {
                 logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Details: %s",
                         account.getUsername(), statusCode, cdcResponseData.getErrorDetails()));

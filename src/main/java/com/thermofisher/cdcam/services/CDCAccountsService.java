@@ -255,4 +255,14 @@ public class CDCAccountsService {
     private boolean isMainApiDomain(String apiDomain) {
         return apiDomain == null || apiDomain == mainApiDomain;
     }
+
+    public GSResponse getRP(String clientId) {
+        final String getRP = APIMethods.GET_RP.getValue();
+        
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, getRP, useHTTPS);
+        request.setParam("clientID", clientId);
+        request.setAPIDomain(mainApiDomain);
+        
+        return request.send();
+    }
 }

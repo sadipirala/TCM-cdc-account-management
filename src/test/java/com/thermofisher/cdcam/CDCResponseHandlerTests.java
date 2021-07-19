@@ -6,10 +6,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -34,6 +36,7 @@ import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.CDCIdentityProviderService;
@@ -41,6 +44,7 @@ import com.thermofisher.cdcam.utils.IdentityProviderUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -560,5 +564,40 @@ public class CDCResponseHandlerTests {
 
         // when
         cdcResponseHandler.changePassword(uid, newPassword, oldPassword);
+    }
+
+    @Test
+    public void getRP_givenMethodCalled_whenClientIdAndRe_returnAValidOpenIdConnectObject() throws Exception {
+        //given
+        String clientId = RandomStringUtils.random(10);
+        List<String> uris = new ArrayList<>();
+        uris.add("http://example.com");
+        uris.add("http://example2.com");
+        GSResponse mockGSResponse = mock(GSResponse.class);
+        String responseData = String.format("{ \"statusCode\": 200, \"errorCode\": 0, \"statusReason\": \"OK\", \"callId\": \"0ac740a1d1444e\", \"time\": \"2016-03-22T10:20:18.732Z\", \"description\": \"This is a THIRD RP\", \"redirectUris\": [ \"http://example.com\", \"http://example2.com\" ], \"allowedScopes\": [ \"openid\", \"email\", \"profile\" ], \"clientID\": \"%s\", \"clientSecret\": \"7_CbWuu6UqokqyjAfhD9sz4xpHnBhW3r2KkI4\", \"supportedResponseTypes\": [ \"code\", \"id_token\", \"id_token token\", \"code id_token\", \"code token\", \"code id_token token\" ], \"subjectIdentifierType\": \"pairwise\" }", clientId);
+        when(mockGSResponse.getData()).thenReturn(new GSObject(responseData));
+        when(cdcAccountsService.getRP(clientId)).thenReturn(mockGSResponse);
+
+        //when
+        OpenIdRelyingParty result = cdcResponseHandler.getRP(clientId);
+
+        //then
+        assertTrue(clientId.equals(result.getClientId()));
+        assertEquals(uris, result.getRedirectUris());
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void getRP_givenMethodCalled_whenClientIdNoExist_ThenCustomGigyaErrorExceptionShouldBeThrown() throws Exception {
+        //given
+        int errorCode = 404;
+        String clientId = RandomStringUtils.random(10);
+        GSResponse mockGSResponse = mock(GSResponse.class);
+        String responseData = String.format("{ \"statusCode\": 404, \"errorCode\": 404000, \"statusReason\": \"NOT_FOUND\", \"callId\": \"0ac740a1d1444e\", \"time\": \"2016-03-22T10:20:18.732Z\", \"description\": \"This is a THIRD RP\", \"redirectUris\": [ \"http://example.com\", \"http://example2.com\" ], \"allowedScopes\": [ \"openid\", \"email\", \"profile\" ], \"clientID\": \"%s\", \"clientSecret\": \"7_CbWuu6UqokqyjAfhD9sz4xpHnBhW3r2KkI4\", \"supportedResponseTypes\": [ \"code\", \"id_token\", \"id_token token\", \"code id_token\", \"code token\", \"code id_token token\" ], \"subjectIdentifierType\": \"pairwise\" }", clientId);
+        when(mockGSResponse.getData()).thenReturn(new GSObject(responseData));
+        when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
+        when(cdcAccountsService.getRP(clientId)).thenReturn(mockGSResponse);
+
+        //when
+        cdcResponseHandler.getRP(clientId);
     }
 }

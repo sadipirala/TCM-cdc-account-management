@@ -10,7 +10,8 @@ public enum APIMethods {
     RESET_PASSWORD("accounts.resetPassword"),
     SEARCH("accounts.search"),
     SEND_VERIFICATION_EMAIL("accounts.resendVerificationCode"),
-    SET_ACCOUNT_INFO("accounts.setAccountInfo");
+    SET_ACCOUNT_INFO("accounts.setAccountInfo"),
+    GET_RP("fidm.oidc.op.getRP");
 
     private String value;
 

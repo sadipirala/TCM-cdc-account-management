@@ -9,7 +9,7 @@ public class EmailLocaleUtils {
     private final static String TAIWAN_LOCALE = "zh-tw";
     private final static String TFCOM_LOCALE_FOR_TAIWAN = "zt_TW";
     private final static String TAIWAN_TEMPLATE_MAPPING = "zh_TW";
-    private final static String SUPPORTED_LOCALES = "en_US,de_DE,es_MX,es_AR,es_ES,es_CL,fr_FR,ko_KR,en_KR,ja_JP,en_JP,zh_CN,en_CN,zh_TW";
+    private final static String SUPPORTED_LOCALES = "en_US,de_DE,es_MX,es_AR,es_ES,es_CL,fr_FR,ko_KR,en_KR,ja_JP,en_JP,zh_CN,en_CN,zh_TW,en_IN";
 
     /**
      * Processes a locale value and returns the best locale match to be used by an email.

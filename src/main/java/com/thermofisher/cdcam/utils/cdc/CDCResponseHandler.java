@@ -2,6 +2,8 @@ package com.thermofisher.cdcam.utils.cdc;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -27,6 +29,7 @@ import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.CDCIdentityProviderService;
@@ -316,5 +319,30 @@ public class CDCResponseHandler {
         };
 
         return cdcResponseData;
+    }
+
+    public OpenIdRelyingParty getRP(String clientId) throws CustomGigyaErrorException, GSKeyNotFoundException {
+        GSResponse response = cdcAccountsService.getRP(clientId);
+        if (response.getErrorCode() != 0) {
+            String error = String.format("Error on getRP. Error code: %d. Message: %s.", response.getErrorCode(), response.getErrorMessage());
+            logger.error(error);
+            throw new CustomGigyaErrorException(error);
+        }
+
+        logger.info(String.format("Getting data for clientId: %s", clientId));
+        GSObject gsData = response.getData();
+        GSArray gsRedirectUrisArray = gsData.getArray("redirectUris");
+        List<String> redirectURIs = new ArrayList<>();
+        for (Object uri : gsRedirectUrisArray) {
+            redirectURIs.add((String) uri);
+        }
+
+        OpenIdRelyingParty openIdRelyingParty = OpenIdRelyingParty.builder()
+            .clientId(clientId)
+            .description(gsData.getString("description"))
+            .redirectUris(redirectURIs)
+            .build();
+
+        return openIdRelyingParty;
     }
 }
