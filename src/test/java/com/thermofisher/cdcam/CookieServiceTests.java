@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,6 +30,9 @@ public class CookieServiceTests {
     @Mock
     EncodeService encodeService;
 
+    @Value("${identity.cookie.cip-authdata.path}")
+    String cipAuthdataPath;
+
     @Test
     public void createCIPAuthDataCookie_givenACIPAuthDataDTO_whenMethodIsCalled_thenReturnCookieTxtWithBase64Value() {
         // given
@@ -42,7 +46,7 @@ public class CookieServiceTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(new byte[] {});
         
         // when
-        String [] txtCookieArray = cookieService.createCIPAuthDataCookie(cipAuthData).split(";");
+        String [] txtCookieArray = cookieService.createCIPAuthDataCookie(cipAuthData, cipAuthdataPath).split(";");
         String txtCookie = txtCookieArray[0].substring(13);
 
         // then

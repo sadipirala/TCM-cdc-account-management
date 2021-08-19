@@ -22,7 +22,7 @@ deployment:
 environments:
   dev:
     branch: integration/*
-    cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
+    cluster: tfcom-cluster-cn-apac-dev.clouddev.thermofisher.net.cn
     env:
       - name: spring.profiles.active
         value: qa4-cn
@@ -35,7 +35,7 @@ environments:
       targetCPUUtilizationPercentage: 80
       targetMemoryUtilizationPercentage: 70
     ingressDomains:
-      - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
+      - cdcam.tfcom-cluster-cn-apac-dev.clouddev.thermofisher.net.cn
 
   qa:
     branch: development/*

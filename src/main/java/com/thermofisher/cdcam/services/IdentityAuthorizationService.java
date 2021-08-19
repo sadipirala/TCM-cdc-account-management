@@ -30,6 +30,12 @@ public class IdentityAuthorizationService {
     @Value("${identity.oidc.u}")
     String u;
 
+    public String generateDefaultRedirectSignInUrl() {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(authorize).append(clientId).append(identityRedirectUri).append(scope).append(state).toString();
+        return urlBuilder.toString();
+    }
+
     public String generateRedirectAuthUrl(String redirectUrl) {
         String uString = "{\"u\":\"" + u.concat(redirectUrl) + "\"}";
         String uEncoded = null;

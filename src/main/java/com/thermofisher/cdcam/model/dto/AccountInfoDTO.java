@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.util.Objects;
 
 @Builder
 @Getter
@@ -25,8 +26,8 @@ public class AccountInfoDTO {
     @NotBlank
     @Size(max = 20)
     private String password;
-    private String jobRole;
-    private String interest;
+    private String[] jobRoles;
+    private String[] interests;
     private String reCaptchaToken;
     private String localeName;
     @Size(max = 50)
@@ -61,4 +62,12 @@ public class AccountInfoDTO {
     private Boolean collectionAndUsePersonalInfoMarketing;
     private Boolean overseasTransferPersonalInfoMandatory;
     private Boolean overseasTransferPersonalInfoOptional;
+
+    public String getJobRoles() {
+        return Objects.isNull(this.jobRoles) ? "" : String.join(",", this.jobRoles);
+    }
+
+    public String getInterests() {
+        return Objects.isNull(this.interests) ? "" : String.join(",", this.interests);
+    }
 }

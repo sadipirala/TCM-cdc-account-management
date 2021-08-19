@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
+import com.thermofisher.cdcam.model.dto.RegistrationDTO;
 import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,7 +82,11 @@ public class AccountBuilder {
 
     private static Registration getRegistration (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
-        return data.containsKey("registration") ? gson.fromJson(data.getString("registration"), Registration.class) : null;
+        if(data.containsKey("registration")) {
+            RegistrationDTO registrationDTO = gson.fromJson(data.getString("registration"), RegistrationDTO.class);
+            return Registration.build(registrationDTO);
+        }
+        return null;
     }
 
     public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
@@ -99,8 +104,8 @@ public class AccountBuilder {
             .registrationType(accountInfoDTO.getRegistrationType())
             .timezone(accountInfoDTO.getTimezone())
             .hiraganaName(accountInfoDTO.getHiraganaName())
-            .jobRole(accountInfoDTO.getJobRole())
-            .interest(accountInfoDTO.getInterest())
+            .jobRole(accountInfoDTO.getJobRoles())
+            .interest(accountInfoDTO.getInterests())
             .phoneNumber(accountInfoDTO.getPhoneNumber())
             .receiveMarketingInformation(accountInfoDTO.getReceiveMarketingInformation())
             .thirdPartyTransferPersonalInfoMandatory(accountInfoDTO.getThirdPartyTransferPersonalInfoMandatory())

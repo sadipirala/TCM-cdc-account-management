@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -10,9 +11,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
@@ -20,13 +25,12 @@ import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.ResetPasswordService;
-import com.thermofisher.cdcam.services.SecretsService;
+import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
+import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -55,6 +59,14 @@ public class ResetPasswordControllerTests {
     JSONObject reCaptchaResponse;
     ResetPasswordRequest resetPasswordRequestBody;
     ResetPasswordResponse resetPasswordResponseMock;
+    private String CLIENT_ID = "1000000";
+    private String REDIRECT_URL = "http://example.com";
+    private String STATE = "state";
+    private String RESPONSE_TYPE = "responseType";
+    private String SCOPE = "scope";
+    private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
+    private String COOKIE_CIP_AUTHDATA_INVALID = "eyJyZWRpcmVjdFVyaSI6InJlZGlyZWN0VXJpIiwic3RhdGUiOiJzdGF0ZSIsInNjb3BlIjoic2NvcGUiLCJyZXNwb25zZVR5cGUiOiJyZXNwb25zZVR5cGUifQ==";
+    private boolean IS_SIGN_IN_URL = true;
 
     @InjectMocks
     ResetPasswordController resetPasswordController;
@@ -73,9 +85,12 @@ public class ResetPasswordControllerTests {
 
     @Mock
     SecretsService secretsService;
-    
+
     @Mock
-    SNSHandler snsHandler;
+    EncodeService encodeService;
+
+    @Mock
+    CookieService cookieService;
     
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
@@ -295,5 +310,90 @@ public class ResetPasswordControllerTests {
 
         //then
         assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.FOUND);
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenParametersAreValid_ThenShouldReturnFoundStatusAndCIP_AUTDATAShouldBePresentInHeaders() throws Exception {
+        // given
+        List<String> redirectUris = new ArrayList<>(Arrays.asList("http://example.com", "http://example2.com"));
+        String description = "Description";
+        String params = "?state=state&redirect_uri=redirect";
+        OpenIdRelyingParty openIdRelyingParty = OpenIdRelyingParty.builder()
+                .clientId(CLIENT_ID)
+                .description(description)
+                .redirectUris(redirectUris)
+                .build();
+        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+        when(cookieService.createCIPAuthDataCookie(any(), any())).thenReturn(anyString());
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.FOUND );
+        assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Set-Cookie")));
+        assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Location")));
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndURiDoesNotExistInClientURIs_ThenShouldReturnBadRequest() throws Exception {
+        // given
+        String redirectUtl = "http://example3.com";
+        List<String> redirectUris = new ArrayList<>(Arrays.asList("http://example.com", "http://example2.com"));
+        String description = "Description";
+        OpenIdRelyingParty openIdRelyingParty = OpenIdRelyingParty.builder()
+                .clientId(CLIENT_ID)
+                .description(description)
+                .redirectUris(redirectUris)
+                .build();
+        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, redirectUtl, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
+        // given
+        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
+
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
+        // given
+        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
+
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenClientIDIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(null, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void redirectAuth_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+        // when
+        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, "", STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 }

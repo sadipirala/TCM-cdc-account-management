@@ -62,8 +62,14 @@
         "terms": true,
         "registration": {
             "china": {
-                "interest": "Test interest",
-                "jobRole": "Development",
+                "interest": [
+                    "Health",
+                    "Lab"
+                ],
+                "jobRole": [
+                    "Development",
+                    "Human Resources"
+                ],
                 "phoneNumber": "6648675309"
             },
             "japan": {

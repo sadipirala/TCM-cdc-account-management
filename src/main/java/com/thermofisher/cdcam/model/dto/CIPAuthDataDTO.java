@@ -29,7 +29,7 @@ public class CIPAuthDataDTO {
     private String responseType;
 
     @JsonIgnore
-    public boolean areClientIdAndRedirectUriValid() {
+    public boolean areClientIdAndRedirectUriInvalid() {
         return (Utils.isNullOrEmpty(this.clientId) || Utils.isNullOrEmpty(this.redirectUri));
     }
 

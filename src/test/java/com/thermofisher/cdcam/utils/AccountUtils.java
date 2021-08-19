@@ -44,8 +44,8 @@ public class AccountUtils {
     public static final String location = "Digital Engineering";
     public static final String timezone = "America/Tijuana";
     public static final String hiraganaName = "ひらがな";
-    public static final String jobRole = "Development";
-    public static final String interest = "Test interest";
+    public static final String jobRole = "Development,Human Resources";
+    public static final String interest = "Health,Lab";
     public static final String phoneNumber = "6648675309";
     
     // Korea

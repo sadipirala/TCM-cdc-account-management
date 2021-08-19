@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.controller;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 import javax.validation.ConstraintViolation;
@@ -8,6 +9,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
@@ -15,16 +17,17 @@ import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.ResetPasswordService;
-import com.thermofisher.cdcam.services.SecretsService;
+import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.services.hashing.HashingService;
+import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
+import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -33,20 +36,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/reset-password")
 public class ResetPasswordController {
     private Logger logger = LogManager.getLogger(this.getClass());
+    private final String REQUEST_EXCEPTION_HEADER = "Request-Exception";
+    private final String REDIRECT_URI = "/identity-reset-password/request";
+    private final String RESET_PASSWORD_REDIRECT_URL = "/api-gateway/identity";
 
     @Value("${aws.sns.password.update}")
     private String passwordUpdateTopic;
@@ -65,6 +63,18 @@ public class ResetPasswordController {
 
     @Autowired
     SecretsService secretsService;
+
+    @Autowired
+    IdentityAuthorizationService identityAuthorizationService;
+
+    @Autowired
+    CookieService cookieService;
+
+    @Autowired
+    EncodeService encodeService;
+
+    @Autowired
+    URLService urlService;
 
     @PostMapping("/email")
     @ApiOperation(value = "sends the request to reset a password.")
@@ -161,5 +171,85 @@ public class ResetPasswordController {
     private void sendResetPasswordConfirmationEmail(String uid) throws IOException, CustomGigyaErrorException {
         AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
         resetPasswordService.sendResetPasswordConfirmation(account);
+    }
+
+    @GetMapping(value = {"/oidc/rp", "/rp"})
+    @ApiOperation(value = "Redirect to the Login URL. Validates cip_authdata cookie.")
+    @ApiResponses({
+            @ApiResponse(code = 302, message = "RP config found, will set cookie data and redirect to Registration page."),
+            @ApiResponse(code = 400, message = "Bad request, missing or invalid params."),
+            @ApiResponse(code = 404, message = "clientId not found."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "client_id", value = "RP Client ID", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "redirect_uri", value = "URL to redirect", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "state", value = "State", dataType = "String", paramType = "query", required = false),
+            @ApiImplicitParam(name = "response_type", value = "Response Type", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "scope", value = "Scope", required = true, dataType = "String", paramType = "query")
+    })
+    public ResponseEntity<?> redirectAuth(
+            @RequestParam("client_id") String clientId,
+            @RequestParam("redirect_uri") String redirectUri,
+            @RequestParam(name = "state", required = false) String state,
+            @RequestParam("response_type") String responseType,
+            @RequestParam("scope") String scope
+    ) throws UnsupportedEncodingException {
+        if (!Utils.isNullOrEmpty(state)) {
+            state = encodeService.decodeUTF8(state);
+        }
+
+        CIPAuthDataDTO cipAuthData = CIPAuthDataDTO.builder()
+                .clientId(clientId)
+                .redirectUri(redirectUri)
+                .state(state)
+                .responseType(responseType)
+                .scope(scope)
+                .build();
+
+        logger.info("Get RP Process started");
+        if (cipAuthData.areClientIdAndRedirectUriInvalid()) {
+            logger.error("Either clientId or redirectURI missing");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        try {
+            boolean uriExists = false;
+            logger.info("Getting RP data");
+            OpenIdRelyingParty openIdRelyingParty = cdcResponseHandler.getRP(cipAuthData.getClientId());
+            for (String uri : openIdRelyingParty.getRedirectUris()) {
+                logger.info(String.format("Find %s in OpenId redirectURIs", cipAuthData.getRedirectUri()));
+                if (uri.equalsIgnoreCase(cipAuthData.getRedirectUri())) {
+                    uriExists = true;
+                    logger.info(String.format("%s was found", cipAuthData.getRedirectUri()));
+                    break;
+                }
+            }
+
+            if (!uriExists) {
+                String error = String.format("%s was not found in RP URIs", cipAuthData.getRedirectUri());
+                logger.error(error);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, error).build();
+            }
+
+            logger.info("Building CIP_AUTHDATA cookie");
+            String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, RESET_PASSWORD_REDIRECT_URL);
+            logger.info("CIP_AUTHDATA cookie built.");
+
+            return ResponseEntity
+                    .status(HttpStatus.FOUND)
+                    .header(HttpHeaders.SET_COOKIE, cipAuthDataCookie)
+                    .header(HttpHeaders.LOCATION, REDIRECT_URI)
+                    .build();
+        }
+        catch (CustomGigyaErrorException customGigyaException) {
+            if (customGigyaException.getMessage().contains("404000")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, customGigyaException.getMessage()).body(null);
+        } catch (GSKeyNotFoundException gsKeyNotFoundException) {
+            logger.error(String.format("GSKeyNotFoundException: %s", gsKeyNotFoundException.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }

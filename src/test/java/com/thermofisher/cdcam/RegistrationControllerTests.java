@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +49,7 @@ public class RegistrationControllerTests {
     private String SCOPE = "scope";
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private String COOKIE_CIP_AUTHDATA_INVALID = "eyJyZWRpcmVjdFVyaSI6InJlZGlyZWN0VXJpIiwic3RhdGUiOiJzdGF0ZSIsInNjb3BlIjoic2NvcGUiLCJyZXNwb25zZVR5cGUiOiJyZXNwb25zZVR5cGUifQ==";
+    private boolean IS_SIGN_IN_URL = true;
 
     @InjectMocks
     RegistrationController registrationController;
@@ -58,13 +61,13 @@ public class RegistrationControllerTests {
     CookieService cookieService;
 
     @Mock
-    EncodeService encodeService;
-
-    @Mock
     URLService urlService;
 
     @Mock
     CIPAuthDataDTO cipAuthData;
+
+    @Mock
+    EncodeService encodeService;
 
     @Mock
     IdentityAuthorizationService identityAuthorizationService;
@@ -79,8 +82,10 @@ public class RegistrationControllerTests {
             .description(description)
             .redirectUris(redirectUris)
             .build();
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
-        when(cookieService.createCIPAuthDataCookie(any())).thenReturn(anyString());
+        when(cookieService.createCIPAuthDataCookie(any(), any())).thenReturn(anyString());
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
@@ -101,6 +106,8 @@ public class RegistrationControllerTests {
             .description(description)
             .redirectUris(redirectUris)
             .build();
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
 
         // when
@@ -111,8 +118,10 @@ public class RegistrationControllerTests {
     }
 
     @Test
-    public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnNotFound() throws Exception {
-        // given
+    public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
+        //given
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
 
         // when
@@ -124,7 +133,9 @@ public class RegistrationControllerTests {
 
     @Test
     public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
-        // given
+        //given
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
 
         // when
@@ -136,6 +147,10 @@ public class RegistrationControllerTests {
 
     @Test
     public void getRPRegistrationConfig_GivenMethodCalled_WhenClientIDIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+        //given
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(null, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
@@ -144,7 +159,11 @@ public class RegistrationControllerTests {
     }
 
     @Test
-    public void getRPRegistrationConfig_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnInternalServerError() throws Exception {
+    public void getRPRegistrationConfig_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+        //given
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, "", STATE, RESPONSE_TYPE, SCOPE);
 
@@ -162,12 +181,14 @@ public class RegistrationControllerTests {
                 .scope("scope")
                 .state("state")
                 .build();
+        String params = "?state=state&redirect_uri=redirect";
         String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenReturn(cipAuthData);
         when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
-        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL);
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, IS_SIGN_IN_URL);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.FOUND);
@@ -186,7 +207,7 @@ public class RegistrationControllerTests {
         when(identityAuthorizationService.generateRedirectAuthUrl("https://www.thermofisher.com/")).thenReturn("%7B%22u%22%3A%22https%3A%2F%2Fwww.dev3.thermofisher.com%2Forder%2Fcatalog%2Fen%2FUS%2Fadirect%2Flt%3Fcmd%3DpartnerMktLogin%26newAccount%3Dtrue%26LoginData-referer%3Dtrue%26LoginData-ReturnURL%3D http%3A%2F%2Fthermofisher.com%22%7D");
 
         // when
-        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_INVALID, REDIRECT_URL);
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_INVALID, REDIRECT_URL, IS_SIGN_IN_URL);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -201,22 +222,24 @@ public class RegistrationControllerTests {
         when(identityAuthorizationService.generateRedirectAuthUrl("https://www.thermofisher.com/")).thenReturn("%7B%22u%22%3A%22https%3A%2F%2Fwww.dev3.thermofisher.com%2Forder%2Fcatalog%2Fen%2FUS%2Fadirect%2Flt%3Fcmd%3DpartnerMktLogin%26newAccount%3Dtrue%26LoginData-referer%3Dtrue%26LoginData-ReturnURL%3D http%3A%2F%2Fthermofisher.com%22%7D");
 
         // when
-        ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, REDIRECT_URL);
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, REDIRECT_URL, IS_SIGN_IN_URL);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.FOUND);
     }
 
     @Test
-    public void redirectLoginAuth_GivenMethodCalled_WhenCookieAndRedirectURLDoesntExist_ThenShouldReturnBadRequest() throws Exception {
+    public void redirectLoginAuth_GivenMethodCalled_WhenCookieAndRedirectURLDoesntExist_ThenShouldReturnDefaultSignInRedirectUrl() throws Exception {
         // given
         String cookie = null;
         String redirectUrl = null;
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         
         // when
-        ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl);
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, IS_SIGN_IN_URL);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
     }
 }

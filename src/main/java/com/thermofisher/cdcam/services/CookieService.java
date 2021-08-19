@@ -11,15 +11,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class CookieService {
 
-    @Value("${identity.cookie.cip-authdata.path}")
-    String cipAuthdataPath;
-
     @Autowired
     EncodeService encodeService;
 
-    public String createCIPAuthDataCookie(CIPAuthDataDTO cipAuthData) {
+    public String createCIPAuthDataCookie(CIPAuthDataDTO cipAuthData, String path) {
         String cipAuthDataBase64 = new String(encodeService.encodeBase64(new Gson().toJson(cipAuthData)));
-        return String.format("cip_authdata=%s; Path=%s", cipAuthDataBase64, cipAuthdataPath);
+        return String.format("cip_authdata=%s; Path=%s", cipAuthDataBase64, path);
     }
 
     public CIPAuthDataDTO decodeCIPAuthDataCookie(String cookieString) throws JsonParseException{
