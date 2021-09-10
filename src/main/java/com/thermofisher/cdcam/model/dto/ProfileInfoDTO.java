@@ -1,5 +1,7 @@
 package com.thermofisher.cdcam.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.thermofisher.cdcam.utils.Utils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +28,10 @@ public class ProfileInfoDTO {
     private String username;
     @Size(max = 50)
     private String email;
+    @JsonIgnore
+    private String actualUsername;
+    @JsonIgnore
+    private String actualEmail;
     @JsonProperty("marketingConsent")
     private MarketingConsentDTO marketingConsentDTO;
 
@@ -46,5 +52,10 @@ public class ProfileInfoDTO {
                 .build();
 
         return profileInfoDTO;
+    }
+
+    @JsonIgnore
+    public boolean isALegacyProfile() {
+        return !Utils.isAValidEmail(this.actualUsername);
     }
 }

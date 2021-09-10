@@ -39,7 +39,6 @@ import io.swagger.annotations.ApiResponses;
 public class RegistrationController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String REQUEST_EXCEPTION_HEADER = "Request-Exception";
-    private static final String DATE_COOKIE_EXPIRED = "cip_authdata=0; Max-Age=0; Path=/; Secure; HttpOnly";
 
     @Value("${identity.oidc.rp.id}")
     String tfComClientId;
@@ -47,7 +46,19 @@ public class RegistrationController {
     @Value("${identity.cookie.cip-authdata.path}")
     String cipAuthdataLoginPath;
 
-    @Autowired  
+    @Value("${identity.authorization.cookie.cip-authdata.path}")
+    String cipAuthdataAuthorizationPath;
+
+    @Value("${identity.oidc.default.scope}")
+    String identityScope;
+
+    @Value("${identity.oidc.identity.authorization.redirect_uri}")
+    String identityRedirectUri;
+
+    @Value("${identity.oidc.response_type}")
+    String identityResponseType;
+
+    @Autowired
     CDCResponseHandler cdcResponseHandler;
 
     @Autowired
@@ -79,9 +90,9 @@ public class RegistrationController {
     })
     public ResponseEntity<?> getRPRegistrationConfig(
         @RequestParam("client_id") String clientId,
-        @RequestParam("redirect_uri") String redirectUri, 
+        @RequestParam("redirect_uri") String redirectUri,
         @RequestParam(name = "state", required = false) String state,
-        @RequestParam("response_type") String responseType, 
+        @RequestParam("response_type") String responseType,
         @RequestParam("scope") String scope
         ) throws UnsupportedEncodingException {
 
@@ -96,13 +107,13 @@ public class RegistrationController {
                 .responseType(responseType)
                 .scope(scope)
                 .build();
-            
+
             logger.info("Get RP Process started");
             if (cipAuthData.areClientIdAndRedirectUriInvalid()) {
                 logger.error("Either clientId or redirectURI missing");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
-            
+
             try {
                 boolean uriExists = false;
                 logger.info("Getting RP data");
@@ -131,7 +142,7 @@ public class RegistrationController {
                     .header(HttpHeaders.SET_COOKIE, cipAuthDataCookie)
                     .header(HttpHeaders.LOCATION, "/global-registration/registration")
                     .build();
-            } 
+            }
             catch (CustomGigyaErrorException customGigyaException) {
                 if (customGigyaException.getMessage().contains("404000")) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -160,27 +171,44 @@ public class RegistrationController {
     public ResponseEntity<?> redirectLoginAuth(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestParam(required = false) String redirectUrl, @RequestParam(required = false) boolean isSignInUrl) {
         logger.info("Validation for redirection started");
         try {
-            if (ObjectUtils.isEmpty(cipAuthData) && ObjectUtils.isNotEmpty(redirectUrl)) {
+            if (ObjectUtils.isEmpty(cipAuthData) && ObjectUtils.isNotEmpty(redirectUrl) && !isSignInUrl) {
                 logger.info("Cookie not present.");
-                logger.info(String.format("Using default tf.com configuration and redirecting to %s", redirectUrl));
+                logger.info(String.format("Using default tf.com configuration and returning URL %s", redirectUrl));
                 String loginAuthUrl = identityAuthorizationService.generateRedirectAuthUrl(redirectUrl);
+                String state = identityAuthorizationService.buildDefaultStateProperty(redirectUrl);
+                logger.info(String.format("Building cip_authdata cookie in path %s", cipAuthdataAuthorizationPath));
+
+                CIPAuthDataDTO cipAuthDataDTO = CIPAuthDataDTO.builder()
+                        .clientId(tfComClientId)
+                        .redirectUri(identityRedirectUri)
+                        .state(state)
+                        .responseType(identityResponseType)
+                        .scope(identityScope)
+                        .build();
+
+                logger.info("cip_authdata cookie built.");
+                String newCipAuthData = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
+
                 return ResponseEntity
-                    .status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, loginAuthUrl)
-                    .header(HttpHeaders.SET_COOKIE, DATE_COOKIE_EXPIRED)
-                    .build();
+                    .status(HttpStatus.OK)
+                    .header(HttpHeaders.SET_COOKIE, newCipAuthData)
+                    .body(loginAuthUrl);
             } else if (ObjectUtils.isNotEmpty(cipAuthData)) {
                 logger.info("Decoding cip_authdata.");
                 CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(cipAuthData);
 
                 logger.info("Validating cip_authdata.");
                 if (cipAuthDataDTO.isCipAuthDataValid()) {
-
+                    String expectedReturnCookie = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
                     if (!Utils.isNullOrEmpty(cipAuthDataDTO.getState())) {
                         String state = cipAuthDataDTO.getState();
                         // TODO: remove temporary fix to redirect to thank you page while coming from login page for tfcom
                         if (isTfcomClientId(cipAuthDataDTO.getClientId()) && !isSignInUrl) {
                             state = identityAuthorizationService.buildDefaultStateProperty(redirectUrl);
+                            logger.info("Building CIP_AUTHDATA cookie with new state for tfcom");
+                            cipAuthDataDTO.setState(state);
+                            expectedReturnCookie = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
+                            logger.info("CIP_AUTHDATA cookie built.");
                         }
                         logger.info(String.format("state: %s", state));
                         String encodedState = encodeService.encodeUTF8(state);
@@ -188,12 +216,11 @@ public class RegistrationController {
                     }
 
                     String authRedirectUrl = urlService.queryParamMapper(cipAuthDataDTO);
-                    logger.info("Redirecting to Login URL with parameters from cookie.");
+                    logger.info("Returning Login URL with parameters from cookie.");
                     return ResponseEntity
-                            .status(HttpStatus.FOUND)
-                            .header(HttpHeaders.LOCATION, authRedirectUrl)
-                            .header(HttpHeaders.SET_COOKIE, DATE_COOKIE_EXPIRED)
-                            .build();
+                            .status(HttpStatus.OK)
+                            .header(HttpHeaders.SET_COOKIE, expectedReturnCookie)
+                            .body(authRedirectUrl);
                 }
 
                 logger.info("Invalid cip_authdata. Bad request.");
@@ -201,12 +228,11 @@ public class RegistrationController {
                         .status(HttpStatus.BAD_REQUEST)
                         .build();
             } else {
+                logger.info("Generating default redirect Sign in URL");
                 String loginAuthUrl = identityAuthorizationService.generateDefaultRedirectSignInUrl();
                 return ResponseEntity
-                        .status(HttpStatus.FOUND)
-                        .header(HttpHeaders.LOCATION, loginAuthUrl)
-                        .header(HttpHeaders.SET_COOKIE, DATE_COOKIE_EXPIRED)
-                        .build();
+                        .status(HttpStatus.OK)
+                        .body(loginAuthUrl);
             }
         } catch (JsonParseException j) {
             logger.error(String.format("JsonParseException: %s", Utils.stackTraceToString(j)));

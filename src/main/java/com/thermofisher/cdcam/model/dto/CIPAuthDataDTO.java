@@ -2,6 +2,7 @@ package com.thermofisher.cdcam.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 import com.thermofisher.cdcam.utils.Utils;
 
 import lombok.Builder;
@@ -13,18 +14,23 @@ import lombok.Setter;
 @Setter
 public class CIPAuthDataDTO {
 
+    @SerializedName("client_id")
     @JsonProperty("client_id")
     private String clientId;
 
+    @SerializedName("redirect_uri")
     @JsonProperty("redirect_uri")
     private String redirectUri;
 
+    @SerializedName("state")
     @JsonProperty("state")
     private String state;
 
+    @SerializedName("scope")
     @JsonProperty("scope")
     private String scope;
 
+    @SerializedName("response_type")
     @JsonProperty("response_type")
     private String responseType;
 

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ public class UpdateAccountService {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final int SUCCESS_CODE = 200;
     private static final int BAD_REQUEST = 400;
+
+    @Value("${account.legacy_username.validation}")
+    private boolean isLegacyValidationEnabled;
 
     @Autowired
     CDCResponseHandler cdcAccountsService;
@@ -56,9 +60,17 @@ public class UpdateAccountService {
 
         Profile profile = Profile.build(profileInfoDTO);
         JSONObject jsonAccount = new JSONObject();
+        if (!Utils.isNullOrEmpty(profileInfoDTO.getEmail())) {
+            jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
+            if (isLegacyValidationEnabled && !profileInfoDTO.isALegacyProfile()) {
+                jsonAccount.put("username", profileInfoDTO.getEmail());
+            }
+        }
+
         JSONObject cleanProfile = new JSONObject(new Gson().toJson(profile));
         jsonAccount.put("uid", uid);
         jsonAccount.put("profile", cleanProfile);
+
         ObjectNode response = cdcAccountsService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info(String.format("Profile update success. UID: %s", uid));

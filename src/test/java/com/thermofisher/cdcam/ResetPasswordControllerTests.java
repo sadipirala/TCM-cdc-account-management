@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
@@ -48,10 +49,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class ResetPasswordControllerTests {
     String username = "armadillo@mail.com";
@@ -65,8 +66,6 @@ public class ResetPasswordControllerTests {
     private String RESPONSE_TYPE = "responseType";
     private String SCOPE = "scope";
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
-    private String COOKIE_CIP_AUTHDATA_INVALID = "eyJyZWRpcmVjdFVyaSI6InJlZGlyZWN0VXJpIiwic3RhdGUiOiJzdGF0ZSIsInNjb3BlIjoic2NvcGUiLCJyZXNwb25zZVR5cGUiOiJyZXNwb25zZVR5cGUifQ==";
-    private boolean IS_SIGN_IN_URL = true;
 
     @InjectMocks
     ResetPasswordController resetPasswordController;
@@ -91,6 +90,9 @@ public class ResetPasswordControllerTests {
 
     @Mock
     CookieService cookieService;
+
+    @Mock
+    IdentityAuthorizationService identityAuthorizationService;
     
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
@@ -119,7 +121,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
@@ -137,7 +139,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
@@ -153,7 +155,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         assertEquals(result.getStatusCode().value(), HttpStatus.ACCEPTED.value());
@@ -167,7 +169,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         assertEquals(result.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
@@ -178,10 +180,12 @@ public class ResetPasswordControllerTests {
             ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(identityAuthorizationService.generateDefaultRedirectSignInUrl()).thenReturn("");
+        when(identityAuthorizationService.buildDefaultStateProperty(anyString())).thenReturn("");
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -195,7 +199,7 @@ public class ResetPasswordControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
 
         // then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -204,15 +208,33 @@ public class ResetPasswordControllerTests {
     @Test
     public void sendResetPasswordEmail_WhenATokenIsValidAndTheAccountExistinCDC_returnOK()
             throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
-            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, GSKeyNotFoundException {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        doNothing().when(cdcResponseHandler).resetPasswordRequest(username);
+        when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn("");
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+
+        //then
+        assertEquals(result.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_WhenCIPAuthDataDoesntExists_ThenADefaultCookieShouldBeBuildAndReturnOK()
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, GSKeyNotFoundException {
+        //given
+        setSendResetPasswordEmailMocks();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
+        when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn("");
+        when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
+
+        //when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(),resetPasswordRequestBody);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -313,7 +335,7 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenParametersAreValid_ThenShouldReturnFoundStatusAndCIP_AUTDATAShouldBePresentInHeaders() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValid_ThenShouldReturnFoundStatusAndCIP_AUTDATAShouldBePresentInHeaders() throws Exception {
         // given
         List<String> redirectUris = new ArrayList<>(Arrays.asList("http://example.com", "http://example2.com"));
         String description = "Description";
@@ -327,7 +349,7 @@ public class ResetPasswordControllerTests {
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cookieService.createCIPAuthDataCookie(any(), any())).thenReturn(anyString());
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.FOUND );
@@ -336,7 +358,7 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndURiDoesNotExistInClientURIs_ThenShouldReturnBadRequest() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValidAndURiDoesNotExistInClientURIs_ThenShouldReturnBadRequest() throws Exception {
         // given
         String redirectUtl = "http://example3.com";
         List<String> redirectUris = new ArrayList<>(Arrays.asList("http://example.com", "http://example2.com"));
@@ -349,49 +371,49 @@ public class ResetPasswordControllerTests {
         when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
 
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, redirectUtl, STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, redirectUtl, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
         // given
         when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
 
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
         // given
         when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
 
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenClientIDIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenClientIDIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(null, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(null, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void redirectAuth_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
+    public void getRPResetPasswordConfig_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
         // when
-        ResponseEntity<?> response = resetPasswordController.redirectAuth(CLIENT_ID, "", STATE, RESPONSE_TYPE, SCOPE);
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, "", STATE, RESPONSE_TYPE, SCOPE);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);

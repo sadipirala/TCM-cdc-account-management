@@ -10,6 +10,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
 import com.gigya.socialize.GSKeyNotFoundException;
+import com.thermofisher.cdcam.enums.CookieType;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
@@ -19,6 +20,7 @@ import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
+import com.thermofisher.cdcam.model.dto.RequestResetPasswordDTO;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
@@ -39,15 +41,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/reset-password")
+@RequestMapping("/identity/reset-password")
 public class ResetPasswordController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String REQUEST_EXCEPTION_HEADER = "Request-Exception";
-    private final String REDIRECT_URI = "/identity-reset-password/request";
-    private final String RESET_PASSWORD_REDIRECT_URL = "/api-gateway/identity";
 
-    @Value("${aws.sns.password.update}")
-    private String passwordUpdateTopic;
+    @Value("${identity.reset-password.cookie.cip-authdata.path}")
+    private String cipAuthDataPath;
+
+    @Value("${identity.reset-password.redirect_uri}")
+    private String rpRedirectUri;
 
     @Autowired
     CDCResponseHandler cdcResponseHandler;
@@ -83,15 +86,26 @@ public class ResetPasswordController {
         @ApiResponse(code = 400, message = "Bad request."),
         @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<?> sendResetPasswordEmail(@RequestBody ResetPasswordRequest body) {
+    public ResponseEntity<?> sendResetPasswordEmail(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestBody ResetPasswordRequest body) {
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
-
+        if (Utils.isNullOrEmpty(cipAuthData)) {
+            logger.info("Cookie not present.");
+            cipAuthData = cookieService.buildDefaultCipAuthDataCookie(CookieType.RESET_PASSWORD);
+        }
         try {
             String reCaptchaSecretKey = body.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
             String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
             logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
-            cdcResponseHandler.resetPasswordRequest(body.getUsername());
+            String passwordToken = cdcResponseHandler.resetPasswordRequest(body.getUsername());
+            logger.info(String.format("Request reset password was successfully for: %s", body.getUsername()));
+            RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()
+                    .passwordToken(passwordToken)
+                    .authData(cipAuthData)
+                    .build();
+
+            sendRequestResetPasswordEmail(body.getUsername(), requestResetPasswordDTO);
+
             logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
             return ResponseEntity.ok().build();
         } catch (LoginIdDoesNotExistException e) {
@@ -161,20 +175,8 @@ public class ResetPasswordController {
         }
     }
 
-    private ResetPasswordResponse createResetPasswordResponse(int responseCode,String responseMessage) {
-        return ResetPasswordResponse.builder()
-            .responseCode(responseCode)
-            .responseMessage(responseMessage)
-            .build();
-    }
-
-    private void sendResetPasswordConfirmationEmail(String uid) throws IOException, CustomGigyaErrorException {
-        AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
-        resetPasswordService.sendResetPasswordConfirmation(account);
-    }
-
     @GetMapping(value = {"/oidc/rp", "/rp"})
-    @ApiOperation(value = "Redirect to the Login URL. Validates cip_authdata cookie.")
+    @ApiOperation(value = "Redirect to the Request Reset Password Url. Validates cip_authdata cookie.")
     @ApiResponses({
             @ApiResponse(code = 302, message = "RP config found, will set cookie data and redirect to Registration page."),
             @ApiResponse(code = 400, message = "Bad request, missing or invalid params."),
@@ -188,7 +190,7 @@ public class ResetPasswordController {
             @ApiImplicitParam(name = "response_type", value = "Response Type", required = true, dataType = "String", paramType = "query"),
             @ApiImplicitParam(name = "scope", value = "Scope", required = true, dataType = "String", paramType = "query")
     })
-    public ResponseEntity<?> redirectAuth(
+    public ResponseEntity<?> getRPResetPasswordConfig(
             @RequestParam("client_id") String clientId,
             @RequestParam("redirect_uri") String redirectUri,
             @RequestParam(name = "state", required = false) String state,
@@ -233,13 +235,13 @@ public class ResetPasswordController {
             }
 
             logger.info("Building CIP_AUTHDATA cookie");
-            String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, RESET_PASSWORD_REDIRECT_URL);
+            String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, cipAuthDataPath);
             logger.info("CIP_AUTHDATA cookie built.");
 
             return ResponseEntity
                     .status(HttpStatus.FOUND)
                     .header(HttpHeaders.SET_COOKIE, cipAuthDataCookie)
-                    .header(HttpHeaders.LOCATION, REDIRECT_URI)
+                    .header(HttpHeaders.LOCATION, rpRedirectUri)
                     .build();
         }
         catch (CustomGigyaErrorException customGigyaException) {
@@ -251,5 +253,24 @@ public class ResetPasswordController {
             logger.error(String.format("GSKeyNotFoundException: %s", gsKeyNotFoundException.getMessage()));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    private ResetPasswordResponse createResetPasswordResponse(int responseCode,String responseMessage) {
+        return ResetPasswordResponse.builder()
+                .responseCode(responseCode)
+                .responseMessage(responseMessage)
+                .build();
+    }
+
+    private void sendResetPasswordConfirmationEmail(String uid) throws IOException, CustomGigyaErrorException {
+        AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
+        resetPasswordService.sendResetPasswordConfirmation(account);
+    }
+
+    private void sendRequestResetPasswordEmail(String username, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException, CustomGigyaErrorException {
+        logger.info("Preparing request reset password confirmation email");
+        String email = cdcResponseHandler.getEmailByUsername(username);
+        AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(email);
+        resetPasswordService.sendRequestResetPassword(account, requestResetPasswordDTO);
     }
 }

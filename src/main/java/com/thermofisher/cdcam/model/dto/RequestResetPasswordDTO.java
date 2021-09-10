@@ -7,8 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class ChinaDTO {
-    private String[] interest;
-    private String[] jobRole;
-    private String phoneNumber;
+public class RequestResetPasswordDTO {
+    private String authData;
+    private String passwordToken;
 }

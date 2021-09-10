@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -33,7 +35,6 @@ public class UpdateAccountServiceTests {
         .uid(uid)
         .firstName("firstName")
         .lastName("lastName")
-        .email("email@test.com")
         .username("username")
         .marketingConsentDTO(
             MarketingConsentDTO.builder()

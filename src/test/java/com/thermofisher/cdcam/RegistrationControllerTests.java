@@ -191,7 +191,7 @@ public class RegistrationControllerTests {
         ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, IS_SIGN_IN_URL);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
@@ -225,7 +225,7 @@ public class RegistrationControllerTests {
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, REDIRECT_URL, IS_SIGN_IN_URL);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
@@ -240,6 +240,6 @@ public class RegistrationControllerTests {
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, IS_SIGN_IN_URL);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 }

@@ -86,7 +86,7 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
-    @Value("${email-verification.enabled}")
+    @Value("${legacy-email-verification.enabled}")
     Boolean isEmailVerificationEnabled;
 
     @Autowired
@@ -574,13 +574,16 @@ public class AccountsController {
             
             logger.info(String.format("Starting user profile update process with UID: %s", profileInfoDTO.getUid()));
             String uid = profileInfoDTO.getUid();
+            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            profileInfoDTO.setActualEmail(accountInfo.getEmailAddress());
+            profileInfoDTO.setActualUsername(accountInfo.getUsername());
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
 
-                AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+                AccountInfo updatedAccountInfo = cdcResponseHandler.getAccountInfo(uid);
                 logger.info("Building AccountUpdatedNotification object.");
-                AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
+                AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");
                 notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
                 logger.info("accountUpdated notification sent.");

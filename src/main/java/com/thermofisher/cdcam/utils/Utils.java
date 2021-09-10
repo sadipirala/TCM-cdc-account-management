@@ -111,4 +111,8 @@ public class Utils {
         byte[] decodedBytes = Base64.decodeBase64(encodedBytes);
         return new String(decodedBytes);
     }
+
+    public static  boolean isAValidEmail(String email) {
+        return email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+    }
 }

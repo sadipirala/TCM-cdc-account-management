@@ -52,6 +52,7 @@ public class CDCResponseHandler {
     private final String NO_RESULTS_FOUND = "";
     private final AccountBuilder accountBuilder = new AccountBuilder();
     private final IdentityProviderBuilder identityProviderBuilder = new IdentityProviderBuilder();
+    private final boolean SEND_EMAIL = false;
 
     private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -105,11 +106,15 @@ public class CDCResponseHandler {
         String uid = Utils.getStringFromJSON(account, "uid");
         JSONObject data = Utils.getObjectFromJSON(account, "data");
         JSONObject profile = Utils.getObjectFromJSON(account, "profile");
+        String removeLoginEmails = Utils.getStringFromJSON(account, "removeLoginEmails");
+        String username = Utils.getStringFromJSON(account, "username");
 
         String dataJson = (data != null) ? data.toString() : "";
         String profileJson = (profile != null) ? profile.toString() : "";
+        String removeLoginEmailsJson = (removeLoginEmails != null) ? removeLoginEmails : "";
+        String usernameJson = (username != null) ? username : "";
 
-        GSResponse cdcResponse = cdcAccountsService.setUserInfo(uid, dataJson, profileJson);
+        GSResponse cdcResponse = cdcAccountsService.setUserInfo(uid, dataJson, profileJson, removeLoginEmailsJson, usernameJson);
 
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         if (cdcResponse.getErrorCode() == SUCCESS_CODE) {
@@ -208,10 +213,11 @@ public class CDCResponseHandler {
         return NO_RESULTS_FOUND;
     }
 
-    public void resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+    public String resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         logger.info(String.format("Reset password request triggered for username: %s.", username));
         GSObject requestParams = new GSObject();
         requestParams.put("loginID", username);
+        requestParams.put("sendEmail", SEND_EMAIL);
         GSResponse response = cdcAccountsService.resetPassword(requestParams);
 
         if (response.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
@@ -221,6 +227,9 @@ public class CDCResponseHandler {
             String errorMessage = String.format("Failed to send a reset password request for %s. CDC error code: %s", username, response.getErrorCode());
             throw new CustomGigyaErrorException(errorMessage);
         }
+
+        GSObject data = response.getData();
+        return data.getString("passwordResetToken");
     }
 
     public ResetPasswordResponse resetPasswordSubmit(ResetPasswordSubmit resetPassword) {

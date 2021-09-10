@@ -113,6 +113,24 @@ public class CDCAccountsService {
         }
     }
 
+    public GSResponse setUserInfo(String uid, String data, String profile, String removeLoginEmails, String username) {
+        String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
+        logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+        GSRequest request = new GSRequest(mainApiKey, mainCdcSecretKey, apiMethod, useHTTPS);
+        request.setAPIDomain(mainApiDomain);
+        request.setParam("UID", uid);
+        request.setParam("data", data);
+        request.setParam("profile", profile);
+        if (!Utils.isNullOrEmpty(removeLoginEmails)) {
+            request.setParam("removeLoginEmails", removeLoginEmails);
+        }
+        if (!Utils.isNullOrEmpty(username)) {
+            request.setParam("username", username);
+        }
+        return request.send();
+    }
+
     public GSResponse changeAccountStatus(String uid, boolean status) {
         try {
             String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();

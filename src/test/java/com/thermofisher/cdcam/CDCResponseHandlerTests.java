@@ -136,7 +136,7 @@ public class CDCResponseHandlerTests {
         // given
         String message = "Success";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(0);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
@@ -157,7 +157,7 @@ public class CDCResponseHandlerTests {
         String message = "Something went bad.";
         int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
@@ -245,11 +245,14 @@ public class CDCResponseHandlerTests {
 
     @Test
     public void resetPasswordRequest_shouldRequestPasswordReset()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         // given
+        GSObject gsObject = new GSObject();
+        gsObject.put("passwordResetToken","");
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
+        when(mockCdcResponse.getData()).thenReturn(gsObject);
 
         // when
         cdcResponseHandler.resetPasswordRequest("armvalidtest@mail.com");
@@ -260,7 +263,7 @@ public class CDCResponseHandlerTests {
 
     @Test(expected = LoginIdDoesNotExistException.class)
     public void resetPasswordRequest_whenAnInValidUsername_throwLoginIdDoesNotExistException()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
@@ -272,7 +275,7 @@ public class CDCResponseHandlerTests {
 
     @Test(expected = CustomGigyaErrorException.class)
     public void resetPasswordRequest_whenAnUnhandledErrorOccurs_throwCustomGigyaErrorException()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);

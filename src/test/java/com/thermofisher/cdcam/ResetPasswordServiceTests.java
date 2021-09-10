@@ -1,14 +1,15 @@
 package com.thermofisher.cdcam;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
+import com.thermofisher.cdcam.model.dto.RequestResetPasswordDTO;
+import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.HttpService;
 import com.thermofisher.cdcam.services.ResetPasswordService;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -34,11 +35,20 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringBootTest(classes = CdcamApplication.class)
 public class ResetPasswordServiceTests {
 
+    AccountInfo accountInfo = AccountUtils.getSiteAccount();
+    RequestResetPasswordDTO requestResetPassword = RequestResetPasswordDTO.builder()
+            .passwordToken("passwordToken")
+            .authData("authData")
+            .build();
+
     @InjectMocks
     ResetPasswordService resetPasswordService;
 
     @Mock
     HttpService httpService;
+
+    @Mock
+    EmailService emailService;
 
     @Test
     public void sendResetPasswordConfirmation_givenAccountWithValidFormat_thenResetPasswordConfirmationEmailPostRequestShouldBeMade() throws IOException {
@@ -54,8 +64,6 @@ public class ResetPasswordServiceTests {
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
-
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
 
         resetPasswordService.sendResetPasswordConfirmation(accountInfo);
 
@@ -77,8 +85,6 @@ public class ResetPasswordServiceTests {
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-
         resetPasswordService.sendResetPasswordConfirmation(accountInfo);
 
         verify(httpService, times(1)).post(any(), any());
@@ -93,8 +99,6 @@ public class ResetPasswordServiceTests {
 
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(null);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
-
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
 
         resetPasswordService.sendResetPasswordConfirmation(accountInfo);
     }
@@ -118,8 +122,6 @@ public class ResetPasswordServiceTests {
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
-
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
 
         accountInfo.setLocaleName(localeName);
         accountInfo.setCountry(country);
@@ -154,8 +156,6 @@ public class ResetPasswordServiceTests {
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-
         accountInfo.setLocaleName(localeName);
 
         ArgumentCaptor<JSONObject> requestObjectCaptor = ArgumentCaptor.forClass(JSONObject.class);
@@ -188,8 +188,6 @@ public class ResetPasswordServiceTests {
         Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
         Mockito.when(httpService.post(any(), any())).thenReturn(mockHttpResponse);
 
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-
         accountInfo.setLocaleName(localeName);
 
         ArgumentCaptor<JSONObject> requestObjectCaptor = ArgumentCaptor.forClass(JSONObject.class);
@@ -201,5 +199,24 @@ public class ResetPasswordServiceTests {
 
         // then
         Assert.assertEquals(requestBody.getString("locale"), expectedLocale);
+    }
+
+    @Test
+    public void sendRequestResetPassword_givenAccountWithValidFormatAndAValidRequestResetPassword_thenACallToEmailServiceForSendRequestResetPasswordEmailShouldBeMade() throws IOException {
+        StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
+        HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
+        CloseableHttpResponse mockHttpCloseableResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        HttpServiceResponse mockHttpResponse = HttpServiceResponse.builder()
+                .closeableHttpResponse(mockHttpCloseableResponse)
+                .build();
+
+        Mockito.when(mockStatusLine.getStatusCode()).thenReturn(200);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getStatusLine()).thenReturn(mockStatusLine);
+        Mockito.when(mockHttpResponse.getCloseableHttpResponse().getEntity()).thenReturn(mockEntity);
+
+        resetPasswordService.sendRequestResetPassword(accountInfo, requestResetPassword);
+
+        verify(emailService, times(1)).sendRequestResetPasswordEmail(any(),any());
     }
 }

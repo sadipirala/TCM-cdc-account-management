@@ -44,8 +44,8 @@ public class AccountUtils {
     public static final String location = "Digital Engineering";
     public static final String timezone = "America/Tijuana";
     public static final String hiraganaName = "ひらがな";
-    public static final String jobRole = "Development,Human Resources";
-    public static final String interest = "Health,Lab";
+    public static final String jobRole = "Development, HR";
+    public static final String interest = "Health, Lab";
     public static final String phoneNumber = "6648675309";
     
     // Korea
@@ -64,6 +64,10 @@ public class AccountUtils {
     public static final Boolean isGovernmentEmployee = true;
     public static final Boolean isProhibitedFromAcceptingGifts = true;
     public static final Boolean acceptsAspireTermsAndConditions = true;
+
+    //China
+    public static  final String[] jobRoles = { "Development", "HR" };
+    public static  final String[] interests = { "Health", "Lab" };
 
     public static AccountInfo getFederatedAccount() {
         return AccountInfo.builder()
@@ -144,6 +148,8 @@ public class AccountUtils {
         .isGovernmentEmployee(isGovernmentEmployee)
         .isProhibitedFromAcceptingGifts(isProhibitedFromAcceptingGifts)
         .acceptsAspireTermsAndConditions(acceptsAspireTermsAndConditions)
+        .jobRoles(jobRoles)
+        .interests(interests)
         .build();
     }
 

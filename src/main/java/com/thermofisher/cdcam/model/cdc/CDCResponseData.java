@@ -23,5 +23,7 @@ public class CDCResponseData {
 
     private String errorDetails;
 
+    private String regToken;
+
     private List<CDCValidationError> validationErrors;
 }

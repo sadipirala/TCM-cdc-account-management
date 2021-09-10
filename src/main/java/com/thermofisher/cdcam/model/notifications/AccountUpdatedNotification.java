@@ -20,6 +20,8 @@ public class AccountUpdatedNotification {
     private String member;
     private String firstName;
     private String lastName;
+    private String emailAddress;
+    private String username;
 
     public static AccountUpdatedNotification build(AccountInfo accountInfo) {
         return AccountUpdatedNotification.builder()
@@ -30,6 +32,8 @@ public class AccountUpdatedNotification {
             .member(accountInfo.getMember())
             .firstName(accountInfo.getFirstName())
             .lastName(accountInfo.getLastName())
+            .emailAddress(accountInfo.getEmailAddress())
+            .username(accountInfo.getUsername())
             .build();
     }
 }

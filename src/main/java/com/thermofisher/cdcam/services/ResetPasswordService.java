@@ -2,6 +2,8 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordConfirmation;
+import com.thermofisher.cdcam.model.EmailRequestResetPassword;
+import com.thermofisher.cdcam.model.dto.RequestResetPasswordDTO;
 import com.thermofisher.cdcam.utils.EmailLocaleUtils;
 
 import org.apache.http.HttpEntity;
@@ -27,8 +29,14 @@ public class ResetPasswordService {
     @Value("${tfrn.email-notification.url}")
     private String emailNotificationUrl;
 
+    @Value("${reset-password.url}")
+    private String resetPasswordUrl;
+
     @Autowired
     HttpService httpService;
+
+    @Autowired
+    EmailService emailService;
 
     @Async
     public void sendResetPasswordConfirmation(AccountInfo accountInfo) throws IOException {
@@ -54,6 +62,13 @@ public class ResetPasswordService {
             logger.error(String.format("Something went wrong while connecting to the email notification service. UID: %s", accountInfo.getUid()));
             throw new IOException();
         }
+    }
+
+    @Async
+    public void sendRequestResetPassword(AccountInfo accountInfo, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException {
+        processAccountLocale(accountInfo);
+        EmailRequestResetPassword request =  EmailRequestResetPassword.build(accountInfo, requestResetPasswordDTO, resetPasswordUrl);
+        emailService.sendRequestResetPasswordEmail(request, accountInfo);
     }
 
     private void processAccountLocale(AccountInfo account) {

@@ -243,4 +243,28 @@ public class UtilsTests {
         // then
         assertFalse(result);
     }
+
+    @Test
+    public void isAValidEmail_GivenMethodIsCalledWithAValidEmail_ThenItShouldReturnTrue() {
+        // given
+        String email = "test@test.com";
+
+        // when
+        boolean result = Utils.isAValidEmail(email);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    public void isAValidEmail_GivenMethodIsCalledWithAInvalidEmail_ThenItShouldReturnFalse() {
+        // given
+        String email = "test@@test.com";
+
+        // when
+        boolean result = Utils.isAValidEmail(email);
+
+        // then
+        assertFalse(result);
+    }
 }

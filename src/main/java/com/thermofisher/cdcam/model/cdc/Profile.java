@@ -46,11 +46,13 @@ public class Profile {
             company = Utils.isNullOrEmpty(marketingConsentDTO.getCompany()) ? null : marketingConsentDTO.getCompany();
             work = Objects.isNull(company) ? null : Work.builder().company(company).build();
         }
+        
         return Profile.builder()
             .firstName(profileInfoDTO.getFirstName())
             .lastName(profileInfoDTO.getLastName())
             .city(city)
             .work(work)
+            .email(profileInfoDTO.getEmail())
             .build();
     }
 }
