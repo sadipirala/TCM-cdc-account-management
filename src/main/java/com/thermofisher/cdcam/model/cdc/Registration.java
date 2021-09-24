@@ -29,11 +29,13 @@ public class Registration {
     @JsonIgnore
     public static Registration build(RegistrationDTO registration){
         China china = China.builder().build();
-        String jobRoles = Objects.isNull(registration.getChina().getJobRole()) ? null : String.join(",", registration.getChina().getJobRole());
-        String interests = Objects.isNull(registration.getChina().getInterest()) ? null : String.join(",", registration.getChina().getInterest());
-        china.setInterest(interests);
-        china.setJobRole(jobRoles);
-        china.setPhoneNumber(registration.getChina().getPhoneNumber());
+        if (Objects.nonNull(registration.getChina())){
+            String jobRoles = Objects.isNull(registration.getChina().getJobRole()) ? null : String.join(",", registration.getChina().getJobRole());
+            String interests = Objects.isNull(registration.getChina().getInterest()) ? null : String.join(",", registration.getChina().getInterest());
+            china.setInterest(interests);
+            china.setJobRole(jobRoles);
+            china.setPhoneNumber(registration.getChina().getPhoneNumber());
+        }
         return Registration.builder()
                 .china(china)
                 .japan(registration.getJapan())

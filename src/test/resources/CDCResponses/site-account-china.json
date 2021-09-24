@@ -61,7 +61,11 @@
         "subscribe": "member",
         "terms": true,
         "registration": {
-            "china": null,
+            "china": {
+                "interest": "Health, Lab",
+                "jobRole": "Development, HR",
+                "phoneNumber": "6648675309"
+            },
             "japan": null,
             "korea": null
         }

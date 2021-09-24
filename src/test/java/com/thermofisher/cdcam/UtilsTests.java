@@ -28,22 +28,25 @@ public class UtilsTests {
 
     @Test
     public void getAlphaNumericString_ifNumberIsProvided_returnSameSizeString() {
-        //setup
+        // given
         int stringSize = 10;
-        //execution
+
+        // when
         String value = Utils.getAlphaNumericString(stringSize);
 
-        //validation
+        // then
         Assert.assertEquals(value.length(), stringSize);
     }
 
     @Test
     public void ApiMethodGet_ifCalled_returnGETMethod() {
-        //setup
+        // given
         String getAccount = "accounts.getAccountInfo";
-        //execution
+
+        // when
         String enumGET = APIMethods.GET.getValue();
-        //validation
+
+        // then
         Assert.assertEquals(getAccount, enumGET);
     }
 

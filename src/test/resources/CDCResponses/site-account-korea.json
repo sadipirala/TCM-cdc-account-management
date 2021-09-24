@@ -63,7 +63,16 @@
         "registration": {
             "china": null,
             "japan": null,
-            "korea": null
+            "korea": {
+                "receiveMarketingInformation": "true",
+                "thirdPartyTransferPersonalInfoMandatory": "true",
+                "thirdPartyTransferPersonalInfoOptional": "true",
+                "collectionAndUsePersonalInfoMandatory": "true",
+                "collectionAndUsePersonalInfoOptional": "true",
+                "collectionAndUsePersonalInfoMarketing": "true",
+                "overseasTransferPersonalInfoMandatory": "true",
+                "overseasTransferPersonalInfoOptional": "true"
+            }
         }
     },
     "isVerified": true,

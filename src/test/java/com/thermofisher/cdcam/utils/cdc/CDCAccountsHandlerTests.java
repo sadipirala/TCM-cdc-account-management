@@ -106,7 +106,7 @@ public class CDCAccountsHandlerTests {
     @Test
     public void buildNewCDCAccount_GivenAccountInfoHasJapanAsCountry_ThenCDCAccountShouldContainJapanObject() throws JSONException {
         // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        AccountInfo accountInfo = AccountUtils.getSiteAccountJapan();
         accountInfo.setCountry(CountryCodes.JAPAN.getValue());
 
         // when
@@ -132,7 +132,7 @@ public class CDCAccountsHandlerTests {
     @Test
     public void buildNewCDCAccount_GivenAccountInfoHasChinaAsCountry_ThenCDCAccountShouldContainChinaObject() throws JSONException {
         // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        AccountInfo accountInfo = AccountUtils.getSiteAccountChina();
         accountInfo.setCountry(CountryCodes.CHINA.getValue());
 
         // when
@@ -159,7 +159,7 @@ public class CDCAccountsHandlerTests {
     @Test
     public void buildNewCDCAccount_GivenChinaAccountContainsPhoneNumberAndIsMember_ThenCDCAccountShouldContainPhoneNumber() throws JSONException {
         // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        AccountInfo accountInfo = AccountUtils.getSiteAccountChina();
         accountInfo.setCountry(CountryCodes.CHINA.getValue());
         accountInfo.setMember("true");
         String phoneNumber = accountInfo.getPhoneNumber();
@@ -190,7 +190,7 @@ public class CDCAccountsHandlerTests {
     @Test
     public void buildNewCDCAccount_GivenAccountInfoHasKoreaAsCountry_ThenCDCAccountShouldKoreaObject() throws JSONException {
         // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        AccountInfo accountInfo = AccountUtils.getSiteAccountKorea();
         accountInfo.setCountry(CountryCodes.KOREA.getValue());
 
         // when

@@ -62,7 +62,9 @@
         "terms": true,
         "registration": {
             "china": null,
-            "japan": null,
+            "japan": {
+                "hiraganaName": "ひらがな"
+            },
             "korea": null
         }
     },

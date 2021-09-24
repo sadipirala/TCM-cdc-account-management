@@ -35,9 +35,15 @@ public class AccountBuilderTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedCdcResponse;
     private String siteCdcResponse;
+    private String siteCdcResponseJapan;
+    private String siteCdcResponseKorea;
+    private String siteCdcResponseChina;
     private String invalidCdcResponse;
     private AccountInfo federatedAccount;
     private AccountInfo siteAccount;
+    private AccountInfo siteAccountJapan;
+    private AccountInfo siteAccountKorea;
+    private AccountInfo siteAccountChina;
 
     @Mock
     AccountBuilder accountBuilder = new AccountBuilder();
@@ -45,10 +51,17 @@ public class AccountBuilderTests {
     @Before
     public void setup() throws ParseException, IOException {
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
+        siteCdcResponseJapan = AccountUtils.getSiteAccountJapanJsonString();
+        siteCdcResponseKorea = AccountUtils.getSiteAccountKoreaJsonString();
+        siteCdcResponseChina = AccountUtils.getSiteAccountChinaJsonString();
         federatedCdcResponse = AccountUtils.getFederatedAccountJsonString();
         invalidCdcResponse = AccountUtils.getInvalidAccountJsonString();
         federatedAccount = AccountUtils.getFederatedAccount();
         siteAccount = AccountUtils.getSiteAccount();
+        siteAccountJapan = AccountUtils.getSiteAccountJapan();
+        siteAccountKorea = AccountUtils.getSiteAccountKorea();
+        siteAccountChina = AccountUtils.getSiteAccountChina();
+
         ReflectionTestUtils.setField(accountBuilder, "logger", logger);
     }
 
@@ -72,10 +85,10 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseJapan));
 
         // then
-        String expectedAccount = mapper.writeValueAsString(siteAccount);
+        String expectedAccount = mapper.writeValueAsString(siteAccountJapan);
         String resAccount = mapper.writeValueAsString(res);
         assertTrue(expectedAccount.equals(resAccount));
     }
@@ -87,7 +100,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseJapan));
 
         // then
         assertEquals(res.getHiraganaName(), hiraganaName);
@@ -100,7 +113,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
         assertEquals(res.getJobRole(), jobRole);
@@ -113,7 +126,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
         assertEquals(res.getInterest(), interest);
@@ -126,7 +139,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
         assertEquals(res.getPhoneNumber(), phoneNumber);
@@ -139,7 +152,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo response = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo response = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(receiveMarketingInformation, response.getReceiveMarketingInformation());
@@ -152,7 +165,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getThirdPartyTransferPersonalInfoMandatory(), thirdPartyTransferPersonalInfoMandatory);
@@ -165,7 +178,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getThirdPartyTransferPersonalInfoOptional(), thirdPartyTransferPersonalInfoOptional);
@@ -178,7 +191,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
@@ -191,7 +204,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getCollectionAndUsePersonalInfoOptional(), collectionAndUsePersonalInfoOptional);
@@ -204,7 +217,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getCollectionAndUsePersonalInfoMarketing(), collectionAndUsePersonalInfoMarketing);
@@ -217,7 +230,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getOverseasTransferPersonalInfoMandatory(), overseasTransferPersonalInfoMandatory);
@@ -230,7 +243,7 @@ public class AccountBuilderTests {
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
 
         // when
-        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
         assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);

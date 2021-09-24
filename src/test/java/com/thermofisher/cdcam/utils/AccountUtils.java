@@ -94,10 +94,75 @@ public class AccountUtils {
                 .username(username)
                 .emailAddress(email)
                 .password(algorithm + ":" + hash)
+                .firstName(firstName)
+                .lastName(lastName)
+                .localeName(localeName)
+                .company(company)
+                .country(country)
+                .city(city)
+                .member(member)
+                .loginProvider(loginProvider)
+                .socialProviders("site")
+                .regAttempts(0)
+                .build();
+    }
+
+    public static AccountInfo getSiteAccountChina() {
+        return AccountInfo.builder()
+                .uid(uid)
+                .username(username)
+                .emailAddress(email)
+                .password(algorithm + ":" + hash)
+                .phoneNumber(phoneNumber)
                 .jobRole(jobRole)
                 .interest(interest)
                 .firstName(firstName)
-                .phoneNumber(phoneNumber)
+                .lastName(lastName)
+                .localeName(localeName)
+                .company(company)
+                .country(country)
+                .city(city)
+                .member(member)
+                .loginProvider(loginProvider)
+                .socialProviders("site")
+                .regAttempts(0)
+                .build();
+    }
+
+    public static AccountInfo getSiteAccountKorea() {
+        return AccountInfo.builder()
+                .uid(uid)
+                .username(username)
+                .emailAddress(email)
+                .password(algorithm + ":" + hash)
+                .firstName(firstName)
+                .lastName(lastName)
+                .localeName(localeName)
+                .company(company)
+                .country(country)
+                .city(city)
+                .member(member)
+                .loginProvider(loginProvider)
+                .socialProviders("site")
+                .regAttempts(0)
+                .receiveMarketingInformation(receiveMarketingInformation)
+                .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
+                .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
+                .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
+                .collectionAndUsePersonalInfoOptional(collectionAndUsePersonalInfoOptional)
+                .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
+                .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
+                .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
+                .build();
+    }
+
+    public static AccountInfo getSiteAccountJapan() {
+        return AccountInfo.builder()
+                .uid(uid)
+                .username(username)
+                .emailAddress(email)
+                .password(algorithm + ":" + hash)
+                .firstName(firstName)
                 .lastName(lastName)
                 .localeName(localeName)
                 .company(company)
@@ -108,14 +173,6 @@ public class AccountUtils {
                 .socialProviders("site")
                 .regAttempts(0)
                 .hiraganaName(hiraganaName)
-                .receiveMarketingInformation(receiveMarketingInformation)
-                .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
-                .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
-                .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
-                .collectionAndUsePersonalInfoOptional(collectionAndUsePersonalInfoOptional)
-                .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
-                .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
-                .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
                 .build();
     }
 
@@ -284,6 +341,21 @@ public class AccountUtils {
 
     public static String getSiteAccountJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountJapanJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-japan.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountKoreaJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-korea.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountChinaJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-china.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
