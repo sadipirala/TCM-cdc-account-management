@@ -585,7 +585,8 @@ public class AccountsController {
                 logger.info("Building AccountUpdatedNotification object.");
                 AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");
-                notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+                notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
+                notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
                 logger.info("accountUpdated notification sent.");
                 return new ResponseEntity<String>("The information was successfully updated.", updateUserProfileStatus);
             } else {

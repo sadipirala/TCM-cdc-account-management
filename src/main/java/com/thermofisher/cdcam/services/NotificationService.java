@@ -29,6 +29,9 @@ public class NotificationService {
     @Value("${aws.sns.reg.topic}")
     private String registrationSNSTopic;
 
+    @Value("${aws.sns.account.updated}")
+    private String accountUpdatedSNSTopic;
+
     @Autowired
     AccountInfoHandler accountHandler;
 
@@ -41,10 +44,16 @@ public class NotificationService {
         snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
     }
 
-    public void sendAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
+    public void sendPrivateAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
         Objects.requireNonNull(accountUpdatedNotification);
         String notificationMessage = new GsonBuilder().create().toJson(accountUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
+    }
+
+    public void sendPublicAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
+        Objects.requireNonNull(accountUpdatedNotification);
+        String notificationMessage = new GsonBuilder().create().toJson(accountUpdatedNotification);
+        snsHandler.sendNotification(notificationMessage, accountUpdatedSNSTopic);
     }
 
     public void sendAspireRegistrationNotification(@NotNull AccountInfo accountInfo) throws JsonProcessingException {

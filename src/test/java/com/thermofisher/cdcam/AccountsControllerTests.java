@@ -1252,13 +1252,15 @@ public class AccountsControllerTests {
         // given
         when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.OK);
         when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = accountsController.updateUserProfile(profileInfoDTO);
 
         // then
-        verify(notificationService).sendAccountUpdatedNotification(any());
+        verify(notificationService).sendPublicAccountUpdatedNotification(any());
+        verify(notificationService).sendPrivateAccountUpdatedNotification(any());
         assertEquals(resp.getStatusCode(),HttpStatus.OK);
     }
 

@@ -44,7 +44,8 @@ public class NotificationController {
             logger.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
             logger.info("Sending accountUpdated notification.");
-            notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+            notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
+            notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
             logger.info("accountUpdated notification sent.");
             return new ResponseEntity<String>("The notification was sent successfully!",HttpStatus.OK);
         }

@@ -258,7 +258,7 @@ public class AccountRequestService {
             logger.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
             logger.info("Sending accountUpdated notification.");
-            notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+            notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
             logger.info("accountUpdated notification sent.");
         } catch (Exception e) {
             logger.error(String.format("onAccountUpdated - Something went wrong. %s.", e.getMessage()));

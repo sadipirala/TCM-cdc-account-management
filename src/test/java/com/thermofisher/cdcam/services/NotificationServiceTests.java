@@ -62,13 +62,13 @@ public class NotificationServiceTests {
     }
 
     @Test(expected = NullPointerException.class)
-    public void sendAccountUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
+    public void sendPrivateAccountUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
         // when
-        notificationService.sendAccountUpdatedNotification(null);
+        notificationService.sendPublicAccountUpdatedNotification(null);
     }
 
     @Test
-    public void sendAccountUpdatedNotification_ShouldSendNotificationToRegistrationSNSTopicWithMergedAccountNotification() throws IOException {
+    public void sendPrivateAccountUpdatedNotification_ShouldSendNotificationToRegistrationSNSTopicWithMergedAccountNotification() throws IOException {
         // given
         ReflectionTestUtils.setField(notificationService, "registrationSNSTopic", "registrationSNS");
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -76,7 +76,7 @@ public class NotificationServiceTests {
         doNothing().when(snsHandler).sendNotification(anyString(), anyString());
 
         // when
-        notificationService.sendAccountUpdatedNotification(accountUpdatedNotification);
+        notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
 
         // then
         verify(snsHandler).sendNotification(anyString(), anyString());

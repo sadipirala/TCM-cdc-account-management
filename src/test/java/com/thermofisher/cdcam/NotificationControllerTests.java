@@ -41,13 +41,15 @@ public class NotificationControllerTests {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);
         when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
 
         // then
-        verify(notificationService).sendAccountUpdatedNotification(any());
+        verify(notificationService).sendPublicAccountUpdatedNotification(any());
+        verify(notificationService).sendPrivateAccountUpdatedNotification(any());
         assertEquals(resp.getStatusCode(),HttpStatus.OK);
     }
 
@@ -56,7 +58,8 @@ public class NotificationControllerTests {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);
         when(cdcResponseHandler.getAccountInfo(any())).thenThrow(CustomGigyaErrorException.class);
-        doNothing().when(notificationService).sendAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
