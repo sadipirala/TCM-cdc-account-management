@@ -1,8 +1,7 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.services;
 
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.services.URLService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -32,6 +31,23 @@ public class URLServiceTests {
 
         // then
         String EXPECTED_STRING = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
+        assertEquals(EXPECTED_STRING, paramString);
+    }
+
+    @Test
+    public void queryParamMapper_givenAnObjectWithEmptyValue_whenMethodIsCalled_thenShouldSkipTheObjectKey() {
+        // given
+        CIPAuthDataDTO cipAuthData = CIPAuthDataDTO.builder()
+            .clientId("")
+            .redirectUri("redirect")
+            .build();
+        ReflectionTestUtils.setField(urlService, "identityAuthorizeEndpoint", "https://www.thermofisher.com");
+
+        // when
+        String paramString = urlService.queryParamMapper(cipAuthData);
+
+        // then
+        String EXPECTED_STRING = "https://www.thermofisher.com?redirect_uri=redirect&state=null&scope=null&response_type=null";
         assertEquals(EXPECTED_STRING, paramString);
     }
 

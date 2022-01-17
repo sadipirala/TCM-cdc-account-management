@@ -19,6 +19,7 @@ public class CDCNewAccount {
     private String password;
     private String data;
     private String profile;
+    //private String preferences;
 
     public static class CDCNewAccountBuilder {
         public CDCNewAccountBuilder data(Data data) {
@@ -30,6 +31,11 @@ public class CDCNewAccount {
             this.profile = prepareProfile(profile);
             return this;
         }
+
+        /* public CDCNewAccountBuilder preferences(Preferences preferences) throws JSONException {
+            this.preferences = new Gson().toJson(preferences);
+            return this;
+        } */
     }
 
     private static String prepareProfile(Profile profile) throws JSONException {

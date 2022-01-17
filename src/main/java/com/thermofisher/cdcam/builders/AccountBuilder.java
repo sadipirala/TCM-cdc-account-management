@@ -1,5 +1,7 @@
 package com.thermofisher.cdcam.builders;
 
+import java.util.Objects;
+
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
@@ -9,7 +11,10 @@ import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import com.thermofisher.cdcam.model.dto.RegistrationDTO;
+import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,6 +34,7 @@ public class AccountBuilder {
             String socialProviders = obj.containsKey("socialProviders") ? obj.getString("socialProviders") : "";
             String company = "";
             String finalPassword = "";
+            //Preferences preferences = getPreferences(obj);
             Registration registration = getRegistration(data);
             RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
@@ -45,6 +51,8 @@ public class AccountBuilder {
                 company = work.containsKey("company") ? work.getString("company") : "";
             }
 
+            String providerClientId = getProviderClientId(registration);
+
             return AccountInfo.builder()
                     .uid(uid)
                     .username(profile.containsKey("username") ? profile.getString("username") : email)
@@ -55,7 +63,8 @@ public class AccountBuilder {
                     .company(company)
                     .country(profile.containsKey("country") ? profile.getString("country") : "")
                     .city(profile.containsKey("city") ? profile.getString("city") : "")
-                    .member(data.containsKey("subscribe") ? data.getString("subscribe") : "false")
+                    //.marketingConsent(getIsConsentGranted(preferences))
+                    .marketingConsent(data.containsKey("subscribe") ? data.getBool("subscribe") : false)
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .socialProviders(socialProviders)
@@ -72,10 +81,11 @@ public class AccountBuilder {
                     .overseasTransferPersonalInfoMandatory(registrationAttributesHandler.getOverseasTransferPersonalInfoMandatory())
                     .overseasTransferPersonalInfoOptional(registrationAttributesHandler.getOverseasTransferPersonalInfoOptional())
                     .regAttempts(0)
+                    .openIdProviderId(providerClientId)
                     .build();
 
         } catch (Exception e) {
-            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, e.getMessage()));
+            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -89,7 +99,28 @@ public class AccountBuilder {
         return null;
     }
 
-    public static AccountInfo parseFromAccountInfoDTO(AccountInfoDTO accountInfoDTO) {
+    /* private boolean getIsConsentGranted(Preferences preferences) {
+        return Objects.nonNull(preferences) && Objects.nonNull(preferences.getMarketing()) && Objects.nonNull(preferences.getMarketing().getConsent()) && preferences.getMarketing().getConsent().isConsentGranted();
+    }
+
+    private Preferences getPreferences (GSObject obj) throws JsonSyntaxException, GSKeyNotFoundException {
+        Gson gson = new Gson();
+        if (obj.containsKey("preferences")) {
+            return gson.fromJson(obj.getString("preferences"), Preferences.class);
+        }
+
+        return null;
+    } */
+
+    private String getProviderClientId(Registration registration) {
+        if (Objects.nonNull(registration) && Objects.nonNull(registration.getOpenIdProvider()) && StringUtils.isNotBlank(registration.getOpenIdProvider().getClientID())) {
+            return registration.getOpenIdProvider().getClientID();
+        }
+
+        return "";
+    }
+
+    public static AccountInfo buildFrom(AccountInfoDTO accountInfoDTO) {
         return AccountInfo.builder()
             .firstName(accountInfoDTO.getFirstName())
             .lastName(accountInfoDTO.getLastName())
@@ -100,7 +131,7 @@ public class AccountBuilder {
             .company(accountInfoDTO.getCompany())
             .city(accountInfoDTO.getCity())
             .country(accountInfoDTO.getCountry())
-            .member(accountInfoDTO.getMember())
+            .marketingConsent(accountInfoDTO.isMarketingConsent())
             .registrationType(accountInfoDTO.getRegistrationType())
             .timezone(accountInfoDTO.getTimezone())
             .hiraganaName(accountInfoDTO.getHiraganaName())

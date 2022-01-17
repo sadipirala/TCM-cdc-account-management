@@ -1,13 +1,13 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.builders;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSObject;
-import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
@@ -24,8 +24,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.IOException;
-
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AccountBuilder.class)
@@ -35,6 +33,7 @@ public class AccountBuilderTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedCdcResponse;
     private String siteCdcResponse;
+    private String siteCdcMarketingConsentFalseResponse;
     private String siteCdcResponseJapan;
     private String siteCdcResponseKorea;
     private String siteCdcResponseChina;
@@ -51,6 +50,7 @@ public class AccountBuilderTests {
     @Before
     public void setup() throws ParseException, IOException {
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
+        siteCdcMarketingConsentFalseResponse = AccountUtils.getSiteAccountWithMarketingConsentAsFalse();
         siteCdcResponseJapan = AccountUtils.getSiteAccountJapanJsonString();
         siteCdcResponseKorea = AccountUtils.getSiteAccountKoreaJsonString();
         siteCdcResponseChina = AccountUtils.getSiteAccountChinaJsonString();
@@ -260,5 +260,43 @@ public class AccountBuilderTests {
 
         // then
         Assert.assertNull(res);
+    }
+
+    @Test
+    public void getAccountInfo_GivenUserAllowsMarketingConsent_ThenIsConsentGrantedShouldBeTrue() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteCdcResponse);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
+
+        // then
+        assertTrue(res.isMarketingConsent());
+    }
+
+    @Test
+    public void getAccountInfo_WhenPreferencesIsAnEmptyObject_ThenIsConsentGrantedShouldBeFalse() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteCdcMarketingConsentFalseResponse);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
+
+        // then
+        assertFalse(res.isMarketingConsent());
+    }
+
+    public void getAccountInfo_GivenAccountHasOpenIdProvider_ThenReturnAssignProviderCliendId() throws Exception {
+        // given
+        String openIdProviderId = AccountUtils.openIdProviderId;
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
+
+        // then
+        assertEquals(res.getOpenIdProviderId(), openIdProviderId);
     }
 }

@@ -6,14 +6,19 @@ import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ActiveProfiles("test")
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = CDCAccountsHandler.class)
 public class CDCAccountsHandlerTests {
 
     @Test
@@ -51,7 +56,7 @@ public class CDCAccountsHandlerTests {
     public void buildNewCDCAccount_GivenAspireAccountContainsCompanyAndIsNotAMember_ThenCDCAccountShouldNotContainCompany() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
+        accountInfo.setMarketingConsent(false);
         String company = accountInfo.getCompany();
 
         // when
@@ -65,7 +70,7 @@ public class CDCAccountsHandlerTests {
     public void buildNewCDCAccount_GivenAspireAccountContainsCityAndIsNotAMember_ThenCDCAccountShouldNotContainCity() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
+        accountInfo.setMarketingConsent(false);
         String city = accountInfo.getCity();
 
         // when
@@ -79,7 +84,7 @@ public class CDCAccountsHandlerTests {
     public void buildNewCDCAccount_GivenAspireAccountContainsCountryAndIsNotAMember_ThenCDCAccountShouldContainCountry() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
+        accountInfo.setMarketingConsent(false);
         String country = accountInfo.getCountry();
 
         // when
@@ -93,7 +98,7 @@ public class CDCAccountsHandlerTests {
     public void buildNewCDCAccount_GivenAspireAccountContainsPhoneNumberAndIsNotAMember_ThenCDCAccountShouldNotContainPhoneNumber() throws JSONException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setMember("false");
+        accountInfo.setMarketingConsent(false);
         String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
@@ -161,7 +166,7 @@ public class CDCAccountsHandlerTests {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccountChina();
         accountInfo.setCountry(CountryCodes.CHINA.getValue());
-        accountInfo.setMember("true");
+        accountInfo.setMarketingConsent(true);
         String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
@@ -177,7 +182,7 @@ public class CDCAccountsHandlerTests {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
         accountInfo.setCountry(CountryCodes.CHINA.getValue());
-        accountInfo.setMember("false");
+        accountInfo.setMarketingConsent(false);
         String phoneNumber = accountInfo.getPhoneNumber();
 
         // when
@@ -218,5 +223,30 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertFalse(result.getData().contains("korea"));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountHasProviderId_ThenCDCAccountShouldHaveProviderClientId() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setOpenIdProviderId(RandomStringUtils.randomAlphanumeric(10));
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains("clientID"));
+    }
+
+    @Test
+    public void buildNewCDCAccount_GivenAccountDoesNotHaveProviderId_ThenCDCAccountShouldNotHaveProviderClientId() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertFalse(result.getData().contains("clientID"));
     }
 }

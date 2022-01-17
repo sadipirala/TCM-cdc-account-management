@@ -3,12 +3,10 @@ package com.thermofisher.cdcam.builders;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.io.IOException;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
-import org.json.simple.parser.ParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -24,7 +22,7 @@ public class IdentityProviderBuilderTests {
     private IdentityProviderBuilder identityProviderBuilder;
 
     @Test
-    public void getIdPInformation_ShouldBuiltAnIdentityProviderResponseWithTheIdPInformation() throws Exception, IOException, ParseException {
+    public void getIdPInformation_ShouldBuiltAnIdentityProviderResponseWithTheIdPInformation() throws Exception {
         // given
         String data = IdentityProviderUtils.getIdentityProviderJsonString();
         GSObject gsObject = new GSObject(data);
@@ -38,7 +36,7 @@ public class IdentityProviderBuilderTests {
     }
 
     @Test
-    public void getIdPInformation_ShouldNotBuiltAnIdentityProviderResponseAndReturnNull() throws Exception, IOException, ParseException {
+    public void getIdPInformation_ShouldNotBuiltAnIdentityProviderResponseAndReturnNull() throws Exception {
         // given
         final String EMPTY_JSON = "{\n" + "}";
         GSObject gsObject = new GSObject(EMPTY_JSON);

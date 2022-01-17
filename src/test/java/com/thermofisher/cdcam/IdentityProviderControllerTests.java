@@ -3,7 +3,6 @@ package com.thermofisher.cdcam;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.IdentityProviderController;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
@@ -30,7 +29,7 @@ public class IdentityProviderControllerTests {
     CDCResponseHandler cdcResponseHandler;
 
     @Test
-    public void getIdentityProviderInformation_ShouldReturn_OK_IfTheIdPGetsFound() throws Exception {
+    public void getIdentityProviderInformation_ShouldReturn_OK_IfTheIdPGetsFound() {
         // given
         final String IDP_NAME = "FID-NOVARTIS";
         IdentityProviderResponse mockResponse = IdentityProviderUtils.buildTestResponse();
@@ -45,7 +44,7 @@ public class IdentityProviderControllerTests {
     }
 
     @Test
-    public void getIdentityProviderInformation_ShouldReturn_BAD_REQUEST_IfTheIdPIsNotFound() throws IOException{
+    public void getIdentityProviderInformation_ShouldReturn_BAD_REQUEST_IfTheIdPIsNotFound() {
         // given
         final String IDP_NAME = "TEST";
         when(cdcResponseHandler.getIdPInformation(any(String.class))).thenReturn(null);

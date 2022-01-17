@@ -28,6 +28,6 @@ public class MergedAccountNotificationTests {
         assertEquals(result.getCompany(), accountInfo.getCompany());
         assertEquals(result.getCity(), accountInfo.getCity());
         assertEquals(result.getCountry(), accountInfo.getCountry());
-        assertEquals(result.getMember(), accountInfo.getMember());
+        assertEquals(result.isMarketingConsent(), accountInfo.isMarketingConsent());
     }
 }

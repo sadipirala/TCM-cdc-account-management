@@ -16,14 +16,11 @@ import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * AccountInfoHandlerTests
@@ -32,17 +29,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AccountInfoHandler.class)
 public class AccountInfoHandlerTests {
-    
-    @InjectMocks
-    AccountInfoHandler accountHandler;
 
     private final String MOCK_CIPDC = "us";
     private ObjectMapper mapper = new ObjectMapper();
-
-    @Before
-    public void before() {
-        ReflectionTestUtils.setField(accountHandler, "CIPDC", MOCK_CIPDC);
-    }
 
     @After
     public void after() { 
@@ -51,7 +40,6 @@ public class AccountInfoHandlerTests {
     
     private String prepareJsonForNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
@@ -74,13 +62,14 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
+        propertiesToRemove.add("openIdProviderId");
         json.put("uuid", json.get("uid").asText());
         json.put("cipdc", MOCK_CIPDC);
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
 
-    private String prepareJsonForGRP(ObjectNode json) throws JsonProcessingException {
+    private String buildRegistrationNotificationPayload(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
@@ -101,6 +90,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
+        propertiesToRemove.add("openIdProviderId");
         json.remove(propertiesToRemove);
         json.put("cipdc", MOCK_CIPDC);
         json.put("type", NotificationType.REGISTRATION.getValue());
@@ -128,6 +118,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("interests");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("hiraganaName");
+        propertiesToRemove.add("openIdProviderId");
         json.remove(propertiesToRemove);
         return mapper.writeValueAsString(json);
     }
@@ -140,7 +131,7 @@ public class AccountInfoHandlerTests {
         String expectedAccountToNotify = prepareJsonForNotification(jsonAccount);
 
         // when
-        String parsedAccount = accountHandler.prepareForProfileInfoNotification(account);
+        String parsedAccount = AccountInfoHandler.prepareForProfileInfoNotification(account, AccountUtils.cipdc);
         
         // then
         assertEquals(parsedAccount.indexOf("\"password\""), -1);
@@ -153,10 +144,10 @@ public class AccountInfoHandlerTests {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
         ObjectNode jsonAccount = mapper.valueToTree(mockAccount);
-        String expectedAccountToNotify = prepareJsonForGRP(jsonAccount);
+        String expectedAccountToNotify = buildRegistrationNotificationPayload(jsonAccount);
 
         // when
-        String parsedAccount = accountHandler.buildRegistrationNotificationPayload(mockAccount);
+        String parsedAccount = AccountInfoHandler.buildRegistrationNotificationPayload(mockAccount, AccountUtils.cipdc);
 
         // then
         assertTrue(parsedAccount.indexOf("\"loginProvider\"") == -1);
@@ -172,7 +163,7 @@ public class AccountInfoHandlerTests {
         String expectedAccountToNotify = prepareJsonForAspireNotification(jsonAccount);
 
         // when
-        String parsedAccount = accountHandler.prepareForAspireNotification(mockAccount);
+        String parsedAccount = AccountInfoHandler.prepareForAspireNotification(mockAccount);
 
         // then
         assertEquals(expectedAccountToNotify, parsedAccount);
@@ -183,10 +174,10 @@ public class AccountInfoHandlerTests {
         // given
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
-        mockAccount.setMember("false");
+        mockAccount.setMarketingConsent(false);
 
         // when
-        String parsedAccount = accountHandler.buildRegistrationNotificationPayload(mockAccount);
+        String parsedAccount = AccountInfoHandler.buildRegistrationNotificationPayload(mockAccount, AccountUtils.cipdc);
 
         // then
         assertEquals(parsedAccount.indexOf("\"department\""), -1);
@@ -201,7 +192,7 @@ public class AccountInfoHandlerTests {
         MessageAttributeValue mockMessageAttributeValue = new MessageAttributeValue();
 
         // when
-        Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
+        Map<String, MessageAttributeValue> messageAttributes = AccountInfoHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
 
         // then
         assertTrue(messageAttributes.containsValue(mockMessageAttributeValue.withDataType("String").withStringValue(mockAccount.getCountry())));
@@ -216,7 +207,7 @@ public class AccountInfoHandlerTests {
         mockAccount.setCountry("");
 
         // when
-        Map<String, MessageAttributeValue> messageAttributes = accountHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
+        Map<String, MessageAttributeValue> messageAttributes = AccountInfoHandler.buildMessageAttributesForAccountInfoSNS(mockAccount);
 
         // then
         assertTrue(messageAttributes.containsValue(mockMessageAttributeValue.withDataType("String").withStringValue(NA_COUNTRY_VALUE)));

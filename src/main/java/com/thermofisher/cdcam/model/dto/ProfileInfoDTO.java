@@ -40,7 +40,7 @@ public class ProfileInfoDTO {
                 .city(accountInfo.getCity())
                 .company(accountInfo.getCompany())
                 .country(accountInfo.getCountry())
-                .consent(Boolean.parseBoolean(accountInfo.getMember()))
+                .consent(accountInfo.isMarketingConsent())
                 .build();
         ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
                 .uid(accountInfo.getUid())

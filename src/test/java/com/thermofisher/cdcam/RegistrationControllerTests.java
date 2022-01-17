@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -35,6 +37,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -49,6 +52,8 @@ public class RegistrationControllerTests {
     private String SCOPE = "scope";
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private String COOKIE_CIP_AUTHDATA_INVALID = "eyJyZWRpcmVjdFVyaSI6InJlZGlyZWN0VXJpIiwic3RhdGUiOiJzdGF0ZSIsInNjb3BlIjoic2NvcGUiLCJyZXNwb25zZVR5cGUiOiJyZXNwb25zZVR5cGUifQ==";
+    private String CREATE_ACCOUNT_ENDPOINT_PATH = "/api-gateway/accounts";
+    private String GET_LOGIN_ENDPOINT_PATH = "/api-gateway/identity/registration/redirect/login";
     private boolean IS_SIGN_IN_URL = true;
 
     @InjectMocks
@@ -75,6 +80,9 @@ public class RegistrationControllerTests {
     @Test
     public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValid_ThenShouldReturnFoundStatusAndCIP_AUTDATAShouldBePresentInHeaders() throws Exception {
         // given
+        int NO_OF_COOKIES = 2;
+        ReflectionTestUtils.setField(registrationController, "createAccountEndpointPath", CREATE_ACCOUNT_ENDPOINT_PATH);
+        ReflectionTestUtils.setField(registrationController, "getOidcLoginEndpointPath", GET_LOGIN_ENDPOINT_PATH);
         List<String> redirectUris = new ArrayList<>(Arrays.asList("http://example.com", "http://example2.com"));
         String description = "Description";
         OpenIdRelyingParty openIdRelyingParty = OpenIdRelyingParty.builder()
@@ -85,14 +93,16 @@ public class RegistrationControllerTests {
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
-        when(cookieService.createCIPAuthDataCookie(any(), any())).thenReturn(anyString());
+        when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
+
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.FOUND );
+        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
         assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Set-Cookie")));
         assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Location")));
+        assertTrue(response.getHeaders().get("Set-Cookie").size() == NO_OF_COOKIES);
     }
 
     @Test
@@ -195,7 +205,7 @@ public class RegistrationControllerTests {
     }
 
     @Test
-    public void redirectLoginAuth_GivenMethodCalled_WhenCookieExistAndIsInvalid_ThenShouldReturnBadRequestCode() throws Exception {
+    public void redirectLoginAuth_GivenMethodCalled_WhenCookieExistAndIsInvalid_ThenShouldReturnBadRequestCode() throws UnsupportedEncodingException {
         // given
         cipAuthData = CIPAuthDataDTO.builder()
                 .redirectUri("redirectUri")
@@ -214,7 +224,7 @@ public class RegistrationControllerTests {
     }
 
     @Test
-    public void redirectLoginAuth_GivenMethodCalled_WhenCookieDoesntExistAndRedirectURLExist_ThenShouldReturnRedirectURL() throws Exception {
+    public void redirectLoginAuth_GivenMethodCalled_WhenCookieDoesntExistAndRedirectURLExist_ThenShouldReturnRedirectURL() throws UnsupportedEncodingException {
         // given
         String cookie = null;
         cipAuthData = null;
@@ -229,7 +239,7 @@ public class RegistrationControllerTests {
     }
 
     @Test
-    public void redirectLoginAuth_GivenMethodCalled_WhenCookieAndRedirectURLDoesntExist_ThenShouldReturnDefaultSignInRedirectUrl() throws Exception {
+    public void redirectLoginAuth_GivenMethodCalled_WhenCookieAndRedirectURLDoesntExist_ThenShouldReturnDefaultSignInRedirectUrl() throws UnsupportedEncodingException {
         // given
         String cookie = null;
         String redirectUrl = null;
@@ -238,6 +248,45 @@ public class RegistrationControllerTests {
         
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, IS_SIGN_IN_URL);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void redirectLoginAuth_GivenMethodCalled_WhenCipAuthDataDoesntExistsAndRedirectExistsAndIsNotSignInUrl_ThenShouldReturnAnOkHttpStatusCode() throws UnsupportedEncodingException {
+        // given
+        String cookie = "";
+        String redirectUrl = "http://google.com";
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
+        // when
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, false);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void redirectLoginAuth_GivenMethodCalled_WhenCookieClientIdIsInTFAndIsNotSignInUrl_ThenShouldReturnAnOkHttpStatusCode() throws UnsupportedEncodingException {
+        // given
+        ReflectionTestUtils.setField(registrationController, "tfComClientId", "tfComClientId");
+        cipAuthData = CIPAuthDataDTO.builder()
+                .clientId("tfComClientId")
+                .redirectUri("redirectUri")
+                .responseType("responseType")
+                .scope("scope")
+                .state("state")
+                .build();
+        String params = "?state=state&redirect_uri=redirect";
+        String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
+        when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenReturn(cipAuthData);
+        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
+        // when
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.OK);

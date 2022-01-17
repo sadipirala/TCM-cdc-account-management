@@ -15,6 +15,7 @@ import com.thermofisher.cdcam.services.CDCAccountsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 public class UsersHandler {
 
     private Logger logger = LogManager.getLogger(this.getClass());
+
+    @Value("${cdc.main.datacenter}")
+    private String mainApiDomain;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -45,7 +49,7 @@ public class UsersHandler {
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(", "));
         String query = String.format("SELECT UID, profile.email, profile.firstName, profile.lastName, isRegistered FROM accounts WHERE UID in (%s) ", joinedUids);
-        GSResponse response = cdcAccountsService.search(query, AccountType.FULL_LITE);
+        GSResponse response = cdcAccountsService.search(query, AccountType.FULL_LITE, mainApiDomain);
 
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(response.getResponseText(), CDCSearchResponse.class);
         if (cdcSearchResponse.getErrorCode() == 0) {

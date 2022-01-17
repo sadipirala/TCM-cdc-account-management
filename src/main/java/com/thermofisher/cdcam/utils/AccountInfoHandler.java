@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,24 +21,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class AccountInfoHandler {
 
-    @Value("${general.cipdc}")
-    private String CIPDC;
-
-    public String prepareForProfileInfoNotification(AccountInfo account) throws JsonProcessingException {
+    public static String prepareForProfileInfoNotification(AccountInfo account, String cipdc) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode json = mapper.valueToTree(account);
         ObjectNode cleanJson = removePropertiesForNotification(json);
         cleanJson.put("uuid", account.getUid());
-        cleanJson.put("cipdc", CIPDC);
+        cleanJson.put("cipdc", cipdc);
         return mapper.writeValueAsString(cleanJson);
     }
 
-    public String buildRegistrationNotificationPayload(AccountInfo account) throws JsonProcessingException {
+    public static String buildRegistrationNotificationPayload(AccountInfo account, String cipdc) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         List<String> propertiesToRemove = new ArrayList<>();
-        if (account.getMember().equals("false")) {
+        if (!account.isMarketingConsent()) {
             propertiesToRemove.add("company");
             propertiesToRemove.add("city");
         }
@@ -62,16 +58,17 @@ public class AccountInfoHandler {
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
+        propertiesToRemove.add("openIdProviderId");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
-        json.put("cipdc", CIPDC);
+        json.put("cipdc", cipdc);
         json.put("type", NotificationType.REGISTRATION.getValue());
 
         return mapper.writeValueAsString(json);
     }
 
-    public String prepareForAspireNotification(AccountInfo account) throws JsonProcessingException {
+    public static String prepareForAspireNotification(AccountInfo account) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
@@ -95,6 +92,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("interests");
         propertiesToRemove.add("jobRole");
         propertiesToRemove.add("hiraganaName");
+        propertiesToRemove.add("openIdProviderId");
 
         ObjectNode json = mapper.valueToTree(account);
         json.remove(propertiesToRemove);
@@ -102,7 +100,7 @@ public class AccountInfoHandler {
         return mapper.writeValueAsString(json);
     }
 
-    public Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
+    public static Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
         final String NA_COUNTRY_VALUE =  "NOT_AVAILABLE";
         String countryValue = account.getCountry();
         String country = (countryValue != null && !countryValue.trim().isEmpty()) ? countryValue : NA_COUNTRY_VALUE;
@@ -116,9 +114,8 @@ public class AccountInfoHandler {
         return messageAttributes;
     }
 
-    private ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
+    private static ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("member");
         propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
@@ -141,6 +138,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
+        propertiesToRemove.add("openIdProviderId");
 
         return objectNode.remove(propertiesToRemove);
     }

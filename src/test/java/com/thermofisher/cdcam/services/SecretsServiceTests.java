@@ -31,6 +31,7 @@ public class SecretsServiceTests {
 
     @Before
     public void setup() throws JSONException {
+        ReflectionTestUtils.setField(secretsService, "env", "prod");
         ReflectionTestUtils.setField(secretsService, "cdcamSecretsName", "secret");
         when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         when(secretsManager.getProperty(any(), anyString())).thenReturn("");
@@ -50,3 +51,4 @@ public class SecretsServiceTests {
         assertEquals(secret, result);
     }
 }
+

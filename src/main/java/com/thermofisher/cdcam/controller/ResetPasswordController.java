@@ -46,8 +46,8 @@ public class ResetPasswordController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String REQUEST_EXCEPTION_HEADER = "Request-Exception";
 
-    @Value("${identity.reset-password.cookie.cip-authdata.path}")
-    private String cipAuthDataPath;
+    @Value("${identity.reset-password.get-login-endpoint.path}")
+    private String getOidcLoginEndpointPath;
 
     @Value("${identity.reset-password.redirect_uri}")
     private String rpRedirectUri;
@@ -60,9 +60,6 @@ public class ResetPasswordController {
 
     @Autowired
     ReCaptchaService reCaptchaService;
-
-    @Autowired
-    ResetPasswordService resetPasswordService;
 
     @Autowired
     SecretsService secretsService;
@@ -135,6 +132,7 @@ public class ResetPasswordController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordSubmit body) {
+        logger.info(String.format("Reset password process started for: %s", body.getUid()));
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<ResetPasswordSubmit>> violations = validator.validate(body);
@@ -160,16 +158,23 @@ public class ResetPasswordController {
                 }
             }
 
+            try {
+                cdcResponseHandler.updateRequirePasswordCheck(body.getUid());
+            } catch (CustomGigyaErrorException e) {
+                logger.error(e.getMessage());
+            }
+
+            logger.info(String.format("Build password update notification started for: %s", body.getUid()));
             String hashedPassword = HashingService.toMD5(body.getNewPassword());
             PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder()
                 .newPassword(hashedPassword)
                 .uid(body.getUid())
                 .build();
             notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
-            sendResetPasswordConfirmationEmail(body.getUid());
             
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
+            logger.error(String.format("An exception occurred: %s",e.getMessage()));
             ResetPasswordResponse response = createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -234,9 +239,9 @@ public class ResetPasswordController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, error).build();
             }
 
-            logger.info("Building CIP_AUTHDATA cookie");
-            String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, cipAuthDataPath);
-            logger.info("CIP_AUTHDATA cookie built.");
+            logger.info("Building cip_authdata cookie to get login endpoint.");
+            String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, getOidcLoginEndpointPath);
+            logger.info("cip_authdata cookie built.");
 
             return ResponseEntity
                     .status(HttpStatus.FOUND)
@@ -262,15 +267,18 @@ public class ResetPasswordController {
                 .build();
     }
 
-    private void sendResetPasswordConfirmationEmail(String uid) throws IOException, CustomGigyaErrorException {
+    private void sendResetPasswordConfirmationEmail(String uid) throws CustomGigyaErrorException {
+        logger.info("Preparing reset password confirmation email");
         AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
-        resetPasswordService.sendResetPasswordConfirmation(account);
+        notificationService.sendResetPasswordConfirmationEmailNotification(account);
+        logger.info("Reset password confirmation email sent");
     }
 
     private void sendRequestResetPasswordEmail(String username, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException, CustomGigyaErrorException {
         logger.info("Preparing request reset password confirmation email");
         String email = cdcResponseHandler.getEmailByUsername(username);
         AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(email);
-        resetPasswordService.sendRequestResetPassword(account, requestResetPasswordDTO);
+        notificationService.sendRequestResetPasswordEmailNotification(account, requestResetPasswordDTO);
+        logger.info("Request reset password email sent");
     }
 }

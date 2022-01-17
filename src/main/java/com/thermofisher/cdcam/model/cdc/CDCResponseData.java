@@ -21,6 +21,8 @@ public class CDCResponseData {
 
     private int statusCode;
 
+    private int errorCode;
+
     private String errorDetails;
 
     private String regToken;

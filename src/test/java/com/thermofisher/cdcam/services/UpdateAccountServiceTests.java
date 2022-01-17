@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.services;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.junit.Assert;
@@ -22,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -113,4 +113,25 @@ public class UpdateAccountServiceTests {
         // validation
         Assert.assertEquals(updateResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    public void updateProfile_GivenAProfileWithEmail_WhenCallUpdateProfileAndLoginEmailIsRemoved_ThenShouldReturnAnOkHttpStatusCode() throws Exception {
+        // setup
+        ObjectNode response = JsonNodeFactory.instance.objectNode();
+        profileInfoDTO.setEmail("email@email.com");
+        profileInfoDTO.setActualEmail("email@email.com");
+        profileInfoDTO.setActualUsername("email@email.com");
+        ReflectionTestUtils.setField(updateAccountService, "isLegacyValidationEnabled", true);
+        response.put("code", HttpStatus.OK.value());
+        response.put("log", "");
+        when(cdcAccountsService.update(any())).thenReturn(response);
+
+        // execution
+        HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
+
+        // validation
+        Assert.assertEquals(updateResponse, HttpStatus.OK);
+    }
+
+
 }

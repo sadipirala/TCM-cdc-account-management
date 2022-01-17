@@ -15,8 +15,9 @@ import lombok.Setter;
 public class Data {
     private Thermofisher thermofisher;
     private Registration registration;
-    private String subscribe;
     private String awsQuickSightRole;
+    private boolean requirePasswordCheck;
+    private boolean subscribe;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")

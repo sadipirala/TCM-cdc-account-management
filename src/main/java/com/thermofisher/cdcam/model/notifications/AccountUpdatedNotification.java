@@ -17,7 +17,7 @@ public class AccountUpdatedNotification {
     private String company;
     private String city;
     private String country;
-    private String member;
+    private boolean marketingConsent;
     private String firstName;
     private String lastName;
     private String emailAddress;
@@ -29,7 +29,7 @@ public class AccountUpdatedNotification {
             .company(accountInfo.getCompany())
             .city(accountInfo.getCity())
             .country(accountInfo.getCountry())
-            .member(accountInfo.getMember())
+            .marketingConsent(accountInfo.isMarketingConsent())
             .firstName(accountInfo.getFirstName())
             .lastName(accountInfo.getLastName())
             .emailAddress(accountInfo.getEmailAddress())

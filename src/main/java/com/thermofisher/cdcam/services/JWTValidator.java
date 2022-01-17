@@ -14,8 +14,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 
-import com.gigya.socialize.GSKeyNotFoundException;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +25,7 @@ public class JWTValidator {
     private static final int JWT_PAYLOAD = 1;
     private static final int JWT_SIGNATURE = 2;
 
-    public static boolean isValidSignature(String jwt, JWTPublicKey jwtPublicKey) throws GSKeyNotFoundException, CustomGigyaErrorException {
+    public static boolean isValidSignature(String jwt, JWTPublicKey jwtPublicKey) {
         try {
             String[] jwtParts = jwt.split("[.]");
 

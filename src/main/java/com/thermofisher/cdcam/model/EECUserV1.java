@@ -5,7 +5,7 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @SuperBuilder
-public class EECUserV1 extends EECUser{
+public class EECUserV1 extends EECUser {
     private Boolean registered;
 
     public static EECUser build(EECUserV2 eecUserV2) {
@@ -16,6 +16,7 @@ public class EECUserV1 extends EECUser{
             .responseCode(eecUserV2.getResponseCode())
             .responseMessage(eecUserV2.getResponseMessage())
             .registered(eecUserV2.getIsRegistered())
+            .isAvailable(eecUserV2.getIsAvailable())
             .build();
     }
 }

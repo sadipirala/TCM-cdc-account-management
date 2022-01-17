@@ -30,7 +30,7 @@ public class AccountInfo {
     private String city;
     private String country;
     private String phoneNumber;
-    private String member;
+    private boolean marketingConsent;
     private String loginProvider;
     private int regAttempts;
     private String registrationType;
@@ -54,6 +54,9 @@ public class AccountInfo {
     private Boolean collectionAndUsePersonalInfoMarketing;
     private Boolean overseasTransferPersonalInfoMandatory;
     private Boolean overseasTransferPersonalInfoOptional;
+
+    // openId provider
+    private String openIdProviderId;
 
     @JsonIgnore
     public boolean isFederatedAccount() {

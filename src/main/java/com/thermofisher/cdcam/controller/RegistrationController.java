@@ -3,8 +3,8 @@ package com.thermofisher.cdcam.controller;
 import java.io.UnsupportedEncodingException;
 
 import com.gigya.socialize.GSKeyNotFoundException;
-import com.google.gson.JsonParseException;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.google.gson.JsonParseException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.services.CookieService;
@@ -43,10 +43,13 @@ public class RegistrationController {
     @Value("${identity.oidc.rp.id}")
     String tfComClientId;
 
-    @Value("${identity.cookie.cip-authdata.path}")
-    String cipAuthdataLoginPath;
+    @Value("${identity.registration.create-account-endpoint.path}")
+    String createAccountEndpointPath;
 
-    @Value("${identity.authorization.cookie.cip-authdata.path}")
+    @Value("${identity.registration.get-login-endpoint.path}")
+    String getOidcLoginEndpointPath;
+
+    @Value("${identity.authorization.path}")
     String cipAuthdataAuthorizationPath;
 
     @Value("${identity.oidc.default.scope}")
@@ -133,13 +136,16 @@ public class RegistrationController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, error).build();
                 }
 
-                logger.info("Building CIP_AUTHDATA cookie");
-                String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, cipAuthdataLoginPath);
-                logger.info("CIP_AUTHDATA cookie built.");
+                logger.info("Building cip_authdata cookie to get login endpoint.");
+                String cipAuthDataForLogin = cookieService.createCIPAuthDataCookie(cipAuthData, getOidcLoginEndpointPath);
+                logger.info("Building cip_authdata cookie for the create account endpoint.");
+                String cipAuthDataForRegistration = cookieService.createCIPAuthDataCookie(cipAuthData, createAccountEndpointPath);
+                logger.info("cip_authdata cookies built.");
 
                 return ResponseEntity
                     .status(HttpStatus.FOUND)
-                    .header(HttpHeaders.SET_COOKIE, cipAuthDataCookie)
+                    .header(HttpHeaders.SET_COOKIE, cipAuthDataForLogin)
+                    .header(HttpHeaders.SET_COOKIE, cipAuthDataForRegistration)
                     .header(HttpHeaders.LOCATION, "/global-registration/registration")
                     .build();
             }
@@ -168,7 +174,7 @@ public class RegistrationController {
     @ApiImplicitParams({
         @ApiImplicitParam(name = "redirectUrl", value = "URL to redirect, only used to redirect if cip_authdata cookie doesn't exist", required = false, dataType = "String", paramType = "query")
     })
-    public ResponseEntity<?> redirectLoginAuth(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestParam(required = false) String redirectUrl, @RequestParam(required = false) boolean isSignInUrl) {
+    public ResponseEntity<?> redirectLoginAuth(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestParam(required = false) String redirectUrl, @RequestParam(required = false) boolean isSignInUrl) throws UnsupportedEncodingException {
         logger.info("Validation for redirection started");
         try {
             if (ObjectUtils.isEmpty(cipAuthData) && ObjectUtils.isNotEmpty(redirectUrl) && !isSignInUrl) {
@@ -190,9 +196,9 @@ public class RegistrationController {
                 String newCipAuthData = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
 
                 return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .header(HttpHeaders.SET_COOKIE, newCipAuthData)
-                    .body(loginAuthUrl);
+                        .status(HttpStatus.OK)
+                        .header(HttpHeaders.SET_COOKIE, newCipAuthData)
+                        .body(loginAuthUrl);
             } else if (ObjectUtils.isNotEmpty(cipAuthData)) {
                 logger.info("Decoding cip_authdata.");
                 CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(cipAuthData);
@@ -236,14 +242,16 @@ public class RegistrationController {
             }
         } catch (JsonParseException j) {
             logger.error(String.format("JsonParseException: %s", Utils.stackTraceToString(j)));
+
+            logger.info("Invalid cip_authdata. Bad request.");
             return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .build();
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
         } catch (Exception e) {
             logger.error(String.format("An error occurred: %s", Utils.stackTraceToString(e)));
             return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .build();
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
         }
     }
 }

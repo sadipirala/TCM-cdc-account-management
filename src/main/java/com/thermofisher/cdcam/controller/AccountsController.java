@@ -13,7 +13,6 @@ import javax.validation.constraints.NotBlank;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.builders.EmailRequestBuilder;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
@@ -21,14 +20,13 @@ import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.EmailSentResponse;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.UsernameRecoveryEmailRequest;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
@@ -37,8 +35,8 @@ import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
-import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -51,6 +49,7 @@ import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -63,6 +62,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -86,8 +86,11 @@ public class AccountsController {
     private Logger logger = LogManager.getLogger(this.getClass());
     private static final String requestExceptionHeader = "Request-Exception";
 
+    @Value("${general.cipdc}")
+    private String cipdc;
+
     @Value("${legacy-email-verification.enabled}")
-    Boolean isEmailVerificationEnabled;
+    Boolean isLegacyEmailVerificationEnabled;
 
     @Autowired
     AccountRequestService accountRequestService;
@@ -96,10 +99,10 @@ public class AccountsController {
     CDCResponseHandler cdcResponseHandler;
 
     @Autowired
-    DataProtectionService dataProtectionService;
+    CookieService cookieService;
 
     @Autowired
-    EmailService emailService;
+    DataProtectionService dataProtectionService;
 
     @Autowired
     LiteRegHandler liteRegHandler;
@@ -260,9 +263,8 @@ public class AccountsController {
         try{
             logger.info("User profile data by UID requested.");
             ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
-
             logger.info(String.format("Retrieved user with UID: %s", uid));
-            return (profileInfoDTO != null) ? new ResponseEntity<ProfileInfoDTO>(profileInfoDTO, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return (profileInfoDTO != null) ? new ResponseEntity<>(profileInfoDTO, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (IOException e) {
             logger.error(String.format("An error occurred while retrieving user data from CDC: %s", Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -303,7 +305,6 @@ public class AccountsController {
 
                 JSONObject data = (JSONObject) event.get("data");
                 String uid = data.get("uid").toString();
-                logger.info("onAccountRegistered initiated.");
                 accountRequestService.onAccountRegistered(uid);
             }
         } catch (Exception e) {
@@ -320,12 +321,12 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfo) throws IOException {
-        logger.info(String.format("Account registration initiated. Username: %s", accountInfo.getUsername()));
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfoDTO, @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString) throws IOException {
+        logger.info(String.format("Account registration initiated. Username: %s", accountInfoDTO.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
-        Set<ConstraintViolation<AccountInfoDTO>> violations = validator.validate(accountInfo);
+        Set<ConstraintViolation<AccountInfoDTO>> violations = validator.validate(accountInfoDTO);
 
         if (violations.size() > 0) {
             logger.error(String.format("One or more errors occurred while creating the account. %s", violations.toArray()));
@@ -333,77 +334,94 @@ public class AccountsController {
         }
         
         try {
-            String reCaptchaSecretKey = accountInfo.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
+            String reCaptchaSecretKey = accountInfoDTO.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
             String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
-            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfo.getReCaptchaToken(), reCaptchaSecret);
-            logger.info(String.format("reCaptcha response for %s: %s", accountInfo.getUsername(), reCaptchaResponse.toString()));
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), reCaptchaSecret);
+            logger.info(String.format("reCaptcha response for %s: %s", accountInfoDTO.getUsername(), reCaptchaResponse.toString()));
         } catch (ReCaptchaLowScoreException v3Exception) {
-            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfo.getUsername(), v3Exception.getMessage()));
+            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfoDTO.getUsername(), v3Exception.getMessage()));
             return ResponseEntity.accepted().build();
         } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
-            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfo.getUsername(), v2Exception.getMessage()));
+            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfoDTO.getUsername(), v2Exception.getMessage()));
             return ResponseEntity.badRequest().build();
         } catch (JSONException jsonException) {
             logger.error(String.format("JSONException while verifying reCaptcha token: %s.", jsonException.getMessage()));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
-        String ciphertext = accountInfo.getCiphertext();
+        String ciphertext = accountInfoDTO.getCiphertext();
 
-        if (ciphertext != null && !ciphertext.isEmpty()) {
-            try{
+        if (StringUtils.isNotBlank(ciphertext)) {
+            try {
                 JSONObject decryptedUserData = dataProtectionService.decrypt(ciphertext);
-                logger.info(String.format("Decryption response for %s: %s", accountInfo.getUsername(), decryptedUserData.toString()));
-                accountInfo.setFirstName(decryptedUserData.getJSONObject("body").getString("firstName"));
-                accountInfo.setLastName(decryptedUserData.getJSONObject("body").getString("lastName"));
-                accountInfo.setEmailAddress(decryptedUserData.getJSONObject("body").getString("email"));
-            }
-            catch (JSONException exception) {
-                logger.error(String.format("Data decryption error for : %s. message: %s", accountInfo.getUsername(), exception.getMessage()));
+                logger.info(String.format("Decryption response for %s: %s", accountInfoDTO.getUsername(), decryptedUserData.toString()));
+                accountInfoDTO.setFirstName(decryptedUserData.getJSONObject("body").getString("firstName"));
+                accountInfoDTO.setLastName(decryptedUserData.getJSONObject("body").getString("lastName"));
+                accountInfoDTO.setEmailAddress(decryptedUserData.getJSONObject("body").getString("email"));
+            } catch (JSONException exception) {
+                logger.error(String.format("Data decryption error for: %s. %s", accountInfoDTO.getUsername(), exception.getMessage()));
             }
         }
 
-        AccountInfo account = AccountBuilder.parseFromAccountInfoDTO(accountInfo);
-        CDCResponseData cdcResponseData = accountRequestService.processRegistrationRequest(account);
+        AccountInfo account = AccountBuilder.buildFrom(accountInfoDTO);
 
-        if (cdcResponseData != null) {
-            int statusCode = cdcResponseData.getStatusCode();
+        CIPAuthDataDTO cipAuthDataDTO;
+        if (StringUtils.isNotBlank(cipAuthDataCookieString)) {
+            logger.info("Decoding cip_authdata.");
+            cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(cipAuthDataCookieString);
+            account.setOpenIdProviderId(cipAuthDataDTO.getClientId());
+            logger.info("cip_authdata decoded. Provider clientId set.");
+        } else {
+            logger.info("Blank cip_authdata.");
+        }
 
-            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
-                String uid = account.getUid();
-                logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), uid));
+        try {
+            logger.info(String.format("Creating new account for %s", account.getUsername()));
+            CDCResponseData accountCreationResponse = accountRequestService.createAccount(account);
+            String newAccountUid = accountCreationResponse.getUID();
+            account.setUid(newAccountUid);
+            logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), newAccountUid));
+            
+            // TODO: Move into a service. Or simply create a model for this notification?
+            String hashedPassword = HashingService.toMD5(account.getPassword());
+            account.setPassword(hashedPassword);
+            logger.info(String.format("Sending account registered notification for UID: %s", newAccountUid));
+            notificationService.sendAccountRegisteredNotification(account, cipdc);
+            logger.info(String.format("Account registered notification sent for UID: %s", newAccountUid));
 
-                if (isAspireRegistrationValid(account)) {
-                    notificationService.sendAspireRegistrationNotification(account);
-                    logger.info(String.format("Aspire Registration Notification sent successfully. UID: %s", uid));
-                }
-
-                if (account.getRegistrationType() != null && account.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
-                    logger.info(String.format("Attempting to send confirmation email. UID: %s", uid));
-                    accountRequestService.sendConfirmationEmail(account);
-                }
-
-                if (isEmailVerificationEnabled) {
-                    logger.info(String.format("Attempting to send verification email to user. UID: %s", uid));
-                    accountRequestService.sendVerificationEmail(uid);
-                }
-            } else {
-                logger.warn(String.format("Account registration request failed. Username: %s. Status: %d. Details: %s",
-                        account.getUsername(), statusCode, cdcResponseData.getErrorDetails()));
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            // TODO: Check notifications possible error scenarios
+            if (isAspireRegistrationValid(account)) {
+                logger.info(String.format("Sending Aspire registration notification for UID: %s", newAccountUid));
+                notificationService.sendAspireRegistrationNotification(account);
+                logger.info(String.format("Aspire registration notification sent for UID: %s", newAccountUid));
             }
 
-            return new ResponseEntity<>(cdcResponseData, HttpStatus.OK);
-        } else {
-            logger.error(String.format("An error occurred while creating account for: %s", account.getUsername()));
+            if (account.getRegistrationType() != null && account.getRegistrationType().equals(RegistrationType.BASIC.getValue())) {
+                logger.info(String.format("Sending registration confirmation notification for UID: %s", newAccountUid));
+                notificationService.sendConfirmationEmailNotification(account);
+                logger.info(String.format("Registration confirmation notification sent for UID: %s", newAccountUid));
+            }
+
+            if (isLegacyEmailVerificationEnabled) {
+                logger.info(String.format("Sending email verification notification for UID: %s", newAccountUid));
+                accountRequestService.sendVerificationEmail(newAccountUid);
+                logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
+            }
+
+            return new ResponseEntity<>(accountCreationResponse, HttpStatus.OK);
+        } catch (CustomGigyaErrorException e) {
+            logger.error(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while creating account for: %s , Error: %s", account.getUsername(), Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private boolean isAspireRegistrationValid (AccountInfo accountInfo) {
-        return accountInfo.getAcceptsAspireEnrollmentConsent() != null && accountInfo.getAcceptsAspireEnrollmentConsent()
-            && accountInfo.getIsHealthcareProfessional() != null && !accountInfo.getIsHealthcareProfessional()
-            && accountInfo.getAcceptsAspireTermsAndConditions() != null && accountInfo.getAcceptsAspireTermsAndConditions();
+    private boolean isAspireRegistrationValid (AccountInfo accountInfoDTO) {
+        return accountInfoDTO.getAcceptsAspireEnrollmentConsent() != null && accountInfoDTO.getAcceptsAspireEnrollmentConsent()
+            && accountInfoDTO.getIsHealthcareProfessional() != null && !accountInfoDTO.getIsHealthcareProfessional()
+            && accountInfoDTO.getAcceptsAspireTermsAndConditions() != null && accountInfoDTO.getAcceptsAspireTermsAndConditions();
     }
 
     @PostMapping("/merged")
@@ -433,7 +451,6 @@ public class AccountsController {
 
             for (int i = 0; i < events.length(); i++) {
                 JSONObject event = events.getJSONObject(i);
-    
      
                 if (isMergeEvent(event)) {
                     logger.info("accountMerged webhook event fired.");
@@ -471,23 +488,22 @@ public class AccountsController {
     })
     public ResponseEntity<String> sendRecoverUsernameEmail(@RequestBody @Valid UsernameRecoveryDTO usernameRecoveryDTO) {
         try {
-            AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(usernameRecoveryDTO.getUserInfo().getEmail());
+            String email = usernameRecoveryDTO.getUserInfo().getEmail();
+            logger.info("Username recovery email requested by %s", email);
+            AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(email);
 
             if (account == null) {
-                logger.warn(String.format("No account found for email: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
+                logger.warn(String.format("No account found for %s while sending username recovery email.", email));
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
-            UsernameRecoveryEmailRequest usernameRecoveryEmailRequest = EmailRequestBuilder.buildUsernameRecoveryEmailRequest(usernameRecoveryDTO, account);
-            EmailSentResponse response = emailService.sendUsernameRecoveryEmail(usernameRecoveryEmailRequest);
-            
-            if (!response.isSuccess()) {
-                logger.error(String.format("Failed to send username recovery email to: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
-                return new ResponseEntity<>("There was an error sending username recovery email.", HttpStatus.BAD_REQUEST);
-            }
-            logger.info(String.format("Username recovery email sent to email address: %s", usernameRecoveryDTO.getUserInfo().getEmail()));
+            logger.info(String.format("Sending username recovery email to %s", email));
+            notificationService.sendRecoveryUsernameEmailNotification(usernameRecoveryDTO, account);
+            logger.info(String.format("Username recovery email sent to %s", email));
+
             return new ResponseEntity<>("OK", HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace();
             return new ResponseEntity<>("", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -574,9 +590,9 @@ public class AccountsController {
             
             logger.info(String.format("Starting user profile update process with UID: %s", profileInfoDTO.getUid()));
             String uid = profileInfoDTO.getUid();
-            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
-            profileInfoDTO.setActualEmail(accountInfo.getEmailAddress());
-            profileInfoDTO.setActualUsername(accountInfo.getUsername());
+            AccountInfo accountInfoDTO = cdcResponseHandler.getAccountInfo(uid);
+            profileInfoDTO.setActualEmail(accountInfoDTO.getEmailAddress());
+            profileInfoDTO.setActualUsername(accountInfoDTO.getUsername());
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));

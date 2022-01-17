@@ -1,15 +1,18 @@
 package com.thermofisher.cdcam.utils;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class EmailLocaleUtils {
-    private final static String CHINA_LOCALE = "zh-cn";
-    private final static String CHINA_TEMPLATE_MAPPING = "zh_CN";
-    private final static String TAIWAN_LOCALE = "zh-tw";
-    private final static String TFCOM_LOCALE_FOR_TAIWAN = "zt_TW";
-    private final static String TAIWAN_TEMPLATE_MAPPING = "zh_TW";
-    private final static String SUPPORTED_LOCALES = "en_US,de_DE,es_MX,es_AR,es_ES,es_CL,fr_FR,ko_KR,en_KR,ja_JP,en_JP,zh_CN,en_CN,zh_TW,en_IN";
+    private final static String VALID_LOCALE_REGEX = "^[a-zA-Z]{2}_[a-zA-Z]{2}$";
+    private final static String CDC_CHINA_LOCALE = "zh-cn";
+    private final static String CHINA_LOCALE_FOR_EMAIL = "zh_CN";
+    private final static String CDC_TAIWAN_LOCALE = "zh-tw";
+    private final static String TFCOM_TAIWAN_LOCALE = "zt_tw";
+    private final static String TAIWAN_LOCALE_FOR_EMAIL = "zh_TW";
+    public final static String US_ENGLISH_LOCALE = "en_US";
 
     /**
      * Processes a locale value and returns the best locale match to be used by an email.
@@ -23,42 +26,39 @@ public class EmailLocaleUtils {
      *      
      */
     public static String processLocaleForNotification(String locale, String country) {
-        if (isLocaleSupported(locale)) {
-            return getLocaleAsNeededByANotification(locale);
+        if (StringUtils.isBlank(locale) || StringUtils.isBlank(country)) {
+            return US_ENGLISH_LOCALE;
         }
 
         if (isSpecialCountryLocale(locale)) { 
-            return getCountryMatchingLocale(locale);
+            return getSpecialCountryLocaleForEmail(locale);
         }
 
-        if (locale != null && country != null) {
-            return joinLocaleAndCountry(locale, country);
+        if (isLocaleFormatValid(locale)) {
+            return parseLocaleForEmails(locale);
         }
         
+        if (locale.length() == 2 && country.length() == 2) {
+            return joinLocaleAndCountry(locale, country);
+        }
+
         return locale;
     }
 
-    /**
-     * Checks whether a locale is supported for an email.
-     * 
-     * @param locale the locale.
-     * 
-     * @return whether the locale is supported for an email.
-     */
-    private static boolean isLocaleSupported(String locale) {
-        List<String> supportedLocaleList = Arrays.asList(SUPPORTED_LOCALES.toUpperCase().split(","));
-        return supportedLocaleList.contains(locale.toUpperCase());
+    private static boolean isLocaleFormatValid(String locale) {
+        Pattern pattern = Pattern.compile(VALID_LOCALE_REGEX);
+        Matcher matcher = pattern.matcher(locale);
+        return matcher.find();
     }
 
     /**
      * Process the locale as needed by an email.
-     * <p>This is just a failsafe operation to send the locale exactly as needed by an email,
-     * which is as (e.g.) es_MX (lowercase_uppercase).</p>
+     * <p>(e.g.) es_MX (lowercase_uppercase).</p>
      * 
      * @param locale the locale. Format: es_MX.
      * @return the locale as needed by an email.
      */
-    private static String getLocaleAsNeededByANotification(String locale) {
+    private static String parseLocaleForEmails(String locale) {
         final int LANG = 0;
         final int COUNTRY = 1;
         String[] localeSections = locale.split("_");
@@ -75,7 +75,7 @@ public class EmailLocaleUtils {
      * @return whether a locale needs a special handling for a specific country.
      */
     private static boolean isSpecialCountryLocale(String locale) {
-        return locale.toLowerCase().equals(CHINA_LOCALE) || isTaiwanLocale(locale);
+        return isCdcChinaLocale(locale) || isTaiwanLocale(locale);
     }
 
     /**
@@ -87,20 +87,20 @@ public class EmailLocaleUtils {
      * 
      * @return the locale as needed by an email.
      */
-    private static String getCountryMatchingLocale(String locale) {
-        if (locale.toLowerCase().equals(CHINA_LOCALE)) {
-            return CHINA_TEMPLATE_MAPPING;
+    private static String getSpecialCountryLocaleForEmail(String locale) {
+        if (isCdcChinaLocale(locale)) {
+            return CHINA_LOCALE_FOR_EMAIL;
         }
 
         if (isTaiwanLocale(locale)) {
-            return TAIWAN_TEMPLATE_MAPPING;
+            return TAIWAN_LOCALE_FOR_EMAIL;
         }
 
         return locale;
     }
 
     /**
-     * Joins the lowercased locale and uppercased country in the following format. </br>
+     * Joins the locale and country in the following format. </br>
      * (e.g.) es_MX.
      * 
      * @param locale the locale.
@@ -113,15 +113,26 @@ public class EmailLocaleUtils {
     }
 
     /**
-     * Checks whether a locale is from Taiwan.
-     * <p>Locales (non-case-sensitive): zh-tw, zt_tw.</p>
+     * Checks whether a locale is from China as needed by CDC.
+     * <p>Locale as needed by CDC (lowercase): zh-cn.</p>
      * 
-     * Keep in mind that for CDC, zt_TW is not a valid locale.
+     * @param locale the locale.
+     * @return whether a locale is from China.
+     */
+    private static boolean isCdcChinaLocale(String locale) {
+        return locale.toLowerCase().equals(CDC_CHINA_LOCALE);
+    }
+
+    /**
+     * Checks whether a locale is from Taiwan.
+     * <p>Locales (lowercase): zh-tw, zt_tw.</p>
+     * 
+     * tf.com's zt_TW locale is not a valid for CDC.
      * 
      * @param locale the locale.
      * @return whether a locale is from Taiwan.
      */
     private static boolean isTaiwanLocale(String locale) {
-        return locale.toLowerCase().equals(TAIWAN_LOCALE) || locale.toLowerCase().equals(TFCOM_LOCALE_FOR_TAIWAN.toLowerCase());
+        return locale.toLowerCase().equals(CDC_TAIWAN_LOCALE) || locale.toLowerCase().equals(TFCOM_TAIWAN_LOCALE);
     }
 }

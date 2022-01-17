@@ -4,16 +4,20 @@ import java.io.IOException;
 
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.China;
 import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.Japan;
 import com.thermofisher.cdcam.model.cdc.Korea;
+import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.cdc.Thermofisher;
 import com.thermofisher.cdcam.model.cdc.Work;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.simple.parser.ParseException;
 import lombok.Getter;
@@ -36,7 +40,7 @@ public class AccountUtils {
     public static final String lastName = "last";
     public static final String country = "United States";
     public static final String city = "testCity";
-    public static final String member = "member";
+    public static final boolean marketingConsent = true;
     public static final String localeName = "en_US";
     public static final String loginProvider = "oidc";
     public static final String federationSocialProviders = "saml-FID-TF-Centrify,site";
@@ -47,6 +51,9 @@ public class AccountUtils {
     public static final String jobRole = "Development, HR";
     public static final String interest = "Health, Lab";
     public static final String phoneNumber = "6648675309";
+    public static final String cipdc = "us";
+    public static final String openIdProviderId = "";
+    
     
     // Korea
     public static final Boolean receiveMarketingInformation = true;
@@ -81,10 +88,11 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .member(member)
+                .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
                 .socialProviders(federationSocialProviders)
                 .regAttempts(0)
+                .openIdProviderId(openIdProviderId)
                 .build();
     }
 
@@ -100,10 +108,11 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .member(member)
+                .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
                 .socialProviders("site")
                 .regAttempts(0)
+                .openIdProviderId(openIdProviderId)
                 .build();
     }
 
@@ -122,10 +131,11 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .member(member)
+                .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
                 .socialProviders("site")
                 .regAttempts(0)
+                .openIdProviderId("")
                 .build();
     }
 
@@ -141,7 +151,7 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .member(member)
+                .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
                 .socialProviders("site")
                 .regAttempts(0)
@@ -153,6 +163,7 @@ public class AccountUtils {
                 .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
                 .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
                 .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
+                .openIdProviderId(openIdProviderId)
                 .build();
     }
 
@@ -168,11 +179,12 @@ public class AccountUtils {
                 .company(company)
                 .country(country)
                 .city(city)
-                .member(member)
+                .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
                 .socialProviders("site")
                 .regAttempts(0)
                 .hiraganaName(hiraganaName)
+                .openIdProviderId(openIdProviderId)
                 .build();
     }
 
@@ -197,7 +209,7 @@ public class AccountUtils {
         .company(company)
         .country(country)
         .city(city)
-        .member(member)
+        .marketingConsent(marketingConsent)
         .reCaptchaToken(reCaptchaToken)
         .isReCaptchaV2(false)
         .acceptsAspireEnrollmentConsent(acceptsAspireEnrollmentConsent)
@@ -217,9 +229,10 @@ public class AccountUtils {
             .build();
 
         Data data = Data.builder()
-            .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
             .registration(buildRegistrationObject(accountInfo))
+            .subscribe(accountInfo.isMarketingConsent())
+            .requirePasswordCheck(false)
             .build();
 
         Work work = buildWorkObject(accountInfo);
@@ -237,10 +250,37 @@ public class AccountUtils {
         return newAccount;
     }
 
+    public static CDCAccount getCDCAccount(AccountInfo accountInfo) throws JSONException {
+        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
+        Thermofisher thermofisher = Thermofisher.builder()
+            .legacyUsername(accountInfo.getUsername())
+            .build();
+
+        Data data = Data.builder()
+            .thermofisher(thermofisher)
+            .registration(buildRegistrationObject(accountInfo))
+            .subscribe(accountInfo.isMarketingConsent())
+            .requirePasswordCheck(false)
+            .build();
+
+        Work work = buildWorkObject(accountInfo);
+
+        Profile profile = buildProfileObject(accountInfo, work, locale);
+
+        CDCAccount account = CDCAccount.builder()
+            .UID(accountInfo.getUid())
+            .profile(profile)
+            .data(data)
+            .build();
+
+        return account;
+    }
+
     public static Data getData() {
         return Data.builder()
             .thermofisher(getThermofisher())
-            .subscribe("false")
+            .subscribe(false)
+            .requirePasswordCheck(false)
             .build();
     }
 
@@ -271,7 +311,7 @@ public class AccountUtils {
     }
 
     private static String getPhoneNumberForChina(AccountInfo accountInfo) {
-        return accountInfo.getMember().equals("true") && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
+        return accountInfo.isMarketingConsent() && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
     }
 
     private static Profile buildProfileObject(AccountInfo accountInfo, Work work, String locale) {
@@ -284,14 +324,14 @@ public class AccountUtils {
                 .timezone(accountInfo.getTimezone())
                 .build();
 
-        if (accountInfo.getMember().equals("true")) {
+        if (accountInfo.isMarketingConsent()) {
             profile.setCity(accountInfo.getCity());
         }
         return profile;
     }
 
     private static Work buildWorkObject(AccountInfo accountInfo) {
-        return accountInfo.getMember().equals("false") ? null : Work.builder()
+        return !accountInfo.isMarketingConsent() ? null : Work.builder()
                 .company(accountInfo.getCompany())
                 .build();
     }
@@ -328,19 +368,31 @@ public class AccountUtils {
                 .build();
         }
 
-        if (japan == null && china == null && korea == null) {
-            return null;
+        OpenIdProvider openIdProvider = OpenIdProvider.builder().build();
+        if (StringUtils.isNotBlank(accountInfo.getOpenIdProviderId())) {
+            openIdProvider.setClientID(accountInfo.getOpenIdProviderId());
         }
 
         return Registration.builder()
             .japan(japan)
             .china(china)
             .korea(korea)
+            .openIdProvider(openIdProvider)
             .build();
     }
 
     public static String getSiteAccountJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountWithoutPreferencesJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-without-preferences.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountWithMarketingConsentAsFalse() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-marketing-consent-false.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 

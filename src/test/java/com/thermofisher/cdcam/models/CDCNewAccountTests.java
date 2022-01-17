@@ -2,6 +2,8 @@ package com.thermofisher.cdcam.models;
 
 import static org.junit.Assert.assertEquals;
 
+import com.gigya.socialize.GSObject;
+import com.google.gson.Gson;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
@@ -63,8 +65,8 @@ public class CDCNewAccountTests {
     }
 
     private static String prepareData(Data data) throws JSONException {
-        JSONObject dataJson = Utils.removeNullValuesFromJsonObject(new JSONObject(data));
-        return dataJson.toString();
+        Gson gson = new Gson();
+        return gson.toJson(data);
     }
 
     private static String prepareProfile(Profile profile) throws JSONException {

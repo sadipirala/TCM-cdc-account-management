@@ -32,6 +32,9 @@ public class LiteRegHandler {
     @Value("${eec.request.limit}")
     public int requestLimit;
 
+    @Value("${cdc.main.datacenter}")
+    private String mainApiDomain;
+
     @Autowired
     CDCResponseHandler cdcResponseHandler;
 
@@ -47,22 +50,21 @@ public class LiteRegHandler {
         }
 
         for (String email : emails) {
-            String query = String.format("SELECT * FROM accounts WHERE profile.username CONTAINS '%1$s' OR profile.email CONTAINS '%1$s'", email);
-            
             try {
-                CDCSearchResponse searchResponse = cdcResponseHandler.search(query, AccountType.FULL_LITE);
+                boolean isAvailable = true;
+                CDCSearchResponse searchResponse = cdcResponseHandler.searchInBothDC(email);
                 List<CDCAccount> accounts = searchResponse.getResults();
-
                 if (accounts.size() == 0) {
                     logger.info(String.format("Registering lite account for: %s", email));
-                    EECUser user = liteRegisterUser(email);
+                    EECUser user = liteRegisterUser(email, isAvailable);
                     liteRegisteredUsers.add(user);
                 } else {
                     logger.info(String.format("%s already exists, getting full registered account, lite otherwise.", email));
+                    isAvailable = false;
                     CDCAccount account = findFullRegisteredAccountOrFirstFromList(accounts);
                     int responseCode = searchResponse.getStatusCode();
                     String responseMessage = searchResponse.getStatusReason();
-                    EECUser user = buildValidEECUser(account, email, responseCode, responseMessage);
+                    EECUser user = buildValidEECUser(account, email, responseCode, responseMessage, isAvailable);
                     liteRegisteredUsers.add(user);
                 }
             } catch (CustomGigyaErrorException e) {
@@ -90,17 +92,18 @@ public class LiteRegHandler {
         return liteRegisteredUsersV1;
     }
 
-    private EECUser liteRegisterUser(String email) throws IOException, CustomGigyaErrorException {
+    private EECUser liteRegisterUser(String email, boolean isAvailable) throws IOException, CustomGigyaErrorException {
         CDCResponseData cdcResponseData = cdcResponseHandler.liteRegisterUser(email);
-        CDCAccount account = new CDCAccount();
-        account.setUID(cdcResponseData.getUID());
-        account.setIsRegistered(false);
-        account.setIsActive(false);
+        CDCAccount account = CDCAccount.builder()
+            .UID(cdcResponseData.getUID())
+            .isRegistered(false)
+            .isActive(false)
+            .build();
 
-        return buildValidEECUser(account, email, cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason());
+        return buildValidEECUser(account, email, cdcResponseData.getStatusCode(), cdcResponseData.getStatusReason(), isAvailable);
     }
 
-    private EECUser buildValidEECUser(CDCAccount account, String email, int responseCode, String responseMessage) {
+    private EECUser buildValidEECUser(CDCAccount account, String email, int responseCode, String responseMessage, boolean isAvailable) {
         String username = Objects.isNull(account.getProfile()) ? null : account.getProfile().getUsername();
         boolean isActive = Objects.isNull(account.getIsActive()) ? false : account.getIsActive();
         boolean isRegistered = Objects.isNull(account.getIsRegistered()) ? false : account.getIsRegistered();
@@ -113,6 +116,7 @@ public class LiteRegHandler {
             .isActive(isActive)
             .responseCode(responseCode)
             .responseMessage(responseMessage)
+            .isAvailable(isAvailable)
             .build();
     }
 

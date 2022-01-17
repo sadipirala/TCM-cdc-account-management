@@ -18,7 +18,7 @@ public class MergedAccountNotification {
     private String company;
     private String city;
     private String country;
-    private String member;
+    private boolean marketingConsent;
 
     public static MergedAccountNotification build(AccountInfo accountInfo) {
         return MergedAccountNotification.builder()
@@ -27,7 +27,7 @@ public class MergedAccountNotification {
             .company(accountInfo.getCompany())
             .city(accountInfo.getCity())
             .country(accountInfo.getCountry())
-            .member(accountInfo.getMember())
+            .marketingConsent(accountInfo.isMarketingConsent())
             .build();
     }
 }

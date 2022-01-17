@@ -53,7 +53,7 @@
     "statusCode": 200
   },
   "data": {
-    "subscribe": "member",
+    "subscribe": true,
     "terms": true
   },
   "isVerified": true,

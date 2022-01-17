@@ -3,7 +3,9 @@ package com.thermofisher.cdcam.enums;
 public enum NotificationType {
     MERGE("accountMerged"),
     REGISTRATION("accountRegistered"),
-    UPDATE("accountUpdated");
+    UPDATE("accountUpdated"),
+    EMAIL_UPDATED("emailUpdated"),
+    MARKETING_CONSENT_UPDATED("marketingConsentUpdated");
 
     private String value;
 

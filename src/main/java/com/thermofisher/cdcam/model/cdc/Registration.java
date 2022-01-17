@@ -20,6 +20,7 @@ public class Registration {
     private Japan japan;
     private China china;
     private Korea korea;
+    private OpenIdProvider openIdProvider;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")
@@ -40,6 +41,7 @@ public class Registration {
                 .china(china)
                 .japan(registration.getJapan())
                 .korea(registration.getKorea())
+                .openIdProvider(registration.getOpenIdProvider())
                 .build();
     }
 }

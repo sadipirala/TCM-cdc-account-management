@@ -24,7 +24,7 @@ public class AccountInfoDTO {
     @Size(max = 50)
     private String emailAddress;
     @NotBlank
-    @Size(max = 20)
+    @Size(min = 8, max = 20)
     private String password;
     private String[] jobRoles;
     private String[] interests;
@@ -37,7 +37,7 @@ public class AccountInfoDTO {
     private String country;
     @Size(max = 13)
     private String phoneNumber;
-    private String member;
+    private boolean marketingConsent;
     private String registrationType;
     private String timezone;
     private String hiraganaName;

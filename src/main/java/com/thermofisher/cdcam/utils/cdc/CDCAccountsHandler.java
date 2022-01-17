@@ -5,6 +5,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.utils.Utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 
 public class CDCAccountsHandler {
@@ -17,43 +18,45 @@ public class CDCAccountsHandler {
             .build();
 
         Data data = Data.builder()
-            .subscribe(accountInfo.getMember())
             .thermofisher(thermofisher)
             .registration(buildRegistrationObject(accountInfo))
+            .subscribe(accountInfo.isMarketingConsent())
+            .requirePasswordCheck(false)
             .build();
 
         Work work = buildWorkObject(accountInfo);
 
         Profile profile = buildProfileObject(accountInfo, work, locale);
 
-        CDCNewAccount newAccount = CDCNewAccount.builder()
+        //Preferences preferences = buildPreferencesObject(accountInfo);
+
+        return CDCNewAccount.builder()
             .username(accountInfo.getUsername())
             .email(accountInfo.getEmailAddress())
             .password(accountInfo.getPassword())
             .profile(profile)
             .data(data)
+            //.preferences(preferences)
             .build();
-
-        return newAccount;
     }
 
     private static Work buildWorkObject(AccountInfo accountInfo) {
-        return accountInfo.getMember().equals("false") ? null : Work.builder()
+        return !accountInfo.isMarketingConsent() ? null : Work.builder()
                 .company(accountInfo.getCompany())
                 .build();
     }
 
     private static Profile buildProfileObject(AccountInfo accountInfo, Work work, String locale) {
         Profile profile = Profile.builder()
-                .firstName(accountInfo.getFirstName())
-                .lastName(accountInfo.getLastName())
-                .locale(locale)
-                .country(accountInfo.getCountry())
-                .work(work)
-                .timezone(accountInfo.getTimezone())
-                .build();
+            .firstName(accountInfo.getFirstName())
+            .lastName(accountInfo.getLastName())
+            .locale(locale)
+            .country(accountInfo.getCountry())
+            .work(work)
+            .timezone(accountInfo.getTimezone())
+            .build();
 
-        if (accountInfo.getMember().equals("true")) {
+        if (accountInfo.isMarketingConsent()) {
             profile.setCity(accountInfo.getCity());
         }
         return profile;
@@ -91,18 +94,26 @@ public class CDCAccountsHandler {
                 .build();
         }
 
-        if (japan == null && china == null && korea == null) {
-            return null;
+        OpenIdProvider openIdProvider = OpenIdProvider.builder().build();
+        if (StringUtils.isNotBlank(accountInfo.getOpenIdProviderId())) {
+            openIdProvider.setClientID(accountInfo.getOpenIdProviderId());
         }
 
         return Registration.builder()
             .japan(japan)
             .china(china)
             .korea(korea)
+            .openIdProvider(openIdProvider)
             .build();
     }
 
     private static String getPhoneNumberForChina(AccountInfo accountInfo) {
-        return accountInfo.getMember().equals("true") && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
+        return accountInfo.isMarketingConsent() && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
     }
+
+    /* private static Preferences buildPreferencesObject(AccountInfo accountInfo) {
+        Consent consent = Consent.builder().isConsentGranted(accountInfo.isMarketingConsent()).build();
+        Marketing marketing = Marketing.builder().consent(consent).build();
+        return Preferences.builder().marketing(marketing).build();
+    } */
 }

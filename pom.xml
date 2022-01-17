@@ -41,7 +41,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.6</version>
+            <version>2.7</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -178,6 +178,17 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.5</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/thermofisher/cdcam/aws/**/*</exclude>
+                        <exclude>com/thermofisher/cdcam/enums/**/*</exclude>
+                        <exclude>com/thermofisher/cdcam/services/SecretsService.*</exclude>
+                        <exclude>com/thermofisher/cdcam/services/JWTValidator.*</exclude>
+                        <exclude>com/thermofisher/cdcam/services/HttpService.*</exclude>
+                        <exclude>com/thermofisher/cdcam/CorsFilterConfig.*</exclude>
+                        <exclude>com/thermofisher/cdcam/builders/GSRequestFactory.*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-prepare-agent</id>
@@ -191,11 +202,25 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                         <configuration>
-                            <excludes>
-                                <exclude>com/thermofisher/cdcam/aws/**/*</exclude>
-                                <exclude>com/thermofisher/cdcam/cdc/*CDCAccounts.*</exclude>
-                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.9</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
                         </configuration>
                     </execution>
                 </executions>

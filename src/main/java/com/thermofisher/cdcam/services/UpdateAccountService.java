@@ -1,6 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import com.thermofisher.cdcam.model.cdc.Profile;
@@ -29,7 +28,7 @@ public class UpdateAccountService {
     @Autowired
     CDCResponseHandler cdcAccountsService;
 
-    public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException, JsonProcessingException {
+    public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException {
         logger.info(String.format("Account update for time zone triggered. UID: %s", uid));
 
         Profile profile = Profile.builder().timezone(timezone).build();

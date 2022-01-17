@@ -11,4 +11,5 @@ public class EECUser {
     private String email;
     private int responseCode;
     private String responseMessage;
+    private Boolean isAvailable;
 }

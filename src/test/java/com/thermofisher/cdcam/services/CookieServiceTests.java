@@ -1,20 +1,13 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.enums.CookieType;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.services.CookieService;
-import com.thermofisher.cdcam.services.EncodeService;
 
-import com.thermofisher.cdcam.utils.Utils;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class CookieServiceTests {
-    Logger logger = LogManager.getLogger(this.getClass());
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
    
     @InjectMocks
@@ -40,8 +32,8 @@ public class CookieServiceTests {
     @Mock
     EncodeService encodeService;
 
-    @Value("${identity.cookie.cip-authdata.path}")
-    String cipAuthdataPath;
+    @Value("${identity.registration.get-login-endpoint.path}")
+    String getOidcLoginEndpointPath;
 
     @Before
     public void setup() {
@@ -67,7 +59,7 @@ public class CookieServiceTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(new byte[] {});
         
         // when
-        String [] txtCookieArray = cookieService.createCIPAuthDataCookie(cipAuthData, cipAuthdataPath).split(";");
+        String [] txtCookieArray = cookieService.createCIPAuthDataCookie(cipAuthData, getOidcLoginEndpointPath).split(";");
         String txtCookie = txtCookieArray[0].substring(13);
 
         // then
@@ -77,18 +69,10 @@ public class CookieServiceTests {
     @Test
     public void decodeCIPAuthDataCookie_givenACodedStringInBase64_whenMethodIsCalled_thenReturnDecodedString() {
         // given
-        CIPAuthDataDTO cipAuthData = CIPAuthDataDTO.builder()
-                .clientId("clientId")
-                .redirectUri("redirectUri")
-                .responseType("responseType")
-                .scope("scope")
-                .state("state")
-                .build();
         String cookieValue = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
         byte[] cookieStringBytes = cookieValue.getBytes();
         String returnedDecodedString = "{\"client_id\":\"clientId\",\"redirect_uri\":\"redirectUri\",\"state\":\"state\",\"scope\":\"scope\",\"response_type\":\"responseType\"}";
         when(encodeService.decodeBase64(cookieStringBytes)).thenReturn(returnedDecodedString);
-        //when(jsonParserService.parseStringToCipAuthDataDto("{\"clientId\":\"clientId\",\"redirectUri\":\"redirectUri\",\"state\":\"state\",\"scope\":\"scope\",\"responseType\":\"responseType\"}")).thenReturn(cipAuthData);
 
         // when
         CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(cookieValue);
@@ -105,13 +89,13 @@ public class CookieServiceTests {
     public void buildDefaultCipAuthDataCookie_whenMethodIsCalled_thenShouldReturnCookieInBase64AsString() {
         // given
         CookieType cookieType = CookieType.RESET_PASSWORD;
+        String cookieMock = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         // when
         String result = cookieService.buildDefaultCipAuthDataCookie(cookieType);
-        logger.info(result);
-
+        
         // then
-        assertTrue(!Utils.isNullOrEmpty(result));
+        assertEquals(cookieMock, result);
     }
 }

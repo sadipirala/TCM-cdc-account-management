@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.handlers;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,7 +93,7 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = false;
         final Boolean isRegistered = false;
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setIsActive(isActive);
         account.setIsRegistered(isRegistered);
@@ -101,7 +101,7 @@ public class LiteRegHandlerTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -121,9 +121,10 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = true;
         final Boolean isRegistered = true;
+        final Boolean isAvailable = false;
         final String username = "test@mail.com";
         Profile profile = Profile.builder().username(username).build();
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setProfile(profile);
         account.setIsActive(isActive);
@@ -132,8 +133,9 @@ public class LiteRegHandlerTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
-        
+        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -147,6 +149,7 @@ public class LiteRegHandlerTests {
         assertEquals(username, userV2.getUsername());
         assertEquals(isRegistered, userV2.getIsRegistered());
         assertEquals(isActive, userV2.getIsActive());
+        assertEquals(isAvailable, userV2.getIsAvailable());
     }
 
     @Test
@@ -154,9 +157,10 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = true;
         final Boolean isRegistered = true;
+        final Boolean isAvailable = true;
         final String username = "test@mail.com";
         Profile profile = Profile.builder().username(username).build();
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setProfile(profile);
         account.setIsActive(isActive);
@@ -165,7 +169,8 @@ public class LiteRegHandlerTests {
         List<CDCAccount> accounts = new ArrayList<CDCAccount>();
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
@@ -184,6 +189,7 @@ public class LiteRegHandlerTests {
         assertNull(userV2.getUsername());
         assertFalse(userV2.getIsRegistered());
         assertFalse(userV2.getIsActive());
+        assertEquals(isAvailable, userV2.getIsAvailable());
         verify(cdcResponseHandler).liteRegisterUser(anyString());
     }
 
@@ -192,8 +198,9 @@ public class LiteRegHandlerTests {
         // given
         final String errorMessage = "Error";
         final int errorCode = 400;
-        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
-        
+
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -210,7 +217,7 @@ public class LiteRegHandlerTests {
     @Test
     public void createLiteAccountsV2_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new IOException());
+        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -265,7 +272,7 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = false;
         final Boolean isRegistered = false;
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setIsActive(isActive);
         account.setIsRegistered(isRegistered);
@@ -273,7 +280,7 @@ public class LiteRegHandlerTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -293,9 +300,10 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = true;
         final Boolean isRegistered = true;
+        final Boolean isAvailable = false;
         final String username = "test@mail.com";
         Profile profile = Profile.builder().username(username).build();
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setProfile(profile);
         account.setIsActive(isActive);
@@ -304,8 +312,8 @@ public class LiteRegHandlerTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
-        
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -318,6 +326,7 @@ public class LiteRegHandlerTests {
         assertEquals(uid, userV1.getUid());
         assertEquals(username, userV1.getUsername());
         assertEquals(isRegistered, userV1.getRegistered());
+        assertEquals(isAvailable, userV1.getIsAvailable());
     }
 
     @Test
@@ -325,9 +334,10 @@ public class LiteRegHandlerTests {
         // given
         final Boolean isActive = true;
         final Boolean isRegistered = true;
+        final Boolean isAvailable = true;
         final String username = "test@mail.com";
         Profile profile = Profile.builder().username(username).build();
-        CDCAccount account = new CDCAccount();
+        CDCAccount account = CDCAccount.builder().build();
         account.setUID(uid);
         account.setProfile(profile);
         account.setIsActive(isActive);
@@ -336,7 +346,7 @@ public class LiteRegHandlerTests {
         List<CDCAccount> accounts = new ArrayList<CDCAccount>();
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any())).thenReturn(searchResponse);
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
@@ -354,6 +364,7 @@ public class LiteRegHandlerTests {
         assertEquals(uid, userV1.getUid());
         assertNull(userV1.getUsername());
         assertFalse(userV1.getRegistered());
+        assertEquals(isAvailable, userV1.getIsAvailable());
         verify(cdcResponseHandler).liteRegisterUser(anyString());
     }
 
@@ -362,8 +373,9 @@ public class LiteRegHandlerTests {
         // given
         final String errorMessage = "Error";
         final int errorCode = 400;
-        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
-        
+
+        when(cdcResponseHandler.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -380,7 +392,7 @@ public class LiteRegHandlerTests {
     @Test
     public void createLiteAccountsV1_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.search(anyString(), any())).thenThrow(new IOException());
+        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
         emails.add("test1");

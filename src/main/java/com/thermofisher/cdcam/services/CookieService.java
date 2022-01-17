@@ -22,9 +22,6 @@ public class CookieService {
     @Value("${identity.reset-password.oidc.rp.client_id}")
     String identityResetPasswordClientId;
 
-    @Value("${identity.cookie.cip-authdata.path}")
-    String cipAuthdataLoginPath;
-
     @Value("${identity.reset-password.oidc.rp.scope}")
     String identityResetPasswordScope;
 
@@ -53,7 +50,7 @@ public class CookieService {
     }
 
     public String buildDefaultCipAuthDataCookie(CookieType type) {
-        switch (type) {
+        switch (type){
             case RESET_PASSWORD:
                 String state = buildDefaultStateProperty();
                 CIPAuthDataDTO cipAuthDataDTO = CIPAuthDataDTO.builder()
@@ -65,7 +62,7 @@ public class CookieService {
                         .build();
                 return new String(encodeService.encodeBase64(new GsonBuilder().disableHtmlEscaping().create().toJson(cipAuthDataDTO)));
             default:
-                return new String();
+                return "";
         }
     }
 

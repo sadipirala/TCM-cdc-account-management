@@ -43,7 +43,7 @@ public class ReCaptchaServiceTests {
     SecretsService secretsService;
 
     @Before
-    public void init() throws JSONException {
+    public void init() {
         ReflectionTestUtils.setField(reCaptchaService, "RECAPTCHA_MIN_THRESHOLD", 0.5);
     }
 

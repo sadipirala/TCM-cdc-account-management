@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam;
+package com.thermofisher.cdcam.services;
 
 import static org.junit.Assert.assertEquals;
 

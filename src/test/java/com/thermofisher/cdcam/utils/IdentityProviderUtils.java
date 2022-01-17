@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.utils;
 import java.io.IOException;
 import java.util.HashMap;
 
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 
 import org.json.simple.parser.ParseException;
@@ -38,5 +39,16 @@ public class IdentityProviderUtils {
         HashMap<String, String> container = new HashMap<String, String>();
         container.put("", "");
         return container;
+    }
+
+    public static CIPAuthDataDTO buildCIPAuthDataDTO() {
+        CIPAuthDataDTO cipAuthData = CIPAuthDataDTO.builder()
+                .clientId("clientId")
+                .redirectUri("redirectUri")
+                .responseType("responseType")
+                .scope("scope")
+                .state("state")
+                .build();
+        return cipAuthData;
     }
 }

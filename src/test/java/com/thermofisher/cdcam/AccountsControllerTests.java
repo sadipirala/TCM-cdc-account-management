@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +28,12 @@ import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.EmailSentResponse;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
@@ -40,8 +41,8 @@ import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
-import com.thermofisher.cdcam.services.EmailService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -50,6 +51,7 @@ import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
+import com.thermofisher.cdcam.utils.IdentityProviderUtils;
 import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
@@ -94,20 +96,20 @@ public class AccountsControllerTests {
     private final UsernameRecoveryDTO usernameRecoveryDTO = EmailRequestBuilderUtils.buildUsernameRecoveryDTO();
     private final int associatedAccounts = 1;
     private final String CIPHERTEXT = "VTJGc2RHVmtYMStuTTlOT3ExeHZtNG5rUHpqNjhMTmhKbHRkVkJZU0xlMnpGTm5QVk1oV0oycUhrVm1JQ2ozSXJVUWdCK2pBaDBuczMyM0ZMYkdLVm1tSzJ4R3BENmtJZ1VGbm1JeURVMUNpSkcxcU1aNzBvRjBJeG80dHVCbHhmdU02TDJFMmtLUDdvUzdGMWpidU53PT0=";
+    private final String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
+    private final MarketingConsentDTO marketingConsentDTO = MarketingConsentDTO.builder()
+        .city("city")
+        .company("company")
+        .country("country")
+        .consent(true)
+        .build();
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
             .uid("1234567890")
             .firstName("firstName")
             .lastName("lastName")
             .email("email@test.com")
             .username("username")
-            .marketingConsentDTO(
-                MarketingConsentDTO.builder()
-                    .city("city")
-                    .company("company")
-                    .country("country")
-                    .consent(true)
-                    .build()
-            )
+            .marketingConsentDTO(marketingConsentDTO)
             .build();
 
     @InjectMocks
@@ -120,10 +122,10 @@ public class AccountsControllerTests {
     CDCResponseHandler cdcResponseHandler;
 
     @Mock
-    DataProtectionService dataProtectionService;
+    CookieService cookieService;
 
     @Mock
-    EmailService emailService;
+    DataProtectionService dataProtectionService;
 
     @Mock
     LiteRegHandler liteRegHandler;
@@ -146,6 +148,9 @@ public class AccountsControllerTests {
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
 
+    @Captor
+    ArgumentCaptor<AccountInfo> accountInfoCaptor;
+
     private CDCResponseData getValidCDCResponse(String uid) {
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
@@ -154,6 +159,15 @@ public class AccountsControllerTests {
         return cdcResponseData;
     }
 
+    private CDCResponseData getEmailVerificationCDCResponse(String uid) {
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID(uid);
+        cdcResponseData.setStatusCode(206);
+        cdcResponseData.setErrorCode(206006);
+        cdcResponseData.setStatusReason("Partial Content");
+        return cdcResponseData;
+    }
+    
     private JSONObject getValidDecryptionResponse(String ciphertext) throws JSONException {
         JSONObject decryptionResponse = new JSONObject();
         decryptionResponse.put("statusCode", 200);
@@ -170,15 +184,16 @@ public class AccountsControllerTests {
     @Before
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", true);
+        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", true);
         reCaptchaResponse = new JSONObject();
         uids.add("001");
         uids.add("002");
         uids.add("003");
+        when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
     }
 
     @Test
-    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() throws IOException {
+    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
         // given
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -281,7 +296,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void emailOnlyRegistrationV2_WhenEmailListEmpty_returnBadRequest() throws IOException {
+    public void emailOnlyRegistrationV2_WhenEmailListEmpty_returnBadRequest() {
         // given
         List<String> emails = new ArrayList<>();
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -510,7 +525,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
@@ -528,7 +543,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
@@ -544,7 +559,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaLowScoreException(""));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.ACCEPTED.value());
@@ -558,7 +573,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaUnsuccessfulResponseException(""));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
@@ -572,7 +587,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new JSONException(""));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -580,21 +595,21 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenReCaptchaIsValid_ThenContinueWithRegistrationProcess() 
-            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService).processRegistrationRequest(any());
+        verify(accountRequestService).createAccount(any());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithValidEncryptedDataIsProvided_ThenACallToDecryptShouldBeMade() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    public void newAccount_givenAnAccountWithValidEncryptedDataIsProvided_ThenACallToDecryptShouldBeMade() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -602,17 +617,17 @@ public class AccountsControllerTests {
         JSONObject decryptionResponse = getValidDecryptionResponse(CIPHERTEXT);
         when(dataProtectionService.decrypt(any())).thenReturn(decryptionResponse);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(dataProtectionService, times(1)).decrypt(CIPHERTEXT);
     }
 
     @Test
-    public void newAccount_givenAnAccountDTOWithValidEncryptedDataIsProvided_ThenAccountInfoShouldBeSetWithDecryptionResponse() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    public void newAccount_givenAnAccountDTOWithValidEncryptedDataIsProvided_ThenAccountInfoShouldBeSetWithDecryptionResponse() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setCiphertext(CIPHERTEXT);
@@ -622,15 +637,15 @@ public class AccountsControllerTests {
         accountDTO.setEmailAddress(decryptionResponse.getJSONObject("body").getString("email"));
 
 
-        AccountInfo accountInfo = AccountBuilder.parseFromAccountInfoDTO(accountDTO);
+        AccountInfo accountInfo = AccountBuilder.buildFrom(accountDTO);
 
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         when(dataProtectionService.decrypt(CIPHERTEXT)).thenReturn(decryptionResponse);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(accountInfo.getFirstName(),accountDTO.getFirstName());
@@ -645,92 +660,108 @@ public class AccountsControllerTests {
         accountDTO.setPassword("");
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
+    public void newAccount_GivenCipAuthDataCookiesIsValid_ShouldAssignProviderClientIdToAccount() throws IOException, JSONException, CustomGigyaErrorException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(accountRequestService.createAccount(any())).thenReturn(new CDCResponseData());
+
+        // when
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        verify(accountRequestService).createAccount(accountInfoCaptor.capture());
+        AccountInfo capturedAccountInfo = accountInfoCaptor.getValue();
+        assertEquals(cipAuthDataDTO.getClientId(), capturedAccountInfo.getOpenIdProviderId());
+    }
+
+    @Test
     public void newAccount_givenABackendError_returnInternalServerError()
-            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(null);
+        when(accountRequestService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Assert.assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAValidAccount_returnUID() throws IOException, JSONException, ReCaptchaLowScoreException,
-            ReCaptchaUnsuccessfulResponseException {
+    public void newAccount_givenAValidAccount_returnCdcResponseWithUID() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
     }
 
     @Test
-    public void newAccount_givenAValidAccount_And_RegistrationTypeIsBasic_sendConfirmationEmailShouldBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
-        // given
+    public void newAccount_givenEmailVerificationIsEnabled_thenShouldReturnAPartialContentErrorCode() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, CustomGigyaErrorException {
+        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", false);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        accountDTO.setRegistrationType(RegistrationType.BASIC.getValue());
-        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        CDCResponseData cdcResponseData = getEmailVerificationCDCResponse(AccountUtils.uid);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
-        verify(accountRequestService, times(1)).sendConfirmationEmail(any());
+        Assert.assertEquals(cdcResponseData.getErrorCode(), response.getBody().getErrorCode());
     }
 
     @Test
-    public void newAccount_givenAValidAccount_And_RegistrationTypeIsNotBasic_sendConfirmationEmailShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    public void newAccount_GivenSuccessfulRegistration_ThenNotifyAccountRegistrationWithHashedPassword() throws CustomGigyaErrorException, IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException {
         // given
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        accountDTO.setRegistrationType("dummy");
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        doNothing().when(notificationService).sendAccountRegisteredNotification(any(), any());
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
-        verify(accountRequestService, times(0)).sendConfirmationEmail(any());
+        verify(notificationService).sendAccountRegisteredNotification(accountInfoCaptor.capture(), any());
+        AccountInfo capturedAccount = accountInfoCaptor.getValue();
+        String expectedPassword = HashingService.toMD5(accountDTO.getPassword());
+        assertEquals(expectedPassword, capturedAccount.getPassword());
     }
 
     @Test
     public void newAccount_givenRegistrationSuccessfulAndEmailVerificationIsEnabled_sendVerificationEmailShouldBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
-        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", true);
+        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", true);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(accountRequestService, times(1)).sendVerificationEmail(any());
@@ -738,19 +769,16 @@ public class AccountsControllerTests {
     
     @Test
     public void newAccount_givenRegistrationNotSuccessful_sendVerificationEmailShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        CDCResponseData cdcResponseData = new CDCResponseData();
-        cdcResponseData.setStatusCode(400);
-        cdcResponseData.setStatusReason("");
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(accountRequestService, times(0)).sendVerificationEmail(any());
@@ -758,20 +786,20 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenRegistrationNotSuccessfulAndEmailVerificationIsDisabled_sendVerificationEmailShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
-        ReflectionTestUtils.setField(accountsController, "isEmailVerificationEnabled", false);
+        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", false);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);
         cdcResponseData.setStatusReason("");
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(accountRequestService, times(0)).sendVerificationEmail(any());
@@ -779,7 +807,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenRegistrationIsValid_AndAspireFieldsAreNull_sendAspireSNSShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -788,11 +816,11 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(null);
         accountDTO.setAcceptsAspireTermsAndConditions(null);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -800,7 +828,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenAspireRegistrationIsValid_sendAspireSNSShouldBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -809,11 +837,11 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(notificationService, times(1)).sendAspireRegistrationNotification(any());
@@ -821,7 +849,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenAspireEnrollmentIsNotAccepted_sendAspireSNSShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -830,11 +858,11 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -842,7 +870,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenUserIsHealthCareProfessional_sendAspireSNSShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -851,11 +879,11 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(true);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -863,7 +891,7 @@ public class AccountsControllerTests {
 
     @Test
     public void newAccount_givenUserDoesNotAcceptAspireTermsAndConditions_sendAspireSNSShouldNotBeCalled() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
@@ -872,32 +900,78 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(false);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
     }
 
     @Test
-    public void newAccount_givenAValidAccount_And_RegistrationFails_nullUIDisReturned() throws IOException,
-            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    public void newAccount_givenAValidAccount_And_RegistrationTypeIsBasic_sendConfirmationEmailShouldBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        CDCResponseData cdcResponseData = new CDCResponseData();
-        cdcResponseData.setStatusCode(400);
-        cdcResponseData.setStatusReason("");
-        Mockito.when(accountRequestService.processRegistrationRequest(any())).thenReturn(cdcResponseData);
+        accountDTO.setRegistrationType(RegistrationType.BASIC.getValue());
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        Assert.assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
+        verify(notificationService, times(1)).sendConfirmationEmailNotification(any());
+    }
+
+    @Test
+    public void newAccount_givenAValidAccount_And_RegistrationTypeIsNotBasic_sendConfirmationEmailShouldNotBeCalled() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setRegistrationType("dummy");
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        verify(notificationService, times(0)).sendConfirmationEmailNotification(any());
+    }
+
+    @Test
+    public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException, CustomGigyaErrorException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+
+        // when
+        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        verify(cdcResponseHandler).getAccountInfoByEmail(anyString());
+    }
+
+    @Test
+    public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException, CustomGigyaErrorException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+
+        // when
+        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        verify(notificationService, times(1)).sendRecoveryUsernameEmailNotification(any(), any());
     }
 
     @Test
@@ -935,34 +1009,6 @@ public class AccountsControllerTests {
         // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
-
-    @Test
-    public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException, CustomGigyaErrorException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
-
-        // when
-        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
-
-        // then
-        verify(cdcResponseHandler).getAccountInfoByEmail(anyString());
-    }
-
-    @Test
-    public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException, CustomGigyaErrorException {
-        // given
-        EmailSentResponse response = EmailSentResponse.builder().statusCode(200).build();
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
-        when(emailService.sendUsernameRecoveryEmail(any())).thenReturn(response);
-
-        // when
-        accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
-
-        // then
-        verify(emailService).sendUsernameRecoveryEmail(any());
-    }
     
     @Test
     public void sendVerificationEmail_WhenResponseReceived_ReturnSameStatus() {
@@ -982,84 +1028,98 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongFirstName_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongFirstName_returnBadRequest() throws IOException {
         // given
-        final String LONG_FIRST_NAME = "SKILZAGkGrDySoz7ikrkuTePmXUm5DG";
+        final String LONG_FIRST_NAME = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setFirstName(LONG_FIRST_NAME);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongLastName_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongLastName_returnBadRequest() throws IOException {
         // given
-        final String LONG_LAST_NAME = "SKILZAGkGrDySoz7ikrkuTePmXUm5DG";
+        final String LONG_LAST_NAME = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setLastName(LONG_LAST_NAME);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongEmail_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongEmail_returnBadRequest() throws IOException {
         // given
-        final String LONG_EMAIL = "dOKzIGsinJuhzqJ6CJwv2aKf2BNSGy1atgH1L3P@DokSb2xW4sKP.com";
+        final String LONG_EMAIL = RandomStringUtils.random(51);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setEmailAddress(LONG_EMAIL);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+    
+    @Test
+    public void newAccount_givenAnAccountWithShortPassword_returnBadRequest() throws IOException {
+        // given
+        final String SHORT_PASSWORD = RandomStringUtils.random(7);;
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setPassword(SHORT_PASSWORD);
+
+        // when
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongPassword_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongPassword_returnBadRequest() throws IOException {
         // given
-        final String LONG_PASSWORD = "z09H4j9QqlwDleHaM8N4t";
+        final String LONG_PASSWORD = RandomStringUtils.random(21);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setPassword(LONG_PASSWORD);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongCompany_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongCompany_returnBadRequest() throws IOException {
         // given
-        final String LONG_COMPANY = "199hvjoVi3t7QSF676unFTfLmbBWiJ3nmb0kXmfrr2Mu3DrJoEN";
+        final String LONG_COMPANY = RandomStringUtils.random(51);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setCompany(LONG_COMPANY);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongCity_returnBadRequest() throws IOException, JSONException {
+    public void newAccount_givenAnAccountWithLongCity_returnBadRequest() throws IOException {
         // given
-        final String LONG_CITY = "TI1YPaFY9MAzdtUiHAP3cYfGWVDs11z";
+        final String LONG_CITY = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setCity(LONG_CITY);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1207,8 +1267,9 @@ public class AccountsControllerTests {
             verify(accountRequestService, times(numberOfWebhookEvents)).onAccountUpdated(anyString());
         }
     }
-    
-    public void getProfileUserByUID_GivenAValidUID_ShouldReturnUserProfile() throws IOException, CustomGigyaErrorException {
+
+    @Test
+    public void getProfileUserByUID_GivenAValidUID_ShouldReturnUserProfile() throws IOException {
         // given
         String uid = uids.get(0);
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -1223,7 +1284,20 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void getProfileUserByUID_GivenAnIOError_returnInternalServerError() throws IOException, CustomGigyaErrorException {
+    public void getProfileUserByUID_GivenAValidUID_whenProfileDoesntExist_ShouldReturnNotFound() throws IOException {
+        // given
+        String uid = uids.get(0);
+        Mockito.when(usersHandler.getUserProfileByUID(uid)).thenReturn(null);
+
+        // when
+        ResponseEntity<ProfileInfoDTO> resp = accountsController.getUserProfileByUID(uid);
+
+        // then
+        Assert.assertEquals(resp.getStatusCode(), HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    public void getProfileUserByUID_GivenAnIOError_returnInternalServerError() throws IOException {
         // given
         String uid = uids.get(0);
         Mockito.when(usersHandler.getUserProfileByUID(uid)).thenThrow(IOException.class);
@@ -1265,7 +1339,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenNoExceptionIsThrown_returnOkNoContent() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenNoExceptionIsThrown_returnOkNoContent() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1285,7 +1359,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenPasswordIsInvalid_returnBadRequest() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenPasswordIsInvalid_returnBadRequest() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1301,7 +1375,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordShouldBeHashed() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordShouldBeHashed() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1324,7 +1398,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordUpdateNotificationShouldBeSent() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenPasswordChangeIsSuccess_ThenPasswordUpdateNotificationShouldBeSent() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1347,7 +1421,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenCustomGigyaExceptionIsThrown_returnBadRequest() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenCustomGigyaExceptionIsThrown_returnBadRequest() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1363,7 +1437,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
@@ -1379,7 +1453,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void changePassword_whenOtherExceptionIsThrown_returnInternalServerError() throws IOException, CustomGigyaErrorException {
+    public void changePassword_whenOtherExceptionIsThrown_returnInternalServerError() {
         // given
         String uid = Long.toString(1L);
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
