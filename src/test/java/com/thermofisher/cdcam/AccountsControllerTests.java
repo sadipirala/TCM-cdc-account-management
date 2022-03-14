@@ -26,8 +26,6 @@ import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
@@ -56,7 +54,6 @@ import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
-import com.thermofisher.cdcam.utils.cdc.LiteRegHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -80,7 +77,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -128,9 +124,6 @@ public class AccountsControllerTests {
     DataProtectionService dataProtectionService;
 
     @Mock
-    LiteRegHandler liteRegHandler;
-
-    @Mock
     NotificationService notificationService;
 
     @Mock
@@ -155,6 +148,7 @@ public class AccountsControllerTests {
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
         cdcResponseData.setStatusCode(200);
+        cdcResponseData.setErrorCode(0);
         cdcResponseData.setStatusReason("");
         return cdcResponseData;
     }
@@ -184,218 +178,11 @@ public class AccountsControllerTests {
     @Before
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", true);
         reCaptchaResponse = new JSONObject();
         uids.add("001");
         uids.add("002");
         uids.add("003");
         when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenEmailListEmpty_returnBadRequest() {
-        // given
-        List<String> emails = new ArrayList<>();
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistration_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException {
-        // given
-        List<String> emails = new ArrayList<>();
-        EmailList emailList = EmailList.builder().emails(emails).build();
-        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccountsV1(emailList);
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenEmailListNull_returnBadRequest() {
-        // given
-        EmailList emailList = EmailList.builder().emails(null).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenEmailListHasValues_returnOK() throws IOException {
-        // given
-        List<EECUser> mockResult = new ArrayList<>();
-        mockResult.add(Mockito.mock(EECUser.class));
-        Mockito.when(liteRegHandler.createLiteAccountsV1(any())).thenReturn(mockResult);
-        liteRegHandler.requestLimit = 1000;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
-        // given
-        when(liteRegHandler.createLiteAccountsV1(any())).thenThrow(IOException.class);
-        liteRegHandler.requestLimit = 1000;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
-        // given
-        Mockito.when(liteRegHandler.createLiteAccountsV1(any())).thenThrow(IOException.class);
-
-        liteRegHandler.requestLimit = 1;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistration_WhenRequestHeaderInvalid_returnBadRequest() {
-        // given
-        EmailList emailList = EmailList.builder().emails(null).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistration(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenEmailListEmpty_returnBadRequest() {
-        // given
-        List<String> emails = new ArrayList<>();
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_whenIllegalArgumentExceptionIsThrown_returnBadRequest() throws IOException {
-        // given
-        List<String> emails = new ArrayList<>();
-        EmailList emailList = EmailList.builder().emails(emails).build();
-        doThrow(new IllegalArgumentException()).when(liteRegHandler).createLiteAccountsV2(emailList);
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenEmailListNull_returnBadRequest() {
-        // given
-        EmailList emailList = EmailList.builder().emails(null).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenEmailListHasValues_returnOK() throws IOException {
-        // given
-        List<EECUser> mockResult = new ArrayList<>();
-        mockResult.add(Mockito.mock(EECUser.class));
-        Mockito.when(liteRegHandler.createLiteAccountsV2(any())).thenReturn(mockResult);
-        liteRegHandler.requestLimit = 1000;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.OK);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenHandlerProcessThrowsException_returnInternalServerError() throws IOException {
-        // given
-        when(liteRegHandler.createLiteAccountsV2(any())).thenThrow(IOException.class);
-        liteRegHandler.requestLimit = 1000;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenRequestLimitExceeded_returnBadRequest() throws IOException {
-        // given
-        Mockito.when(liteRegHandler.createLiteAccountsV2(any())).thenThrow(IOException.class);
-
-        liteRegHandler.requestLimit = 1;
-        List<String> emails = new ArrayList<>();
-        emails.add("email1");
-        emails.add("email1");
-        EmailList emailList = EmailList.builder().emails(emails).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    public void emailOnlyRegistrationV2_WhenRequestHeaderInvalid_returnBadRequest() {
-        // given
-        EmailList emailList = EmailList.builder().emails(null).build();
-
-        // when
-        ResponseEntity<List<EECUser>> res = accountsController.emailOnlyRegistrationV2(emailList);
-
-        // then
-        Assert.assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -455,6 +242,18 @@ public class AccountsControllerTests {
     }
 
     @Test
+    public void handleNullPointerException_givenNullPointerException_ReturnErrorMessage() {
+        // given
+        NullPointerException ex = new NullPointerException();
+
+        // when
+        String resp = accountsController.handleNullPointerException(ex);
+
+        // then
+        Assert.assertEquals(resp, "Invalid input. Null body present.");
+    }
+
+    @Test
     public void onAccountRegistered_givenMethodCalled_WhenJWTIsValid_returnOk() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         int numberOfWebhookEvents = 1;
@@ -511,6 +310,26 @@ public class AccountsControllerTests {
 
             // then
             verify(accountRequestService, times(numberOfWebhookEvents)).onAccountRegistered(anyString());
+        }
+    }
+
+    @Test
+    public void onAccountRegistered_shouldNotCallOnAccountRegistered_whenPublicKeyCantBeRetrieved() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 1;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
+        doNothing().when(accountRequestService).onAccountRegistered(any());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
+
+            // when
+            accountsController.onAccountRegistered(jwt, body);
+
+            // then
+            verify(accountRequestService, times(0)).onAccountRegistered(body);
         }
     }
 
@@ -714,9 +533,23 @@ public class AccountsControllerTests {
     }
 
     @Test
+    public void newAccount_givenAValidAccount_withCIPAuthDataInvalid_returnCdcResponseWithUID() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, CustomGigyaErrorException {
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+
+        // when
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, null);
+
+        // then
+        Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
+    }
+
+    @Test
     public void newAccount_givenEmailVerificationIsEnabled_thenShouldReturnAPartialContentErrorCode() throws IOException, JSONException, ReCaptchaLowScoreException,
             ReCaptchaUnsuccessfulResponseException, CustomGigyaErrorException {
-        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", false);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getEmailVerificationCDCResponse(AccountUtils.uid);
@@ -752,7 +585,6 @@ public class AccountsControllerTests {
     public void newAccount_givenRegistrationSuccessfulAndEmailVerificationIsEnabled_sendVerificationEmailShouldBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
-        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", true);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -788,12 +620,12 @@ public class AccountsControllerTests {
     public void newAccount_givenRegistrationNotSuccessfulAndEmailVerificationIsDisabled_sendVerificationEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
-        ReflectionTestUtils.setField(accountsController, "isLegacyEmailVerificationEnabled", false);
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);
+        cdcResponseData.setErrorCode(400004);
         cdcResponseData.setStatusReason("");
         when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
@@ -972,6 +804,30 @@ public class AccountsControllerTests {
 
         // then
         verify(notificationService, times(1)).sendRecoveryUsernameEmailNotification(any(), any());
+    }
+
+    @Test
+    public void sendUsernameRecoveryEmail_shouldReturnBadRequest_whenAccountIsNull() throws IOException, CustomGigyaErrorException {
+        // given
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(null);
+
+        // when
+        ResponseEntity<String> resp = accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        assertEquals(resp.getStatusCode(),HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void sendUsernameRecoveryEmail_shouldReturnInternalServerError_whenAnExceptionIsThrown() throws IOException, CustomGigyaErrorException {
+        // given
+        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenThrow(new CustomGigyaErrorException(""));
+
+        // when
+        ResponseEntity<String> resp = accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
+
+        // then
+        assertEquals(resp.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -1229,6 +1085,26 @@ public class AccountsControllerTests {
     }
 
     @Test
+    public void onAccountsMerge_shouldNotCallOnAccountMerged_whenPublicKeyCantBeRetrieved() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        int numberOfWebhookEvents = 2;
+        String jwt = Utils.getAlphaNumericString(20);
+        String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
+        when(cdcResponseHandler.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
+        doNothing().when(accountRequestService).onAccountMerged(anyString());
+
+        try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
+            jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
+
+            // when
+            ResponseEntity<String> resp = accountsController.onAccountsMerge(jwt, body);
+
+            // then
+            verify(accountRequestService, never()).onAccountMerged(anyString());
+        }
+    }
+
+    @Test
     public void onAccountUpdated_GivenTheMethodIsCalled_WhenNotificationTypeIsNotUpdated_ThenOnAccountUpdatedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         int numberOfWebhookEvents = 1;
@@ -1336,6 +1212,19 @@ public class AccountsControllerTests {
         verify(notificationService).sendPublicAccountUpdatedNotification(any());
         verify(notificationService).sendPrivateAccountUpdatedNotification(any());
         assertEquals(resp.getStatusCode(),HttpStatus.OK);
+    }
+
+    @Test
+    public void updateUserProfile_GivenAnInvalidProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnBadRequest() throws Exception {
+        // given
+        when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.BAD_REQUEST);
+        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+
+        // when
+        ResponseEntity<String> resp = accountsController.updateUserProfile(profileInfoDTO);
+
+        // then
+        assertEquals(resp.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test

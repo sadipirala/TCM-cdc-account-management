@@ -11,6 +11,7 @@ import com.thermofisher.cdcam.enums.cdc.FederationProviders;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCValidationError;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
@@ -41,6 +42,9 @@ public class AccountRequestService {
 
     @Value("${general.cipdc}")
     private String cipdc;
+
+    @Value("${is-new-marketing-enabled}")
+    private boolean isNewMarketingConsentEnabled;
 
     @Autowired
     CDCAccountsService cdcAccountsService;
@@ -120,8 +124,15 @@ public class AccountRequestService {
 
     public CDCResponseData createAccount(AccountInfo accountInfo) throws JSONException, IOException, CustomGigyaErrorException {
         Objects.requireNonNull(accountInfo);
-        CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-        CDCResponseData accountCreationResponse = cdcResponseHandler.register(newAccount);
+        CDCResponseData accountCreationResponse = null;
+
+        if (isNewMarketingConsentEnabled) {
+            CDCNewAccountV2 newAccountV2 = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+            accountCreationResponse = cdcResponseHandler.register(newAccountV2);
+        } else {
+            CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+            accountCreationResponse = cdcResponseHandler.register(newAccount);
+        }
 
         if (!HttpStatus.valueOf(accountCreationResponse.getStatusCode()).is2xxSuccessful()) {
             if (Objects.nonNull(accountCreationResponse.getValidationErrors())) {

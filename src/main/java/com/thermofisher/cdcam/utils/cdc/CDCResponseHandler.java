@@ -16,18 +16,21 @@ import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
+import com.thermofisher.cdcam.enums.cdc.DataCenter;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
+import com.thermofisher.cdcam.model.cdc.SearchResponse;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.services.CDCAccountsService;
 import com.thermofisher.cdcam.services.CDCIdentityProviderService;
@@ -62,8 +65,17 @@ public class CDCResponseHandler {
     @Value("${cdc.main.datacenter}")
     private String mainApiDomain;
 
+    @Value("${cdc.main.datacenter.name}")
+    private String mainDataCenter;
+
     @Value("${cdc.secondary.datacenter}")
     private String secondaryApiDomain;
+
+    @Value("${cdc.secondary.datacenter.name}")
+    private String secondaryDataCenter;
+
+    @Value("${is-new-marketing-enabled}")
+    private Boolean isNewMarketingConsentEnabled;
 
     @Value("${env.name}")
     private String env;
@@ -78,10 +90,28 @@ public class CDCResponseHandler {
     }
 
     public AccountInfo getAccountInfo(String uid) throws CustomGigyaErrorException {
+        if (isNewMarketingConsentEnabled) {
+            return getAccountInfoV2(uid);
+        }
+        return getAccountInfoV1(uid);
+    }
+
+    private AccountInfo getAccountInfoV1(String uid) throws CustomGigyaErrorException {
         GSResponse gsResponse = cdcAccountsService.getAccount(uid);
         if (gsResponse.getErrorCode() == 0) {
             GSObject obj = gsResponse.getData();
             return accountBuilder.getAccountInfo(obj);
+        } else {
+            String error = String.format("An error occurred while retrieving account info. UID: %s. Error details: %s Error code: %s", uid, gsResponse.getErrorDetails(), gsResponse.getErrorCode());
+            throw new CustomGigyaErrorException(error, gsResponse.getErrorCode());
+        }
+    }
+
+    private AccountInfo getAccountInfoV2(String uid) throws CustomGigyaErrorException {
+        GSResponse gsResponse = cdcAccountsService.getAccountV2(uid);
+        if (gsResponse.getErrorCode() == 0) {
+            GSObject obj = gsResponse.getData();
+            return accountBuilder.getAccountInfoV2(obj);
         } else {
             String error = String.format("An error occurred while retrieving account info. UID: %s. Error details: %s Error code: %s", uid, gsResponse.getErrorDetails(), gsResponse.getErrorCode());
             throw new CustomGigyaErrorException(error, gsResponse.getErrorCode());
@@ -127,6 +157,11 @@ public class CDCResponseHandler {
     }
 
     public CDCResponseData register(CDCNewAccount newAccount) throws IOException {
+        GSResponse gsResponse = cdcAccountsService.register(newAccount);
+        return new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
+    }
+
+    public CDCResponseData register(CDCNewAccountV2 newAccount) throws IOException {
         GSResponse gsResponse = cdcAccountsService.register(newAccount);
         return new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
     }
@@ -314,23 +349,36 @@ public class CDCResponseHandler {
         return new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
     }
 
-    public CDCSearchResponse searchInBothDC(String email) throws CustomGigyaErrorException, IOException {
+    public SearchResponse searchInBothDC(String email) throws CustomGigyaErrorException, IOException {
+        SearchResponse response = SearchResponse.builder().build();
         String query = String.format("SELECT * FROM accounts WHERE profile.username CONTAINS '%1$s' OR profile.email CONTAINS '%1$s'", email);
+        
+        CDCSearchResponse cdcSearchResponse = this.search(query, AccountType.FULL_LITE, mainApiDomain);
+        response.setCdcSearchResponse(cdcSearchResponse);
 
-        CDCSearchResponse searchResponse = this.search(query, AccountType.FULL_LITE, mainApiDomain);
-        boolean accountNotFound = searchResponse.getResults().size() == 0;
-
-        if (CDCUtils.isSecondaryDCSupported(env) && accountNotFound) {
-            searchResponse = this.search(query, AccountType.FULL_LITE, secondaryApiDomain);
+        boolean accountFound = cdcSearchResponse.getResults().size() > 0;
+        if (accountFound) {
+            response.setDataCenter(DataCenter.getEqualsAs(mainDataCenter));
+            return response;
+        }
+        
+        if (CDCUtils.isSecondaryDCSupported(env)) {
+            cdcSearchResponse = this.search(query, AccountType.FULL_LITE, secondaryApiDomain);
+            response.setCdcSearchResponse(cdcSearchResponse);
+            
+            accountFound = cdcSearchResponse.getResults().size() > 0;
+            if (accountFound) {
+                response.setDataCenter(DataCenter.getEqualsAs(secondaryDataCenter));
+            }
         }
 
-        return searchResponse;
+        return response;
     }
 
-    public CDCResponseData liteRegisterUser(String email) throws IOException, CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.setLiteReg(email);
+    public CDCResponseData registerLiteAccount(String email) throws IOException, CustomGigyaErrorException, GSKeyNotFoundException {
+        GSResponse gsResponse = cdcAccountsService.registerLiteAccount(email);
         CDCResponseData cdcResponseData = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
-        
+
         if (isErrorResponse(gsResponse)) {
             String errorList = Utils.convertJavaToJsonString(cdcResponseData.getValidationErrors());
             String errorDetails = String.format("%s: %s", gsResponse.getErrorMessage(), errorList);

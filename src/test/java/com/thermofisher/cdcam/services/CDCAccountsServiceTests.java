@@ -1,6 +1,8 @@
 package com.thermofisher.cdcam.services;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
@@ -10,8 +12,12 @@ import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
+import com.thermofisher.cdcam.utils.cdc.CDCUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -99,6 +106,70 @@ public class CDCAccountsServiceTests {
 
             // then
             verify(gsRequestMock).send();
+        }
+    }
+
+    @Test
+    public void getAccount_givenParametersToMakeGetAccountRequest_whenNullPointerExceptionIsThrown_thenMethodSendFromGSRequestShouldNotBeCalled() {
+        // given
+        final String uid = "uid";
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
+
+            // when
+            cdcAccountsService.getAccount(uid);
+
+            // then
+            verify(gsRequestMock, times(0)).send();
+        }
+    }
+
+
+    @Test
+    public void getAccount_v2_givenParametersToMakeGetAccountRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
+        // given
+        final String uid = "uid";
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
+
+            // when
+            cdcAccountsService.getAccountV2(uid);
+
+            // then
+            verify(gsRequestMock).send();
+        }
+    }
+
+    @Test
+    public void getAccount_v2_givenParametersToMakeGetAccountRequest_whenNullPointerExceptionIsThrown_thenMethodSendFromGSRequestShouldNotBeCalled() {
+        // given
+        final String uid = "uid";
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
+
+            // when
+            cdcAccountsService.getAccountV2(uid);
+
+            // then
+            verify(gsRequestMock, times(0)).send();
         }
     }
 
@@ -219,9 +290,9 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
-    public void setLiteReg_givenParametersToMakeSetLiteRegRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void changeAccountStatus_givenParametersToMakeChangeAccountStatusRequest_whenNullPointerExceptionIsThrown_thenMethodSendFromGSRequestShouldNotBeCalled(){
         // given
-        String email = "email";
+        String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
@@ -229,13 +300,69 @@ public class CDCAccountsServiceTests {
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
+
+            // when
+            cdcAccountsService.changeAccountStatus(uid, true);
+
+            // then
+            verify(gsRequestMock, times(0)).send();
+        }
+    }
+
+    @Test
+    public void registerLiteAccount_ShouldMakeTwoRequests_AndOneShouldBeSentWithTheRegTokenAndProfileParams() throws GSKeyNotFoundException, CustomGigyaErrorException{
+        // given
+        String email = "ivan.quintana@thermofisher.com";
+        String regToken = RandomStringUtils.random(10);
+
+        GSObject data = mock(GSObject.class);
+        data.put("regToken", regToken);
+        GSResponse initRegResponse = mock(GSResponse.class);
+        when(initRegResponse.getData()).thenReturn(data);
+        
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
+        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.setLiteReg(email);
+            cdcAccountsService.registerLiteAccount(email);
 
             // then
             verify(gsRequestMock, times(2)).send();
+        }
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void registerLiteAccount_ShouldThrowCustomGigyaErrorException_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException {
+        // given
+        String email = "ivan.quintana@thermofisher.com";
+        String regToken = RandomStringUtils.random(10);
+
+        GSObject data = mock(GSObject.class);
+        data.put("regToken", regToken);
+        GSResponse initRegResponse = mock(GSResponse.class);
+        when(initRegResponse.getData()).thenReturn(data);
+
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
+        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
+
+        try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtils.when(() -> CDCUtils.isErrorResponse(any())).thenReturn(true);
+
+            // when
+            cdcAccountsService.registerLiteAccount(email);
+
+            // then
+            verify(gsRequestMock, times(0)).send();
         }
     }
 
@@ -282,6 +409,69 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
+    public void register_shouldReturnNull_whenNullPointerExceptionIsThrown()  {
+        // given
+        CDCNewAccount cdcNewAccount = CDCNewAccount.builder().build();
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
+
+            // when
+            GSResponse response = cdcAccountsService.register(cdcNewAccount);
+
+            // then
+            assertNull(response);
+        }
+    }
+
+    @Test
+    public void register_v2_givenParametersToMakeRegisterRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
+        // given
+        CDCNewAccountV2 cdcNewAccount = CDCNewAccountV2.builder().build();
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
+
+            // when
+            cdcAccountsService.register(cdcNewAccount);
+
+            // then
+            verify(gsRequestMock).send();
+        }
+    }
+
+    @Test
+    public void register_v2_shouldReturnNull_whenNullPointerExceptionIsThrown() {
+        // given
+        CDCNewAccountV2 cdcNewAccount = CDCNewAccountV2.builder().build();
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
+
+            // when
+            GSResponse response = cdcAccountsService.register(cdcNewAccount);
+
+            // then
+            assertNull(response);
+        }
+    }
+
+    @Test
     public void sendVerificationEmail_givenParametersToMakeSendVerificationEmailRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() throws JSONException {
         // given
         String uid = "uid";
@@ -299,6 +489,27 @@ public class CDCAccountsServiceTests {
 
             // then
             verify(gsRequestMock).send();
+        }
+    }
+
+    @Test
+    public void sendVerificationEmail_shouldReturnNull_whenNullPointerExceptionIsThrown() {
+        // given
+        String uid = "uid";
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
+
+            // when
+            GSResponse response = cdcAccountsService.sendVerificationEmail(uid);
+
+            // then
+            assertNull(response);
         }
     }
 
@@ -346,6 +557,27 @@ public class CDCAccountsServiceTests {
     }
 
     @Test
+    public void resetPassword_shouldReturnNull_whenNullPointerExceptionIsThrown(){
+        // given
+        GSObject gsObject = new GSObject();
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
+
+            // when
+            GSResponse response = cdcAccountsService.resetPassword(gsObject);
+
+            // then
+            assertNull(response);
+        }
+    }
+
+    @Test
     public void getRP_givenParametersToMakeGetRPRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
         // given
         String clientID = "clientID";
@@ -385,5 +617,78 @@ public class CDCAccountsServiceTests {
             // then
             verify(gsRequestMock).send();
         }
+    }
+
+    @Test
+    public void setCredentials_shouldSetCredentialsForMainDataCenter() throws JSONException {
+        // given
+        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+
+        // when
+        cdcAccountsService.setCredentials();
+
+        // then
+        verify(secretsService).get(any());
+    }
+
+    @Test
+    public void setCredentials_shouldSetCredentialsForSecondaryDataCenter() throws JSONException {
+        // given
+        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+
+        try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
+
+            // when
+            cdcAccountsService.setCredentials();
+
+            // then
+            verify(secretsService, times(2)).get(any());
+        }
+    }
+
+    @Test
+    public void setCredentials_shouldNotSetCredentials_whenEnvIsTest() throws JSONException {
+        // given
+        ReflectionTestUtils.setField(cdcAccountsService, "env", "test");
+
+        try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
+
+            // when
+            cdcAccountsService.setCredentials();
+
+            // then
+            verify(secretsService, times(0)).get(any());
+        }
+    }
+
+    @Test
+    public void setCredentials_shouldNotSetCredentials_whenEnvIsLocal() throws JSONException {
+        // given
+        ReflectionTestUtils.setField(cdcAccountsService, "env", "local");
+
+        try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
+
+            // when
+            cdcAccountsService.setCredentials();
+
+            // then
+            verify(secretsService, times(0)).get(any());
+        }
+    }
+
+    @Test
+    public void setCredentials_shouldThrowASONException() throws JSONException {
+        // given
+        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+        when(secretsService.get(any())).thenThrow(JSONException.class);
+
+        // when
+        cdcAccountsService.setCredentials();
+
+        // then
+        verify(secretsService, times(1)).get(any());
     }
 }

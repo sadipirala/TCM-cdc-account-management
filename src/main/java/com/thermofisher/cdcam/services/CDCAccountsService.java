@@ -2,6 +2,7 @@ package com.thermofisher.cdcam.services;
 
 import javax.annotation.PostConstruct;
 
+import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
@@ -13,6 +14,8 @@ import com.thermofisher.cdcam.enums.cdc.APIMethods;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
@@ -82,9 +85,23 @@ public class CDCAccountsService {
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
-            //request.setParam("include", "emails, profile, data, password, userInfo, preferences, regSource, identities");
             request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
             request.setParam("extraProfileFields", "username, locale, work");
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
+    public GSResponse getAccountV2(String uid) {
+        try {
+            String apiMethod = APIMethods.GET.getValue();
+            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+
+            GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+            request.setParam("UID", uid);
+            request.setParam("include", "emails, profile, data, password, userInfo, preferences, regSource, identities");
             return request.send();
         } catch (Exception e) {
             logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
@@ -154,14 +171,20 @@ public class CDCAccountsService {
         }
     }
 
-    public GSResponse setLiteReg(String email) {
-        final boolean isLiteRegistration = true;
+    public GSResponse registerLiteAccount(String email) throws GSKeyNotFoundException, CustomGigyaErrorException {
+        final boolean isLite = true;
+        GSResponse initRegResponse = initRegistration(isLite);        
+        if (CDCUtils.isErrorResponse(initRegResponse)) {
+            throw new CustomGigyaErrorException("Error during lite registration. Error code: " + initRegResponse.getErrorCode());
+        }
+        
+        GSObject data = initRegResponse.getData();
         String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
-        logger.info(String.format("%s (email-only registration) triggered. Email: %s", apiMethod, email));
-
+        
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
-        request.setParam("regToken", getRegToken(isLiteRegistration));
+        request.setParam("regToken", getRegToken(data));
         request.setParam("profile", String.format("{\"email\":\"%s\"}", email));
+
         return request.send();
     }
 
@@ -186,7 +209,27 @@ public class CDCAccountsService {
             request.setParam("password", newAccount.getPassword());
             request.setParam("data", newAccount.getData());
             request.setParam("profile", newAccount.getProfile());
-            //request.setParam("preferences", newAccount.getPreferences());
+            request.setParam("regSource", "tf-registration");
+            request.setParam("finalizeRegistration", "true");
+            return request.send();
+        } catch (Exception e) {
+            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
+    public GSResponse register(CDCNewAccountV2 newAccount) {
+        try {
+            String apiMethod = APIMethods.REGISTER.getValue();
+            logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
+
+            GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+            request.setParam("username", newAccount.getUsername());
+            request.setParam("email", newAccount.getEmail());
+            request.setParam("password", newAccount.getPassword());
+            request.setParam("data", newAccount.getData());
+            request.setParam("profile", newAccount.getProfile());
+            request.setParam("preferences", newAccount.getPreferences());
             request.setParam("regSource", "tf-registration");
             request.setParam("finalizeRegistration", "true");
             return request.send();
@@ -265,27 +308,17 @@ public class CDCAccountsService {
         return apiDomain == null || apiDomain == mainApiDomain;
     }
 
-    private String getRegToken(boolean isLite) {
-        try {
-            String apiMethod = APIMethods.INITREG.getValue();
-            logger.info(String.format("%s triggered. Email-only: %s", apiMethod, Boolean.toString(isLite)));
+    private GSResponse initRegistration(boolean isLite) {
+        String apiMethod = APIMethods.INIT_REGISTRATION.getValue();
+        logger.info(String.format("%s triggered. Lite: %s", apiMethod, Boolean.toString(isLite)));
 
-            GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
-            request.setParam("isLite", isLite);
+        GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+        request.setParam("isLite", isLite);
 
-            GSResponse response = request.send();
-            if (response.getErrorCode() == 0) {
-                GSObject obj = response.getData();
-                return obj.getString("regToken");
-            } else {
-                String message = String.format("An error occurred while generating a regToken. Error: %s", response.getErrorMessage());
-                logger.error(message);
+        return request.send();
+    }
 
-                return (message);
-            }
-        } catch (Exception e) {
-            logger.error(String.format("An error occurred while generating a regToken. Error: %s", Utils.stackTraceToString(e)));
-            return null;
-        }
+    private String getRegToken(GSObject data) throws GSKeyNotFoundException {
+        return data.getString("regToken");
     }
 }

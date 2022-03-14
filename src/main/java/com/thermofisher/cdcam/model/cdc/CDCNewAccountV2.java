@@ -9,23 +9,26 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-public class CDCNewAccount {
+public class CDCNewAccountV2 {
     private String username;
     private String email;
     private String password;
     private String data;
     private String profile;
-    
-    public static CDCNewAccount build(String username, String email, String password, Data data, Profile profile) {
+    private String preferences;
+
+    public static CDCNewAccountV2 build(String username, String email, String password, Data data, Profile profile, Preferences preferences) {
         String dataString = new Gson().toJson(data);
         String profileString = new Gson().toJson(profile);
+        String preferencesString = new Gson().toJson(preferences); 
 
-        return CDCNewAccount.builder()
+        return CDCNewAccountV2.builder()
                 .username(username)
                 .email(email)
                 .password(password)
                 .data(dataString)
                 .profile(profileString)
+                .preferences(preferencesString)
                 .build();
     }
 }

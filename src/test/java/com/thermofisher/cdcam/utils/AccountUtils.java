@@ -1,20 +1,11 @@
 package com.thermofisher.cdcam.utils;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.CDCAccount;
-import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
-import com.thermofisher.cdcam.model.cdc.China;
-import com.thermofisher.cdcam.model.cdc.Data;
-import com.thermofisher.cdcam.model.cdc.Japan;
-import com.thermofisher.cdcam.model.cdc.Korea;
-import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
-import com.thermofisher.cdcam.model.cdc.Profile;
-import com.thermofisher.cdcam.model.cdc.Registration;
-import com.thermofisher.cdcam.model.cdc.Thermofisher;
-import com.thermofisher.cdcam.model.cdc.Work;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import org.apache.commons.lang3.StringUtils;
@@ -105,6 +96,25 @@ public class AccountUtils {
                 .firstName(firstName)
                 .lastName(lastName)
                 .localeName(localeName)
+                .company(company)
+                .country(country)
+                .city(city)
+                .marketingConsent(marketingConsent)
+                .loginProvider(loginProvider)
+                .socialProviders("site")
+                .regAttempts(0)
+                .openIdProviderId(openIdProviderId)
+                .build();
+    }
+
+    public static AccountInfo getSiteAccountWithoutLocale() {
+        return AccountInfo.builder()
+                .uid(uid)
+                .username(username)
+                .emailAddress(email)
+                .password(algorithm + ":" + hash)
+                .firstName(firstName)
+                .lastName(lastName)
                 .company(company)
                 .country(country)
                 .city(city)
@@ -239,15 +249,38 @@ public class AccountUtils {
 
         Profile profile = buildProfileObject(accountInfo, work, locale);
 
-        CDCNewAccount newAccount = CDCNewAccount.builder()
-            .username(accountInfo.getUsername())
-            .email(accountInfo.getEmailAddress())
-            .password(accountInfo.getPassword())
-            .profile(profile)
-            .data(data)
-            .build();
+        return CDCNewAccount.build(
+            accountInfo.getUsername(), 
+            accountInfo.getEmailAddress(), 
+            accountInfo.getPassword(),
+            data,
+            profile);
+    }
 
-        return newAccount;
+    public static CDCNewAccountV2 getNewCDCAccountV2(AccountInfo accountInfo) throws JSONException {
+        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
+        Thermofisher thermofisher = Thermofisher.builder()
+                .legacyUsername(accountInfo.getUsername())
+                .build();
+
+        Data data = Data.builder()
+                .thermofisher(thermofisher)
+                .registration(buildRegistrationObject(accountInfo))
+                .requirePasswordCheck(false)
+                .build();
+
+        Work work = buildWorkObject(accountInfo);
+
+        Profile profile = buildProfileObject(accountInfo, work, locale);
+        Preferences preferences = buildPreferencesObject(accountInfo);
+
+        return CDCNewAccountV2.build(
+                accountInfo.getUsername(),
+                accountInfo.getEmailAddress(),
+                accountInfo.getPassword(),
+                data,
+                profile,
+                preferences);
     }
 
     public static CDCAccount getCDCAccount(AccountInfo accountInfo) throws JSONException {
@@ -312,6 +345,21 @@ public class AccountUtils {
 
     private static String getPhoneNumberForChina(AccountInfo accountInfo) {
         return accountInfo.isMarketingConsent() && accountInfo.getCountry().toLowerCase().equals("cn") ? accountInfo.getPhoneNumber() : null;
+    }
+
+    private static Preferences buildPreferencesObject(AccountInfo accountInfo) {
+        Consent consent = Consent.builder().isConsentGranted(accountInfo.isMarketingConsent()).build();
+        Marketing marketing = Marketing.builder().consent(consent).build();
+        KoreaMarketingConsent korea = null;
+        if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
+            korea = KoreaMarketingConsent.build(accountInfo);
+        }
+
+        if (Objects.nonNull(korea)) {
+            return Preferences.builder().marketing(marketing).korea(korea).build();
+        }
+
+        return Preferences.builder().marketing(marketing).build();
     }
 
     private static Profile buildProfileObject(AccountInfo accountInfo, Work work, String locale) {
@@ -386,6 +434,11 @@ public class AccountUtils {
         return TestUtils.getJSONFromFile(path).toString();
     }
 
+    public static String getSiteAccountJsonStringV2() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-v2.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
     public static String getSiteAccountWithoutPreferencesJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account-without-preferences.json";
         return TestUtils.getJSONFromFile(path).toString();
@@ -396,6 +449,16 @@ public class AccountUtils {
         return TestUtils.getJSONFromFile(path).toString();
     }
 
+    public static String getSiteAccountWithMarketingConsentAsFalseV2() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-marketing-consent-false-v2.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountIncomplete() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-incomplete.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
     public static String getSiteAccountJapanJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account-japan.json";
         return TestUtils.getJSONFromFile(path).toString();
@@ -403,6 +466,11 @@ public class AccountUtils {
 
     public static String getSiteAccountKoreaJsonString() throws IOException, ParseException {
         String path = "src/test/resources/CDCResponses/site-account-korea.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getSiteAccountKoreaJsonStringV2() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/site-account-korea-v2.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 

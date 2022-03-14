@@ -45,7 +45,7 @@ public class CdcamApplication {
 			.groupName("CDCAM V2")
 			.select()
 			.apis(RequestHandlerSelectors.basePackage(messageSource().getMessage("swagger.base.package", null,null)))
-			.paths(PathSelectors.regex("/accounts/v2/.*"))
+			.paths(PathSelectors.regex("/v2/.*"))
 			.build()
 			.apiInfo(apiInfo("2.0"));
 	}

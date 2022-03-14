@@ -238,6 +238,60 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
+    public void sendResetPasswordEmail_WhenLoginIdDoesNotExistExceptionIsThrown_ThenReturnHttpStatusOK()
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, GSKeyNotFoundException {
+        //given
+        setSendResetPasswordEmailMocks();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
+        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new LoginIdDoesNotExistException(""));
+        when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
+
+        //when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+
+        //then
+        assertEquals(result.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_WhenCustomGigyaErrorExceptionIsThrown_ThenReturnHttpStatusBadRequest()
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, GSKeyNotFoundException {
+        //given
+        setSendResetPasswordEmailMocks();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
+        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new CustomGigyaErrorException(""));
+        when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
+
+        //when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+
+        //then
+        assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_WhenNullPointerExceptionIsThrown_ThenReturnHttpStatusInternalServerError()
+            throws JSONException, IOException, CustomGigyaErrorException, LoginIdDoesNotExistException,
+            ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, GSKeyNotFoundException {
+        //given
+        setSendResetPasswordEmailMocks();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
+        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new NullPointerException(""));
+        when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
+
+        //when
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+
+        //then
+        assertEquals(result.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
     public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws CustomGigyaErrorException {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
@@ -412,6 +466,17 @@ public class ResetPasswordControllerTests {
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void getRPResetPasswordConfig_WhenExceptionJSONExceptionIsThrown_ThenReturnHttpStatusInternalServerError() throws Exception {
+        when(cdcResponseHandler.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
+
+        // when
+        ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test

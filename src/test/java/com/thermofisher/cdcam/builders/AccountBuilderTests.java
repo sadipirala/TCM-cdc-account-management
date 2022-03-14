@@ -33,16 +33,17 @@ public class AccountBuilderTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedCdcResponse;
     private String siteCdcResponse;
+    private String siteCdcResponseV2;
     private String siteCdcMarketingConsentFalseResponse;
+    private String siteCdcMarketingConsentFalseResponseV2;
     private String siteCdcResponseJapan;
     private String siteCdcResponseKorea;
+    private String siteCdcResponseKoreaV2;
     private String siteCdcResponseChina;
     private String invalidCdcResponse;
+    private String siteAccountIncompleteAccount;
     private AccountInfo federatedAccount;
-    private AccountInfo siteAccount;
     private AccountInfo siteAccountJapan;
-    private AccountInfo siteAccountKorea;
-    private AccountInfo siteAccountChina;
 
     @Mock
     AccountBuilder accountBuilder = new AccountBuilder();
@@ -50,17 +51,18 @@ public class AccountBuilderTests {
     @Before
     public void setup() throws ParseException, IOException {
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
+        siteCdcResponseV2 = AccountUtils.getSiteAccountJsonStringV2();
         siteCdcMarketingConsentFalseResponse = AccountUtils.getSiteAccountWithMarketingConsentAsFalse();
+        siteCdcMarketingConsentFalseResponseV2 = AccountUtils.getSiteAccountWithMarketingConsentAsFalseV2();
         siteCdcResponseJapan = AccountUtils.getSiteAccountJapanJsonString();
         siteCdcResponseKorea = AccountUtils.getSiteAccountKoreaJsonString();
+        siteCdcResponseKoreaV2 = AccountUtils.getSiteAccountKoreaJsonStringV2();
         siteCdcResponseChina = AccountUtils.getSiteAccountChinaJsonString();
         federatedCdcResponse = AccountUtils.getFederatedAccountJsonString();
         invalidCdcResponse = AccountUtils.getInvalidAccountJsonString();
         federatedAccount = AccountUtils.getFederatedAccount();
-        siteAccount = AccountUtils.getSiteAccount();
         siteAccountJapan = AccountUtils.getSiteAccountJapan();
-        siteAccountKorea = AccountUtils.getSiteAccountKorea();
-        siteAccountChina = AccountUtils.getSiteAccountChina();
+        siteAccountIncompleteAccount = AccountUtils.getSiteAccountIncomplete();
 
         ReflectionTestUtils.setField(accountBuilder, "logger", logger);
     }
@@ -248,6 +250,125 @@ public class AccountBuilderTests {
         // then
         assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);
     }
+    
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithReceiveMarketingInformation_returnAccountInfoWithReceiveMarketingInformation() throws Exception {
+        // given
+        Boolean receiveMarketingInformation = AccountUtils.receiveMarketingInformation;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo response = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(receiveMarketingInformation, response.getReceiveMarketingInformation());
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithThirdPartyTransferPersonalInfoMandatory_returnAccountInfoWithThirdPartyTransferPersonalInfoMandatory() throws Exception {
+        // given
+        Boolean thirdPartyTransferPersonalInfoMandatory = AccountUtils.thirdPartyTransferPersonalInfoMandatory;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getThirdPartyTransferPersonalInfoMandatory(), thirdPartyTransferPersonalInfoMandatory);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithThirdPartyTransferPersonalInfoOptional_returnAccountInfoWithThirdPartyTransferPersonalInfoOptional() throws Exception {
+        // given
+        Boolean thirdPartyTransferPersonalInfoOptional = AccountUtils.thirdPartyTransferPersonalInfoOptional;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getThirdPartyTransferPersonalInfoOptional(), thirdPartyTransferPersonalInfoOptional);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithCollectionAndUsePersonalInfoMandatory_returnAccountInfoWithCollectionAndUsePersonalInfoMandatory() throws Exception {
+        // given
+        Boolean collectionAndUsePersonalInfoMandatory = AccountUtils.collectionAndUsePersonalInfoMandatory;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithCollectionAndUsePersonalInfoOptional_returnAccountInfoWithCollectionAndUsePersonalInfoOptional() throws Exception {
+        // given
+        Boolean collectionAndUsePersonalInfoOptional = AccountUtils.collectionAndUsePersonalInfoOptional;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getCollectionAndUsePersonalInfoOptional(), collectionAndUsePersonalInfoOptional);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithCollectionAndUsePersonalInfoMarketing_returnAccountInfoWithCollectionAndUsePersonalInfoMarketing() throws Exception {
+        // given
+        Boolean collectionAndUsePersonalInfoMarketing = AccountUtils.collectionAndUsePersonalInfoMarketing;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getCollectionAndUsePersonalInfoMarketing(), collectionAndUsePersonalInfoMarketing);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithOverseasTransferPersonalInfoMandatory_returnAccountInfoWithOverseasTransferPersonalInfoMandatory() throws Exception {
+        // given
+        Boolean overseasTransferPersonalInfoMandatory = AccountUtils.overseasTransferPersonalInfoMandatory;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getOverseasTransferPersonalInfoMandatory(), overseasTransferPersonalInfoMandatory);
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenSiteUserWithOverseasTransferPersonalInfoOptional_returnAccountInfoWithOverseasTransferPersonalInfoOptional() throws Exception {
+        // given
+        Boolean overseasTransferPersonalInfoOptional = AccountUtils.overseasTransferPersonalInfoOptional;
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
+
+        // then
+        assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);
+    }
+
+    @Test
+    public void getAccountInfoV2_ShouldSetDefaultValues_WhenPropertiesAreMissing() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteAccountIncompleteAccount);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
+
+        // then
+        assertEquals(res.getEmailAddress(), "");
+        assertEquals(res.getFirstName(), "");
+        assertEquals(res.getLastName(), "");
+    }
 
     @Test
     public void getAccountInfo_ifGivenAInvalidObj_returnNull() throws Exception {
@@ -276,6 +397,47 @@ public class AccountBuilderTests {
     }
 
     @Test
+    public void getAccountInfo_ShouldSetDefaultValues_WhenPropertiesAreMissing() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteAccountIncompleteAccount);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
+
+        // then
+        assertEquals(res.getEmailAddress(), "");
+        assertEquals(res.getFirstName(), "");
+        assertEquals(res.getLastName(), "");
+    }
+
+    @Test
+    public void getAccountInfoV2_GivenUserAllowsMarketingConsent_ThenIsConsentGrantedShouldBeTrue() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteCdcResponseV2);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
+
+        // then
+        assertTrue(res.isMarketingConsent());
+    }
+
+    @Test
+    public void getAccountInfoV2_ifGivenAInvalidObj_returnNull() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(invalidCdcResponse);
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
+
+        // then
+        Assert.assertNull(res);
+    }
+
+    @Test
     public void getAccountInfo_WhenPreferencesIsAnEmptyObject_ThenIsConsentGrantedShouldBeFalse() throws Exception {
         // given
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
@@ -287,8 +449,21 @@ public class AccountBuilderTests {
         // then
         assertFalse(res.isMarketingConsent());
     }
+    
+    @Test
+    public void getAccountInfoV2_WhenPreferencesIsAnEmptyObject_ThenIsConsentGrantedShouldBeFalse() throws Exception {
+        // given
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+        GSObject jsonObj = new GSObject(siteCdcMarketingConsentFalseResponseV2);
 
-    public void getAccountInfo_GivenAccountHasOpenIdProvider_ThenReturnAssignProviderCliendId() throws Exception {
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
+
+        // then
+        assertFalse(res.isMarketingConsent());
+    }
+
+    public void getAccountInfo_GivenAccountHasOpenIdProvider_ThenReturnAssignProviderClientId() throws Exception {
         // given
         String openIdProviderId = AccountUtils.openIdProviderId;
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();

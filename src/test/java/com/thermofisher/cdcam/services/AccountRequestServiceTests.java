@@ -4,11 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -16,11 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCValidationError;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
@@ -206,6 +205,21 @@ public class AccountRequestServiceTests {
     }
 
     @Test
+    public void onAccountRegistered_GivenJsonProcessingExceptionIsThrown_ThenDoNotSendNotifyAccountInfoNotification() throws IOException, CustomGigyaErrorException {
+        // given
+        ReflectionTestUtils.setField(accountRequestService, "cipdc", "us");
+        String uid = UUID.randomUUID().toString();
+        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
+        doThrow(JsonProcessingException.class).when(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
+
+        // when
+        accountRequestService.onAccountRegistered(uid);
+
+        // then
+        verify(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
+    }
+
+    @Test
     public void onAccountRegistered_GivenNewAccountRegistered_ThenSendAccountRegistrationNotification() throws IOException, CustomGigyaErrorException {
         // given
         ReflectionTestUtils.setField(accountRequestService, "cipdc", "us");
@@ -229,23 +243,41 @@ public class AccountRequestServiceTests {
     @Test
     public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
         // given
+        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", false);
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
         cdcResponseData.setStatusCode(200);
-        when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
+        when(cdcResponseHandler.register(any(CDCNewAccount.class))).thenReturn(cdcResponseData);
 
         // when
         accountRequestService.createAccount(accountInfo);
 
         // then
-        verify(cdcResponseHandler).register(any());
+        verify(cdcResponseHandler).register(any(CDCNewAccount.class));
+    }
+
+    @Test
+    public void processRegistrationRequest_givenAValidAccount_returnCDCResponseData_V2() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
+        // given
+        ReflectionTestUtils.setField(accountRequestService, "isNewMarketingConsentEnabled", true);
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setUID("9f6f2133e57144d787574d49c0b9908e");
+        cdcResponseData.setStatusCode(200);
+        when(cdcResponseHandler.register(any(CDCNewAccountV2.class))).thenReturn(cdcResponseData);
+
+        // when
+        accountRequestService.createAccount(accountInfo);
+
+        // then
+        verify(cdcResponseHandler).register(any(CDCNewAccountV2.class));
     }
 
     @Test(expected = CustomGigyaErrorException.class)
     public void processRegistrationRequest_GivenCDCReturnsAnErrorResponse_ThenThrowCustomGigyaErrorException() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
         // given
+        ReflectionTestUtils.setField(accountRequestService, "isNewMarketingConsentEnabled", false);
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setStatusCode(400);
@@ -257,7 +289,28 @@ public class AccountRequestServiceTests {
         error.setMessage("incorrect password");
         errors.add(error);
         cdcResponseData.setValidationErrors(errors);
-        when(cdcResponseHandler.register(any())).thenReturn(cdcResponseData);
+        when(cdcResponseHandler.register(any(CDCNewAccount.class))).thenReturn(cdcResponseData);
+
+        // when
+        accountRequestService.createAccount(accountInfo);
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void processRegistrationRequest_GivenCDCReturnsAnErrorResponse_ThenThrowCustomGigyaErrorException_V2() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
+        // given
+        ReflectionTestUtils.setField(accountRequestService, "isNewMarketingConsentEnabled", true);
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        CDCResponseData cdcResponseData = new CDCResponseData();
+        cdcResponseData.setStatusCode(400);
+        cdcResponseData.setStatusReason("");
+        List<CDCValidationError> errors = new ArrayList<>();
+        CDCValidationError error = new CDCValidationError();
+        error.setErrorCode(400);
+        error.setFieldName("password");
+        error.setMessage("incorrect password");
+        errors.add(error);
+        cdcResponseData.setValidationErrors(errors);
+        when(cdcResponseHandler.register(any(CDCNewAccountV2.class))).thenReturn(cdcResponseData);
 
         // when
         accountRequestService.createAccount(accountInfo);
@@ -350,6 +403,22 @@ public class AccountRequestServiceTests {
     }
 
     @Test
+    public void givenOnAccountMergedIsCalled_WhenCustomGigyaErrorExceptionIsThrown_ThenAccountMergedNotificationShouldNotBeSent() throws CustomGigyaErrorException {
+        // given
+        String uid = AccountUtils.uid;
+        AccountInfo accountMock = AccountUtils.getFederatedAccount();
+        MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountMock);
+        when(cdcResponseHandler.getAccountInfo(uid)).thenThrow(new CustomGigyaErrorException(("")));
+        doNothing().when(notificationService).sendAccountMergedNotification(any());
+
+        // when
+        accountRequestService.onAccountMerged(uid);
+
+        // then
+        verify(notificationService, times(0)).sendAccountMergedNotification(mergedAccountNotification);
+    }
+
+    @Test
     public void givenOnAccountMergedIsCalled_WhenAccountIsNotFederated_ThenAccountMergedNotificationShouldNotBeSent() throws CustomGigyaErrorException {
         // when
         String uid = AccountUtils.uid;
@@ -394,5 +463,19 @@ public class AccountRequestServiceTests {
 
         // then
         verify(notificationService, never()).sendPrivateAccountUpdatedNotification(any());
+    }
+
+    @Test
+    public void onAccountUpdated_WhenCustomGigyaErrorExceptionIsThrown_ThenAccountUpdatedNotificationShouldNotBeSent() throws CustomGigyaErrorException {
+        // given
+        String uid = AccountUtils.uid;
+        when(cdcResponseHandler.getAccountInfo(uid)).thenThrow(new CustomGigyaErrorException(("")));
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+
+        // when
+        accountRequestService.onAccountUpdated(uid);
+
+        // then
+        verify(notificationService, times(0)).sendPrivateAccountUpdatedNotification(any());
     }
 }

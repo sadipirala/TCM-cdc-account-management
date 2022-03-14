@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -13,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.gigya.socialize.GSKeyNotFoundException;
+import com.google.gson.JsonParseException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.RegistrationController;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
@@ -100,9 +101,9 @@ public class RegistrationControllerTests {
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.FOUND);
-        assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Set-Cookie")));
-        assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Location")));
-        assertTrue(response.getHeaders().get("Set-Cookie").size() == NO_OF_COOKIES);
+        assertFalse(Utils.isNullOrEmpty(response.getHeaders().get("Set-Cookie")));
+        assertFalse(Utils.isNullOrEmpty(response.getHeaders().get("Location")));
+        assertEquals(response.getHeaders().get("Set-Cookie").size(), NO_OF_COOKIES);
     }
 
     @Test
@@ -179,6 +180,23 @@ public class RegistrationControllerTests {
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void getRPRegistrationConfig_GivenMethodCalled_WhenGSKeyNotFoundExceptionIsThrown_ThenShouldReturnInternalServerError() throws Exception {
+        // given
+        ReflectionTestUtils.setField(registrationController, "createAccountEndpointPath", CREATE_ACCOUNT_ENDPOINT_PATH);
+        ReflectionTestUtils.setField(registrationController, "getOidcLoginEndpointPath", GET_LOGIN_ENDPOINT_PATH);
+        String params = "?state=state&redirect_uri=redirect";
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+        when(cdcResponseHandler.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
+        when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
+
+        // when
+        ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -290,5 +308,53 @@ public class RegistrationControllerTests {
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    public void redirectLoginAuth_GivenMethodCalled_WhenJsonParseExceptionIsThrown_ThenShouldReturnBadRequestHttpStatusCode() throws UnsupportedEncodingException {
+        // given
+        ReflectionTestUtils.setField(registrationController, "tfComClientId", "tfComClientId");
+        cipAuthData = CIPAuthDataDTO.builder()
+                .clientId("tfComClientId")
+                .redirectUri("redirectUri")
+                .responseType("responseType")
+                .scope("scope")
+                .state("state")
+                .build();
+        String params = "?state=state&redirect_uri=redirect";
+        String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
+        when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenThrow(new JsonParseException(""));
+        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
+        // when
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void redirectLoginAuth_GivenMethodCalled_WhenNullPointerExceptionIsThrown_ThenShouldReturnInternalServerErrorHttpStatusCode() throws UnsupportedEncodingException {
+        // given
+        ReflectionTestUtils.setField(registrationController, "tfComClientId", "tfComClientId");
+        cipAuthData = CIPAuthDataDTO.builder()
+                .clientId("tfComClientId")
+                .redirectUri("redirectUri")
+                .responseType("responseType")
+                .scope("scope")
+                .state("state")
+                .build();
+        String params = "?state=state&redirect_uri=redirect";
+        String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
+        when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenThrow(new NullPointerException(""));
+        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+
+        // when
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

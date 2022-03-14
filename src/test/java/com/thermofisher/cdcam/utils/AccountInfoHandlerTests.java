@@ -63,6 +63,7 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
         propertiesToRemove.add("openIdProviderId");
+        propertiesToRemove.add("phoneNumber");
         json.put("uuid", json.get("uid").asText());
         json.put("cipdc", MOCK_CIPDC);
         json.remove(propertiesToRemove);
@@ -135,6 +136,7 @@ public class AccountInfoHandlerTests {
         
         // then
         assertEquals(parsedAccount.indexOf("\"password\""), -1);
+        assertEquals(parsedAccount.indexOf("\"phoneNumber\""), -1);
         assertEquals(expectedAccountToNotify, parsedAccount);
     }
 

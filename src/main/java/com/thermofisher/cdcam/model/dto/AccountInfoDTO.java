@@ -54,14 +54,14 @@ public class AccountInfoDTO {
     private String ciphertext;
 
     // korea
-    private Boolean receiveMarketingInformation;
-    private Boolean thirdPartyTransferPersonalInfoMandatory;
-    private Boolean thirdPartyTransferPersonalInfoOptional;
-    private Boolean collectionAndUsePersonalInfoMandatory;
-    private Boolean collectionAndUsePersonalInfoOptional;
-    private Boolean collectionAndUsePersonalInfoMarketing;
-    private Boolean overseasTransferPersonalInfoMandatory;
-    private Boolean overseasTransferPersonalInfoOptional;
+    private boolean receiveMarketingInformation;
+    private boolean thirdPartyTransferPersonalInfoMandatory;
+    private boolean thirdPartyTransferPersonalInfoOptional;
+    private boolean collectionAndUsePersonalInfoMandatory;
+    private boolean collectionAndUsePersonalInfoOptional;
+    private boolean collectionAndUsePersonalInfoMarketing;
+    private boolean overseasTransferPersonalInfoMandatory;
+    private boolean overseasTransferPersonalInfoOptional;
 
     public String getJobRoles() {
         return Objects.isNull(this.jobRoles) ? "" : String.join(",", this.jobRoles);

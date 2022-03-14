@@ -102,16 +102,6 @@ public class Utils {
         return collection.stream().anyMatch(Utils::isNullOrEmpty);
     }
 
-    public static byte[] encodeBase64(String encodeMe){
-        byte[] encodedBytes = Base64.encodeBase64(encodeMe.getBytes());
-        return encodedBytes;
-    } 
-
-    public static String decodeBase64(byte[] encodedBytes){
-        byte[] decodedBytes = Base64.decodeBase64(encodedBytes);
-        return new String(decodedBytes);
-    }
-
     public static  boolean isAValidEmail(String email) {
         return email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
     }

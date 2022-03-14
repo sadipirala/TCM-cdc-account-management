@@ -139,6 +139,7 @@ public class AccountInfoHandler {
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
         propertiesToRemove.add("openIdProviderId");
+        propertiesToRemove.add("phoneNumber");
 
         return objectNode.remove(propertiesToRemove);
     }

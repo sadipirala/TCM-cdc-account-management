@@ -7,6 +7,8 @@ import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.Korea;
+import com.thermofisher.cdcam.model.cdc.Preferences;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
@@ -34,7 +36,6 @@ public class AccountBuilder {
             String socialProviders = obj.containsKey("socialProviders") ? obj.getString("socialProviders") : "";
             String company = "";
             String finalPassword = "";
-            //Preferences preferences = getPreferences(obj);
             Registration registration = getRegistration(data);
             RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
 
@@ -63,7 +64,6 @@ public class AccountBuilder {
                     .company(company)
                     .country(profile.containsKey("country") ? profile.getString("country") : "")
                     .city(profile.containsKey("city") ? profile.getString("city") : "")
-                    //.marketingConsent(getIsConsentGranted(preferences))
                     .marketingConsent(data.containsKey("subscribe") ? data.getBool("subscribe") : false)
                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
@@ -90,6 +90,75 @@ public class AccountBuilder {
         }
     }
 
+    public AccountInfo getAccountInfoV2(GSObject obj) {
+        String uid = null;
+        try {
+            uid = (String) obj.get("UID");
+            GSObject data = (GSObject) obj.get("data");
+            GSObject profile = (GSObject) obj.get("profile");
+            GSObject work = profile.containsKey("work") ? (GSObject) profile.get("work") : null;
+            String email = profile.containsKey("email") ? profile.getString("email") : "";
+            GSObject password = obj.containsKey("password") ? (GSObject) obj.get("password") : null;
+            String socialProviders = obj.containsKey("socialProviders") ? obj.getString("socialProviders") : "";
+            String company = "";
+            String finalPassword = "";
+            Preferences preferences = getPreferences(obj);
+            Registration registration = getRegistration(data);
+            RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+
+            if (password != null) {
+                String hash = password.containsKey("hash") ? password.getString("hash") : "";
+                GSObject hashSettings = password.containsKey("hashSettings") ? (GSObject) password.get("hashSettings") : null;
+                if (hashSettings != null) {
+                    String algorithm = hashSettings.containsKey("algorithm") ? hashSettings.getString("algorithm") : "";
+                    finalPassword = (algorithm + ":" + hash).toUpperCase();
+                }
+            }
+
+            if (work != null) {
+                company = work.containsKey("company") ? work.getString("company") : "";
+            }
+
+            String providerClientId = getProviderClientId(registration);
+
+            Korea koreaConsents = getKoreaConsents(preferences);
+
+            return AccountInfo.builder()
+                    .uid(uid)
+                    .username(profile.containsKey("username") ? profile.getString("username") : email)
+                    .emailAddress(email)
+                    .password(finalPassword)
+                    .firstName(profile.containsKey("firstName") ? profile.getString("firstName") : "")
+                    .lastName(profile.containsKey("lastName") ? profile.getString("lastName") : "")
+                    .company(company)
+                    .country(profile.containsKey("country") ? profile.getString("country") : "")
+                    .city(profile.containsKey("city") ? profile.getString("city") : "")
+                    .marketingConsent(getIsConsentGranted(preferences))
+                    .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
+                    .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
+                    .socialProviders(socialProviders)
+                    .hiraganaName(registrationAttributesHandler.getHiraganaName())
+                    .jobRole(registrationAttributesHandler.getJobRole())
+                    .interest(registrationAttributesHandler.getInterest())
+                    .phoneNumber(registrationAttributesHandler.getPhoneNumber())
+                    .receiveMarketingInformation(koreaConsents.getReceiveMarketingInformation())
+                    .thirdPartyTransferPersonalInfoMandatory(koreaConsents.getThirdPartyTransferPersonalInfoMandatory())
+                    .thirdPartyTransferPersonalInfoOptional(koreaConsents.getThirdPartyTransferPersonalInfoOptional())
+                    .collectionAndUsePersonalInfoMandatory(koreaConsents.getCollectionAndUsePersonalInfoMandatory())
+                    .collectionAndUsePersonalInfoOptional(koreaConsents.getCollectionAndUsePersonalInfoOptional())
+                    .collectionAndUsePersonalInfoMarketing(koreaConsents.getCollectionAndUsePersonalInfoMarketing())
+                    .overseasTransferPersonalInfoMandatory(koreaConsents.getOverseasTransferPersonalInfoMandatory())
+                    .overseasTransferPersonalInfoOptional(koreaConsents.getOverseasTransferPersonalInfoOptional())
+                    .regAttempts(0)
+                    .openIdProviderId(providerClientId)
+                    .build();
+
+        } catch (Exception e) {
+            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
+            return null;
+        }
+    }
+
     private static Registration getRegistration (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
         if(data.containsKey("registration")) {
@@ -99,8 +168,12 @@ public class AccountBuilder {
         return null;
     }
 
-    /* private boolean getIsConsentGranted(Preferences preferences) {
+    private boolean getIsConsentGranted(Preferences preferences) {
         return Objects.nonNull(preferences) && Objects.nonNull(preferences.getMarketing()) && Objects.nonNull(preferences.getMarketing().getConsent()) && preferences.getMarketing().getConsent().isConsentGranted();
+    }
+
+    private Korea getKoreaConsents(Preferences preferences) {
+        return Korea.buildFromPreferences(preferences);
     }
 
     private Preferences getPreferences (GSObject obj) throws JsonSyntaxException, GSKeyNotFoundException {
@@ -110,8 +183,8 @@ public class AccountBuilder {
         }
 
         return null;
-    } */
-
+    } 
+    
     private String getProviderClientId(Registration registration) {
         if (Objects.nonNull(registration) && Objects.nonNull(registration.getOpenIdProvider()) && StringUtils.isNotBlank(registration.getOpenIdProvider().getClientID())) {
             return registration.getOpenIdProvider().getClientID();
@@ -138,14 +211,14 @@ public class AccountBuilder {
             .jobRole(accountInfoDTO.getJobRoles())
             .interest(accountInfoDTO.getInterests())
             .phoneNumber(accountInfoDTO.getPhoneNumber())
-            .receiveMarketingInformation(accountInfoDTO.getReceiveMarketingInformation())
-            .thirdPartyTransferPersonalInfoMandatory(accountInfoDTO.getThirdPartyTransferPersonalInfoMandatory())
-            .thirdPartyTransferPersonalInfoOptional(accountInfoDTO.getThirdPartyTransferPersonalInfoOptional())
-            .collectionAndUsePersonalInfoMandatory(accountInfoDTO.getCollectionAndUsePersonalInfoMandatory())
-            .collectionAndUsePersonalInfoOptional(accountInfoDTO.getCollectionAndUsePersonalInfoOptional())
-            .collectionAndUsePersonalInfoMarketing(accountInfoDTO.getCollectionAndUsePersonalInfoMarketing())
-            .overseasTransferPersonalInfoMandatory(accountInfoDTO.getOverseasTransferPersonalInfoMandatory())
-            .overseasTransferPersonalInfoOptional(accountInfoDTO.getOverseasTransferPersonalInfoOptional())
+            .receiveMarketingInformation(accountInfoDTO.isReceiveMarketingInformation())
+            .thirdPartyTransferPersonalInfoMandatory(accountInfoDTO.isThirdPartyTransferPersonalInfoMandatory())
+            .thirdPartyTransferPersonalInfoOptional(accountInfoDTO.isThirdPartyTransferPersonalInfoOptional())
+            .collectionAndUsePersonalInfoMandatory(accountInfoDTO.isCollectionAndUsePersonalInfoMandatory())
+            .collectionAndUsePersonalInfoOptional(accountInfoDTO.isCollectionAndUsePersonalInfoOptional())
+            .collectionAndUsePersonalInfoMarketing(accountInfoDTO.isCollectionAndUsePersonalInfoMarketing())
+            .overseasTransferPersonalInfoMandatory(accountInfoDTO.isOverseasTransferPersonalInfoMandatory())
+            .overseasTransferPersonalInfoOptional(accountInfoDTO.isOverseasTransferPersonalInfoOptional())
             .acceptsAspireEnrollmentConsent(accountInfoDTO.getAcceptsAspireEnrollmentConsent())
             .isHealthcareProfessional(accountInfoDTO.getIsHealthcareProfessional())
             .isGovernmentEmployee(accountInfoDTO.getIsGovernmentEmployee())

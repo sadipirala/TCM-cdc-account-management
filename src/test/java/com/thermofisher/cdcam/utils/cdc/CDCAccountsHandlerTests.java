@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.utils.cdc;
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -50,6 +51,23 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertTrue(expectedAccount.getProfile().contains(String.format("\"locale\":\"%s\"", expectedLocale)));
+    }
+
+    @Test
+    public void buildNewCDCAccount_ShouldBuildACDCNewAccountObjectWithLocaleNull() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccountWithoutLocale();
+        CDCNewAccount expectedCDCNewAccount = AccountUtils.getNewCDCAccount(accountInfo);
+
+        // when
+        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
+
+        // then
+        assertEquals(expectedCDCNewAccount.getUsername(), result.getUsername());
+        assertEquals(expectedCDCNewAccount.getEmail(), result.getEmail());
+        assertEquals(expectedCDCNewAccount.getPassword(), result.getPassword());
+        assertEquals(expectedCDCNewAccount.getData(), result.getData());
+        assertEquals(expectedCDCNewAccount.getProfile(), result.getProfile());
     }
 
     @Test
@@ -248,5 +266,101 @@ public class CDCAccountsHandlerTests {
 
         // then
         assertFalse(result.getData().contains("clientID"));
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_ShouldBuildACDCNewAccountObjectWithCorrectFields() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        CDCNewAccountV2 expectedCDCNewAccount = AccountUtils.getNewCDCAccountV2(accountInfo);
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertEquals(expectedCDCNewAccount.getUsername(), result.getUsername());
+        assertEquals(expectedCDCNewAccount.getEmail(), result.getEmail());
+        assertEquals(expectedCDCNewAccount.getPassword(), result.getPassword());
+        assertEquals(expectedCDCNewAccount.getData(), result.getData());
+        assertEquals(expectedCDCNewAccount.getProfile(), result.getProfile());
+        assertEquals(expectedCDCNewAccount.getPreferences(), result.getPreferences());
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_ShouldBuildACDCNewAccountObjectWithLocaleNull() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccountWithoutLocale();
+        CDCNewAccountV2 expectedCDCNewAccount = AccountUtils.getNewCDCAccountV2(accountInfo);
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertEquals(expectedCDCNewAccount.getUsername(), result.getUsername());
+        assertEquals(expectedCDCNewAccount.getEmail(), result.getEmail());
+        assertEquals(expectedCDCNewAccount.getPassword(), result.getPassword());
+        assertEquals(expectedCDCNewAccount.getData(), result.getData());
+        assertEquals(expectedCDCNewAccount.getProfile(), result.getProfile());
+        assertEquals(expectedCDCNewAccount.getPreferences(), result.getPreferences());
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_GivenAccountInfoHasJapanAsCountry_ThenCDCAccountShouldContainJapanObject() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccountJapan();
+        accountInfo.setCountry(CountryCodes.JAPAN.getValue());
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"hiraganaName\":\"%s\"", accountInfo.getHiraganaName())));
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_GivenAccountInfoHasChinaAsCountry_ThenCDCAccountShouldContainChinaObject() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccountChina();
+        accountInfo.setCountry(CountryCodes.CHINA.getValue());
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains(String.format("\"jobRole\":\"%s\"", accountInfo.getJobRole())));
+        assertTrue(result.getData().contains(String.format("\"interest\":\"%s\"", accountInfo.getInterest())));
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_GivenAccountHasProviderId_ThenCDCAccountShouldHaveProviderClientId() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccount();
+        accountInfo.setOpenIdProviderId(RandomStringUtils.randomAlphanumeric(10));
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertTrue(result.getData().contains("clientID"));
+    }
+
+    @Test
+    public void buildNewCDCAccount_v2_GivenAccountInfoHasKoreaAsCountry_ThenCDCAccountShouldKoreaObject() throws JSONException {
+        // given
+        AccountInfo accountInfo = AccountUtils.getSiteAccountKorea();
+        accountInfo.setCountry(CountryCodes.KOREA.getValue());
+
+        // when
+        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
+
+        // then
+        assertTrue(result.getPreferences().contains(String.format("\"receiveMarketingInformation\":{\"isConsentGranted\":%s}", accountInfo.getReceiveMarketingInformation())));
+        assertTrue(result.getPreferences().contains(String.format("\"thirdPartyTransferPersonalInfoMandatory\":{\"isConsentGranted\":%s}", accountInfo.getThirdPartyTransferPersonalInfoMandatory())));
+        assertTrue(result.getPreferences().contains(String.format("\"thirdPartyTransferPersonalInfoOptional\":{\"isConsentGranted\":%s}", accountInfo.getThirdPartyTransferPersonalInfoOptional())));
+        assertTrue(result.getPreferences().contains(String.format("\"collectionAndUsePersonalInfoMandatory\":{\"isConsentGranted\":%s}", accountInfo.getCollectionAndUsePersonalInfoMandatory())));
+        assertTrue(result.getPreferences().contains(String.format("\"collectionAndUsePersonalInfoOptional\":{\"isConsentGranted\":%s}", accountInfo.getCollectionAndUsePersonalInfoOptional())));
+        assertTrue(result.getPreferences().contains(String.format("\"collectionAndUsePersonalInfoMarketing\":{\"isConsentGranted\":%s}", accountInfo.getCollectionAndUsePersonalInfoMarketing())));
+        assertTrue(result.getPreferences().contains(String.format("\"overseasTransferPersonalInfoOptional\":{\"isConsentGranted\":%s}", accountInfo.getOverseasTransferPersonalInfoOptional())));
+        assertTrue(result.getPreferences().contains(String.format("\"overseasTransferPersonalInfoMandatory\":{\"isConsentGranted\":%s}", accountInfo.getOverseasTransferPersonalInfoMandatory())));
     }
 }

@@ -2,14 +2,13 @@ package com.thermofisher.cdcam.models;
 
 import static org.junit.Assert.assertEquals;
 
-import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.utils.AccountUtils;
-import com.thermofisher.cdcam.utils.Utils;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,13 +32,12 @@ public class CDCNewAccountTests {
         String expectedData = prepareData(data);
         
         // when
-        CDCNewAccount result = CDCNewAccount.builder()
-            .username(AccountUtils.username)
-            .email(AccountUtils.email)
-            .password(AccountUtils.password)
-            .data(data)
-            .profile(profile)
-            .build();
+        CDCNewAccount result = CDCNewAccount.build(
+            AccountUtils.username, 
+            AccountUtils.email, 
+            AccountUtils.password, 
+            data, 
+            profile);
 
         // then
         assertEquals(expectedData, result.getData());
@@ -52,25 +50,22 @@ public class CDCNewAccountTests {
         String expectedProfile = prepareProfile(profile);
         
         // when
-        CDCNewAccount result = CDCNewAccount.builder()
-            .username(AccountUtils.username)
-            .email(AccountUtils.email)
-            .password(AccountUtils.password)
-            .data(data)
-            .profile(profile)
-            .build();
+        CDCNewAccount result = CDCNewAccount.build(
+            AccountUtils.username, 
+            AccountUtils.email, 
+            AccountUtils.password, 
+            data, 
+            profile);
 
         // then
         assertEquals(expectedProfile, result.getProfile());
     }
 
     private static String prepareData(Data data) throws JSONException {
-        Gson gson = new Gson();
-        return gson.toJson(data);
+        return new Gson().toJson(data);
     }
 
     private static String prepareProfile(Profile profile) throws JSONException {
-        JSONObject profileJson = Utils.removeNullValuesFromJsonObject(new JSONObject(profile));
-        return profileJson.toString();
+        return new Gson().toJson(profile);
     }
 }

@@ -267,13 +267,6 @@ public class ResetPasswordController {
                 .build();
     }
 
-    private void sendResetPasswordConfirmationEmail(String uid) throws CustomGigyaErrorException {
-        logger.info("Preparing reset password confirmation email");
-        AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
-        notificationService.sendResetPasswordConfirmationEmailNotification(account);
-        logger.info("Reset password confirmation email sent");
-    }
-
     private void sendRequestResetPasswordEmail(String username, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException, CustomGigyaErrorException {
         logger.info("Preparing request reset password confirmation email");
         String email = cdcResponseHandler.getEmailByUsername(username);
