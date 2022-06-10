@@ -1,7 +1,6 @@
 ![](https://github.com/thermofisher/TCM-cdc-account-management/workflows/tests/badge.svg)
 
 
-
 # CDC Account Management API (CDCAM)
 
 CDCAM handles all direct communication with SAP CDC for Customer Identity & Account Management (CIAM).

@@ -26,8 +26,10 @@ import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
@@ -38,9 +40,10 @@ import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.AccountsService;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -52,7 +55,6 @@ import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
 import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
@@ -71,12 +73,14 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -108,14 +112,17 @@ public class AccountsControllerTests {
             .marketingConsentDTO(marketingConsentDTO)
             .build();
 
+    @Value("${identity.oidc.rp.id}")
+    private String defaultClientId;
+
     @InjectMocks
     AccountsController accountsController;
 
     @Mock
-    AccountRequestService accountRequestService;
+    AccountsService accountsService;
 
     @Mock
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Mock
     CookieService cookieService;
@@ -160,17 +167,6 @@ public class AccountsControllerTests {
         cdcResponseData.setErrorCode(206006);
         cdcResponseData.setStatusReason("Partial Content");
         return cdcResponseData;
-    }
-    
-    private JSONObject getValidDecryptionResponse(String ciphertext) throws JSONException {
-        JSONObject decryptionResponse = new JSONObject();
-        decryptionResponse.put("statusCode", 200);
-        JSONObject body = new JSONObject();
-        body.put("firstName", "John");
-        body.put("lastName", "Doe");
-        body.put("email", "john.doe@mail.com");
-        decryptionResponse.put("body", body);
-        return decryptionResponse;
     }
 
     JSONObject reCaptchaResponse;
@@ -259,8 +255,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountRegistered(any());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountRegistered(any());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
@@ -279,8 +275,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountRegistered(any());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountRegistered(any());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -289,7 +285,7 @@ public class AccountsControllerTests {
             accountsController.onAccountRegistered(jwt, body);
 
             // then
-            verify(accountRequestService, times(0)).onAccountRegistered(body);
+            verify(accountsService, times(0)).onAccountRegistered(body);
         }
     }
 
@@ -299,8 +295,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 2;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountRegistered(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountRegistered(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
@@ -309,7 +305,7 @@ public class AccountsControllerTests {
             accountsController.onAccountRegistered(jwt, body);
 
             // then
-            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountRegistered(anyString());
+            verify(accountsService, times(numberOfWebhookEvents)).onAccountRegistered(anyString());
         }
     }
 
@@ -319,8 +315,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
-        doNothing().when(accountRequestService).onAccountRegistered(any());
+        when(gigyaService.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
+        doNothing().when(accountsService).onAccountRegistered(any());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -329,7 +325,7 @@ public class AccountsControllerTests {
             accountsController.onAccountRegistered(jwt, body);
 
             // then
-            verify(accountRequestService, times(0)).onAccountRegistered(body);
+            verify(accountsService, times(0)).onAccountRegistered(body);
         }
     }
 
@@ -418,31 +414,31 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService).createAccount(any());
+        verify(accountsService).createAccount(any());
     }
 
     @Test
-    public void newAccount_givenAnAccountWithValidEncryptedDataIsProvided_ThenACallToDecryptShouldBeMade() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
+    public void newAccount_givenAnAccountWithValidEncryptedDataIsProvided_ShouldDecryptTheCiphertext() throws JSONException, IOException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setCiphertext(CIPHERTEXT);
-        JSONObject decryptionResponse = getValidDecryptionResponse(CIPHERTEXT);
-        when(dataProtectionService.decrypt(any())).thenReturn(decryptionResponse);
+        Ciphertext decryptedCiphertext = AccountUtils.getCiphertext();
+        when(dataProtectionService.decrypCiphertext(CIPHERTEXT)).thenReturn(decryptedCiphertext);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(dataProtectionService, times(1)).decrypt(CIPHERTEXT);
+        verify(dataProtectionService).decrypCiphertext(CIPHERTEXT);
     }
 
     @Test
@@ -450,18 +446,12 @@ public class AccountsControllerTests {
         // given
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setCiphertext(CIPHERTEXT);
-        JSONObject decryptionResponse = getValidDecryptionResponse(CIPHERTEXT);
-        accountDTO.setFirstName(decryptionResponse.getJSONObject("body").getString("firstName"));
-        accountDTO.setLastName(decryptionResponse.getJSONObject("body").getString("lastName"));
-        accountDTO.setEmailAddress(decryptionResponse.getJSONObject("body").getString("email"));
-
-
         AccountInfo accountInfo = AccountBuilder.buildFrom(accountDTO);
-
+        Ciphertext decryptedCiphertext = AccountUtils.getCiphertext();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(dataProtectionService.decrypt(CIPHERTEXT)).thenReturn(decryptionResponse);
+        when(dataProtectionService.decrypCiphertext(CIPHERTEXT)).thenReturn(decryptedCiphertext);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
@@ -491,15 +481,33 @@ public class AccountsControllerTests {
         CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(accountRequestService.createAccount(any())).thenReturn(new CDCResponseData());
+        when(accountsService.createAccount(any())).thenReturn(new CDCResponseData());
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService).createAccount(accountInfoCaptor.capture());
+        verify(accountsService).createAccount(accountInfoCaptor.capture());
         AccountInfo capturedAccountInfo = accountInfoCaptor.getValue();
         assertEquals(cipAuthDataDTO.getClientId(), capturedAccountInfo.getOpenIdProviderId());
+    }
+
+    @Test
+    public void newAccount_GivenCipAuthDataCookiesIsInvalid_ShouldAssignDefaultProviderClientIdToAccount() throws IOException, JSONException, CustomGigyaErrorException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        // given
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(accountsService.createAccount(any())).thenReturn(new CDCResponseData());
+        String COOKIE_CIP_AUTHDATA_INVALID = null;
+        ReflectionTestUtils.setField(accountsController, "defaultClientId", defaultClientId);
+
+        // when
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_INVALID);
+
+        // then
+        verify(accountsService).createAccount(accountInfoCaptor.capture());
+        AccountInfo capturedAccountInfo = accountInfoCaptor.getValue();
+        assertEquals(defaultClientId, capturedAccountInfo.getOpenIdProviderId());
     }
 
     @Test
@@ -508,7 +516,7 @@ public class AccountsControllerTests {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        when(accountRequestService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
+        when(accountsService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
@@ -523,7 +531,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
@@ -533,12 +541,30 @@ public class AccountsControllerTests {
     }
 
     @Test
+    public void newAccount_givenAnAccountIsCreated_AndItComesFromInvite_ItShouldBeVerified() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        accountDTO.setCiphertext(CIPHERTEXT);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(dataProtectionService.decrypCiphertext(CIPHERTEXT)).thenReturn(AccountUtils.getCiphertext());
+        when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
+        when(accountsService.verify(any())).thenReturn(AccountUtils.getCdcResponse());
+
+        // when
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        verify(accountsService).verify(any());
+        assertEquals(response.getBody().getErrorCode(), 0);
+    }
+
+    @Test
     public void newAccount_givenAValidAccount_withCIPAuthDataInvalid_returnCdcResponseWithUID() throws IOException, JSONException, ReCaptchaLowScoreException,
             ReCaptchaUnsuccessfulResponseException, CustomGigyaErrorException {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, null);
@@ -553,7 +579,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getEmailVerificationCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
@@ -568,7 +594,7 @@ public class AccountsControllerTests {
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         doNothing().when(notificationService).sendAccountRegisteredNotification(any(), any());
 
         // when
@@ -589,14 +615,14 @@ public class AccountsControllerTests {
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService, times(1)).sendVerificationEmail(any());
+        verify(accountsService, times(1)).sendVerificationEmail(any());
     }
     
     @Test
@@ -606,14 +632,14 @@ public class AccountsControllerTests {
         reCaptchaResponse.put("success", true);
         reCaptchaResponse.put("score", 0.5);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        when(accountRequestService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
+        when(accountsService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService, times(0)).sendVerificationEmail(any());
+        verify(accountsService, times(0)).sendVerificationEmail(any());
     }
 
     @Test
@@ -627,14 +653,14 @@ public class AccountsControllerTests {
         cdcResponseData.setStatusCode(400);
         cdcResponseData.setErrorCode(400004);
         cdcResponseData.setStatusReason("");
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
 
         // then
-        verify(accountRequestService, times(0)).sendVerificationEmail(any());
+        verify(accountsService, times(0)).sendVerificationEmail(any());
     }
 
     @Test
@@ -648,7 +674,7 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(null);
         accountDTO.setAcceptsAspireTermsAndConditions(null);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -669,7 +695,7 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -690,7 +716,7 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -711,7 +737,7 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(true);
         accountDTO.setAcceptsAspireTermsAndConditions(true);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -732,7 +758,7 @@ public class AccountsControllerTests {
         accountDTO.setIsHealthcareProfessional(false);
         accountDTO.setAcceptsAspireTermsAndConditions(false);
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -751,7 +777,7 @@ public class AccountsControllerTests {
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setRegistrationType(RegistrationType.BASIC.getValue());
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -770,7 +796,7 @@ public class AccountsControllerTests {
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setRegistrationType("dummy");
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
-        when(accountRequestService.createAccount(any())).thenReturn(cdcResponseData);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
@@ -784,20 +810,20 @@ public class AccountsControllerTests {
     public void sendUsernameRecoveryEmail_shouldSearchForAccountInfoByEmail() throws IOException, CustomGigyaErrorException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+        when(gigyaService.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
 
         // when
         accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
 
         // then
-        verify(cdcResponseHandler).getAccountInfoByEmail(anyString());
+        verify(gigyaService).getAccountInfoByEmail(anyString());
     }
 
     @Test
     public void sendUsernameRecoveryEmail_shouldSendUsernameRecoveryEmail() throws IOException, CustomGigyaErrorException {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
+        when(gigyaService.getAccountInfoByEmail(anyString())).thenReturn(accountInfo);
 
         // when
         accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
@@ -809,7 +835,7 @@ public class AccountsControllerTests {
     @Test
     public void sendUsernameRecoveryEmail_shouldReturnBadRequest_whenAccountIsNull() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenReturn(null);
+        when(gigyaService.getAccountInfoByEmail(anyString())).thenReturn(null);
 
         // when
         ResponseEntity<String> resp = accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
@@ -821,7 +847,7 @@ public class AccountsControllerTests {
     @Test
     public void sendUsernameRecoveryEmail_shouldReturnInternalServerError_whenAnExceptionIsThrown() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.getAccountInfoByEmail(anyString())).thenThrow(new CustomGigyaErrorException(""));
+        when(gigyaService.getAccountInfoByEmail(anyString())).thenThrow(new CustomGigyaErrorException(""));
 
         // when
         ResponseEntity<String> resp = accountsController.sendRecoverUsernameEmail(usernameRecoveryDTO);
@@ -874,7 +900,7 @@ public class AccountsControllerTests {
         CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
         when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
 
-        when(accountRequestService.sendVerificationEmailSync(any())).thenReturn(mockResponse);
+        when(accountsService.sendVerificationEmailSync(any())).thenReturn(mockResponse);
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.sendVerificationEmail("test");
@@ -884,7 +910,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongFirstName_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongFirstName_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_FIRST_NAME = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -898,7 +924,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongLastName_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongLastName_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_LAST_NAME = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -912,7 +938,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongEmail_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongEmail_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_EMAIL = RandomStringUtils.random(51);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -926,7 +952,7 @@ public class AccountsControllerTests {
     }
     
     @Test
-    public void newAccount_givenAnAccountWithShortPassword_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithShortPassword_returnBadRequest() throws IOException, JSONException {
         // given
         final String SHORT_PASSWORD = RandomStringUtils.random(7);;
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -940,7 +966,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongPassword_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongPassword_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_PASSWORD = RandomStringUtils.random(21);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -954,7 +980,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongCompany_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongCompany_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_COMPANY = RandomStringUtils.random(51);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -968,7 +994,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenAnAccountWithLongCity_returnBadRequest() throws IOException {
+    public void newAccount_givenAnAccountWithLongCity_returnBadRequest() throws IOException, JSONException {
         // given
         final String LONG_CITY = RandomStringUtils.random(31);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -985,7 +1011,7 @@ public class AccountsControllerTests {
     public void isAvailableLoginID_GivenIdIsAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenReturn(true);
+        when(gigyaService.isAvailableLoginId(loginID)).thenReturn(true);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
@@ -999,7 +1025,7 @@ public class AccountsControllerTests {
     public void isAvailableLoginID_GivenIdIsNotAvailableInCDC_ItShouldReturnOk() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenReturn(false);
+        when(gigyaService.isAvailableLoginId(loginID)).thenReturn(false);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
@@ -1013,7 +1039,7 @@ public class AccountsControllerTests {
     public void isAvailableLoginID_GivenAnExceptionOccursWhenCheckingCDC_ItShouldReturnInternalServerError() throws Exception {
         // given
         String loginID = "test@mail.com";
-        when(cdcResponseHandler.isAvailableLoginId(loginID)).thenThrow(CustomGigyaErrorException.class);
+        when(gigyaService.isAvailableLoginId(loginID)).thenThrow(CustomGigyaErrorException.class);
 
         // when
         ResponseEntity<AccountAvailabilityResponse> response = accountsController.isAvailableLoginID(loginID);
@@ -1028,9 +1054,9 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountMerged(anyString());
-        doNothing().when(accountRequestService).onAccountUpdated(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountMerged(anyString());
+        doNothing().when(accountsService).onAccountUpdated(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -1039,19 +1065,19 @@ public class AccountsControllerTests {
             accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, never()).onAccountMerged(anyString());
-            verify(accountRequestService, never()).onAccountUpdated(anyString());
+            verify(accountsService, never()).onAccountMerged(anyString());
+            verify(accountsService, never()).onAccountUpdated(anyString());
         }
     }
 
     @Test
-    public void onAccountsMerge_GivenTheMethodIsCalled_WhenNotificationTypeIsNotMerge_ThenAccountRequestService_OnAccountMergedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
+    public void onAccountsMerge_GivenTheMethodIsCalled_WhenNotificationTypeIsNotMerge_ThenaccountsService_OnAccountMergedShouldNotBeCalled() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountMerged(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountMerged(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -1060,7 +1086,7 @@ public class AccountsControllerTests {
             accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, never()).onAccountMerged(anyString());
+            verify(accountsService, never()).onAccountMerged(anyString());
         }
     }
 
@@ -1070,8 +1096,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 2;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountMerged(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountMerged(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
@@ -1080,7 +1106,7 @@ public class AccountsControllerTests {
             accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountMerged(anyString());
+            verify(accountsService, times(numberOfWebhookEvents)).onAccountMerged(anyString());
         }
     }
 
@@ -1090,8 +1116,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 2;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
-        doNothing().when(accountRequestService).onAccountMerged(anyString());
+        when(gigyaService.getJWTPublicKey()).thenThrow(new CustomGigyaErrorException(""));
+        doNothing().when(accountsService).onAccountMerged(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
@@ -1100,7 +1126,7 @@ public class AccountsControllerTests {
             ResponseEntity<String> resp = accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, never()).onAccountMerged(anyString());
+            verify(accountsService, never()).onAccountMerged(anyString());
         }
     }
 
@@ -1110,8 +1136,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 1;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.REGISTRATION, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountUpdated(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountUpdated(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
@@ -1120,7 +1146,7 @@ public class AccountsControllerTests {
             accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, never()).onAccountUpdated(anyString());
+            verify(accountsService, never()).onAccountUpdated(anyString());
         }
     }
 
@@ -1130,8 +1156,8 @@ public class AccountsControllerTests {
         int numberOfWebhookEvents = 2;
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.UPDATE, numberOfWebhookEvents);
-        when(cdcResponseHandler.getJWTPublicKey()).thenReturn(null);
-        doNothing().when(accountRequestService).onAccountUpdated(anyString());
+        when(gigyaService.getJWTPublicKey()).thenReturn(null);
+        doNothing().when(accountsService).onAccountUpdated(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
@@ -1140,7 +1166,7 @@ public class AccountsControllerTests {
             accountsController.onAccountsMerge(jwt, body);
 
             // then
-            verify(accountRequestService, times(numberOfWebhookEvents)).onAccountUpdated(anyString());
+            verify(accountsService, times(numberOfWebhookEvents)).onAccountUpdated(anyString());
         }
     }
 
@@ -1201,7 +1227,7 @@ public class AccountsControllerTests {
     public void updateUserProfile_GivenAValidProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnOK() throws Exception {
         // given
         when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.OK);
-        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
         doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
         doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
@@ -1218,7 +1244,7 @@ public class AccountsControllerTests {
     public void updateUserProfile_GivenAnInvalidProfileInfoDTO_WhenRequestUpdate_ThenShouldReturnBadRequest() throws Exception {
         // given
         when(updateAccountService.updateProfile(profileInfoDTO)).thenReturn(HttpStatus.BAD_REQUEST);
-        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
 
         // when
         ResponseEntity<String> resp = accountsController.updateUserProfile(profileInfoDTO);
@@ -1234,7 +1260,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(gigyaService).changePassword(anyString(), anyString(), anyString());
 
         try (MockedStatic<PasswordUtils> passwordUtilsMock = Mockito.mockStatic(PasswordUtils.class)) {
             passwordUtilsMock.when(() -> PasswordUtils.isPasswordValid(anyString())).thenReturn(true);
@@ -1254,7 +1280,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(gigyaService).changePassword(anyString(), anyString(), anyString());
 
         // when
         ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
@@ -1270,7 +1296,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("P@ssw0rd");
         changePasswordDTO.setPassword("World");
-        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(gigyaService).changePassword(anyString(), anyString(), anyString());
         doNothing().when(notificationService).sendPasswordUpdateNotification(any());
 
         // when
@@ -1293,7 +1319,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        doNothing().when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doNothing().when(gigyaService).changePassword(anyString(), anyString(), anyString());
         doNothing().when(notificationService).sendPasswordUpdateNotification(any());
 
         // when
@@ -1316,7 +1342,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        doThrow(new CustomGigyaErrorException("")).when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doThrow(new CustomGigyaErrorException("")).when(gigyaService).changePassword(anyString(), anyString(), anyString());
 
         // when
         ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);
@@ -1332,7 +1358,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        doThrow(new IllegalArgumentException()).when(cdcResponseHandler).changePassword(anyString(), anyString(), anyString());
+        doThrow(new IllegalArgumentException()).when(gigyaService).changePassword(anyString(), anyString(), anyString());
 
         // when
         ResponseEntity<?> response = accountsController.changePassword(uid, changePasswordDTO);

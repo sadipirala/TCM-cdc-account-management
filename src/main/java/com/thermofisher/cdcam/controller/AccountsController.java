@@ -13,14 +13,17 @@ import javax.validation.constraints.NotBlank;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.enums.InviteSource;
 import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
@@ -33,9 +36,10 @@ import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountRequestService;
+import com.thermofisher.cdcam.services.AccountsService;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -44,7 +48,6 @@ import com.thermofisher.cdcam.services.UpdateAccountService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.apache.commons.lang3.StringUtils;
@@ -85,11 +88,14 @@ public class AccountsController {
     @Value("${general.cipdc}")
     private String cipdc;
 
-    @Autowired
-    AccountRequestService accountRequestService;
+    @Value("${identity.oidc.rp.id}")
+    private String defaultClientId;
 
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    AccountsService accountsService;
+
+    @Autowired
+    GigyaService gigyaService;
 
     @Autowired
     CookieService cookieService;
@@ -126,7 +132,7 @@ public class AccountsController {
             if (!PasswordUtils.isPasswordValid(body.getNewPassword())) {
                 throw new IllegalArgumentException("Invalid password. Bad request.");
             }
-            cdcResponseHandler.changePassword(uid, body.getNewPassword(), body.getPassword());
+            gigyaService.changePassword(uid, body.getNewPassword(), body.getPassword());
             logger.info(String.format("Password updated successfully for %s. Sending SNS notification.", uid));
             String hashedPassword = HashingService.toMD5(body.getNewPassword());
             PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder().uid(uid).newPassword(hashedPassword).build();
@@ -196,7 +202,7 @@ public class AccountsController {
         try {
             logger.info("JWT validation started.");
             logger.info("Getting JWT public key.");
-            JWTPublicKey jwtPublicKey = cdcResponseHandler.getJWTPublicKey();
+            JWTPublicKey jwtPublicKey = gigyaService.getJWTPublicKey();
             logger.info("Validating JWT signature.");
             boolean isJWTValid = JWTValidator.isValidSignature(jwt, jwtPublicKey);
 
@@ -217,7 +223,7 @@ public class AccountsController {
 
                 JSONObject data = (JSONObject) event.get("data");
                 String uid = data.get("uid").toString();
-                accountRequestService.onAccountRegistered(uid);
+                accountsService.onAccountRegistered(uid);
             }
         } catch (Exception e) {
             logger.error(String.format("onAccountRegistered error: %s. %s.", e.getMessage(), e.getCause()));
@@ -233,10 +239,11 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfoDTO, @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString) throws IOException {
+    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfoDTO, @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString) throws IOException, JSONException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfoDTO.getUsername()));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<AccountInfoDTO>> violations = validator.validate(accountInfoDTO);
 
@@ -262,21 +269,13 @@ public class AccountsController {
         }
 
         String ciphertext = accountInfoDTO.getCiphertext();
-
+        Ciphertext decryptedCiphertext = null;
         if (StringUtils.isNotBlank(ciphertext)) {
-            try {
-                JSONObject decryptedUserData = dataProtectionService.decrypt(ciphertext);
-                logger.info(String.format("Decryption response for %s: %s", accountInfoDTO.getUsername(), decryptedUserData.toString()));
-                accountInfoDTO.setFirstName(decryptedUserData.getJSONObject("body").getString("firstName"));
-                accountInfoDTO.setLastName(decryptedUserData.getJSONObject("body").getString("lastName"));
-                accountInfoDTO.setEmailAddress(decryptedUserData.getJSONObject("body").getString("email"));
-            } catch (JSONException exception) {
-                logger.error(String.format("Data decryption error for: %s. %s", accountInfoDTO.getUsername(), exception.getMessage()));
-            }
+            decryptedCiphertext = dataProtectionService.decrypCiphertext(ciphertext);
+            accountInfoDTO.setCiphertextData(decryptedCiphertext);
         }
 
         AccountInfo account = AccountBuilder.buildFrom(accountInfoDTO);
-
         CIPAuthDataDTO cipAuthDataDTO;
         if (StringUtils.isNotBlank(cipAuthDataCookieString)) {
             logger.info("Decoding cip_authdata.");
@@ -284,12 +283,13 @@ public class AccountsController {
             account.setOpenIdProviderId(cipAuthDataDTO.getClientId());
             logger.info("cip_authdata decoded. Provider clientId set.");
         } else {
-            logger.info("Blank cip_authdata.");
+            account.setOpenIdProviderId(defaultClientId);
+            logger.info("Blank cip_authdata. Setting default Provider ClientId.");
         }
 
         try {
             logger.info(String.format("Creating new account for %s", account.getUsername()));
-            CDCResponseData accountCreationResponse = accountRequestService.createAccount(account);
+            CDCResponseData accountCreationResponse = accountsService.createAccount(account);
             String newAccountUid = accountCreationResponse.getUID();
             account.setUid(newAccountUid);
             logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), newAccountUid));
@@ -316,8 +316,13 @@ public class AccountsController {
 
             if (accountCreationResponse.getErrorCode() == GigyaCodes.SUCCESS.getValue()) {
                 logger.info(String.format("Sending email verification notification for UID: %s", newAccountUid));
-                accountRequestService.sendVerificationEmail(newAccountUid);
+                accountsService.sendVerificationEmail(newAccountUid);
                 logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
+            }
+
+            if (accountCreationResponse.getErrorCode() == GigyaCodes.PENDING_CODE_VERIFICATION.getValue() && isInvitedAccount(decryptedCiphertext)) {
+                CDCResponse verifyResponse = accountsService.verify(account);
+                accountCreationResponse.setErrorCode(verifyResponse.getErrorCode());
             }
 
             return new ResponseEntity<>(accountCreationResponse, HttpStatus.OK);
@@ -328,6 +333,10 @@ public class AccountsController {
             logger.error(String.format("An error occurred while creating account for: %s , Error: %s", account.getUsername(), Utils.stackTraceToString(e)));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private boolean isInvitedAccount(Ciphertext ciphertext) {
+        return ciphertext != null && InviteSource.contains(ciphertext.getSource());
     }
 
     private boolean isAspireRegistrationValid (AccountInfo accountInfoDTO) {
@@ -348,7 +357,7 @@ public class AccountsController {
         try {
             logger.info("JWT validation started.");
             logger.info("Getting JWT public key.");
-            JWTPublicKey jwtPublicKey = cdcResponseHandler.getJWTPublicKey();
+            JWTPublicKey jwtPublicKey = gigyaService.getJWTPublicKey();
             logger.info("Validating JWT signature.");
             boolean isJWTValid = JWTValidator.isValidSignature(jwt, jwtPublicKey);
     
@@ -368,12 +377,12 @@ public class AccountsController {
                     logger.info("accountMerged webhook event fired.");
                     JSONObject data = (JSONObject) event.get("data");
                     String uid = data.get("newUid").toString();
-                    accountRequestService.onAccountMerged(uid);
+                    accountsService.onAccountMerged(uid);
                 } else if (isUpdateEvent(event)) {
                     JSONObject data = (JSONObject) event.get("data");
                     logger.info("accountUpdate webhook event fired.");
                     String uid = data.get("uid").toString();
-                    accountRequestService.onAccountUpdated(uid);
+                    accountsService.onAccountUpdated(uid);
                 }
             }
         } catch (Exception e) {
@@ -402,7 +411,7 @@ public class AccountsController {
         try {
             String email = usernameRecoveryDTO.getUserInfo().getEmail();
             logger.info("Username recovery email requested by %s", email);
-            AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(email);
+            AccountInfo account = gigyaService.getAccountInfoByEmail(email);
 
             if (account == null) {
                 logger.warn(String.format("No account found for %s while sending username recovery email.", email));
@@ -431,7 +440,7 @@ public class AccountsController {
     public ResponseEntity<CDCResponseData> sendVerificationEmail(@PathVariable String uid) {
         logger.info(String.format("CDC verification email process triggered for user with UID: %s", uid));
 
-        CDCResponseData responseData = accountRequestService.sendVerificationEmailSync(uid);
+        CDCResponseData responseData = accountsService.sendVerificationEmailSync(uid);
         HttpStatus responseStatus = HttpStatus.valueOf(responseData.getStatusCode());
 
         return new ResponseEntity<>(responseData, responseStatus);
@@ -470,7 +479,7 @@ public class AccountsController {
 
         Boolean cdcAvailabilityResponse;
         try {
-            cdcAvailabilityResponse = cdcResponseHandler.isAvailableLoginId(loginID);
+            cdcAvailabilityResponse = gigyaService.isAvailableLoginId(loginID);
         } catch (Exception e) {
             String exception = Utils.stackTraceToString(e);
             logger.error(String.format("An error occurred while checking availability in CDC for: %s. Error: %s", loginID, exception));
@@ -502,14 +511,14 @@ public class AccountsController {
             
             logger.info(String.format("Starting user profile update process with UID: %s", profileInfoDTO.getUid()));
             String uid = profileInfoDTO.getUid();
-            AccountInfo accountInfoDTO = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo accountInfoDTO = gigyaService.getAccountInfo(uid);
             profileInfoDTO.setActualEmail(accountInfoDTO.getEmailAddress());
             profileInfoDTO.setActualUsername(accountInfoDTO.getUsername());
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
 
-                AccountInfo updatedAccountInfo = cdcResponseHandler.getAccountInfo(uid);
+                AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
                 logger.info("Building AccountUpdatedNotification object.");
                 AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");

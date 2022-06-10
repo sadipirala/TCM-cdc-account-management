@@ -5,7 +5,7 @@ import java.util.Objects;
 import javax.validation.constraints.NotBlank;
 
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import com.thermofisher.cdcam.services.GigyaService;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +31,7 @@ public class IdentityProviderController {
     private Logger logger = LogManager.getLogger(this.getClass());
     
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @GetMapping("/{identityProvider}")
     @ApiOperation(value = "Gets information about an Identity Provider.")
@@ -43,7 +43,7 @@ public class IdentityProviderController {
     @ApiImplicitParam(name = "identityProvider", value = "IdP (Identity Provider Name)", required = true)
     public ResponseEntity<IdentityProviderResponse> getIdentityProviderInformation(@PathVariable @NotBlank String identityProvider) {
         logger.info("Identity Provider information requested.");
-        IdentityProviderResponse idpInformation = cdcResponseHandler.getIdPInformation(identityProvider);
+        IdentityProviderResponse idpInformation = gigyaService.getIdPInformation(identityProvider);
         
         HttpHeaders headers = new HttpHeaders();
         headers.add("error-details", String.format("Registered idp name %s not found.", identityProvider));

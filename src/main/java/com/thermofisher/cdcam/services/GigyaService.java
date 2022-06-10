@@ -1,9 +1,11 @@
-package com.thermofisher.cdcam.utils.cdc;
+package com.thermofisher.cdcam.services;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +15,7 @@ import com.gigya.socialize.GSArray;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSResponse;
+import com.google.gson.Gson;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
@@ -24,6 +27,7 @@ import com.thermofisher.cdcam.model.ResetPasswordSubmit;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
@@ -32,9 +36,8 @@ import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import com.thermofisher.cdcam.services.CDCAccountsService;
-import com.thermofisher.cdcam.services.CDCIdentityProviderService;
 import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,11 +47,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-/**
- * CDCAccountsService
- */
 @Service
-public class CDCResponseHandler {
+public class GigyaService {
     private final String NO_RESULTS_FOUND = "";
     private final AccountBuilder accountBuilder = new AccountBuilder();
     private final IdentityProviderBuilder identityProviderBuilder = new IdentityProviderBuilder();
@@ -57,7 +57,7 @@ public class CDCResponseHandler {
     private Logger logger = LogManager.getLogger(this.getClass());
 
     @Autowired
-    CDCAccountsService cdcAccountsService;
+    GigyaApi gigyaApi;
 
     @Autowired(required = false)
     CDCIdentityProviderService cdcIdentityProviderService;
@@ -81,7 +81,7 @@ public class CDCResponseHandler {
     private String env;
 
     public void changePassword(String uid, String newPassword, String oldPassword) throws CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.changePassword(uid, newPassword, oldPassword);
+        GSResponse gsResponse = gigyaApi.changePassword(uid, newPassword, oldPassword);
 
         if (isErrorResponse(gsResponse)) {
             String error = String.format("%s, %s. Error code: %d", gsResponse.getErrorMessage(), gsResponse.getErrorDetails(), gsResponse.getErrorCode());
@@ -97,7 +97,7 @@ public class CDCResponseHandler {
     }
 
     private AccountInfo getAccountInfoV1(String uid) throws CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.getAccount(uid);
+        GSResponse gsResponse = gigyaApi.getAccount(uid);
         if (gsResponse.getErrorCode() == 0) {
             GSObject obj = gsResponse.getData();
             return accountBuilder.getAccountInfo(obj);
@@ -108,7 +108,7 @@ public class CDCResponseHandler {
     }
 
     private AccountInfo getAccountInfoV2(String uid) throws CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.getAccountV2(uid);
+        GSResponse gsResponse = gigyaApi.getAccountV2(uid);
         if (gsResponse.getErrorCode() == 0) {
             GSObject obj = gsResponse.getData();
             return accountBuilder.getAccountInfoV2(obj);
@@ -141,7 +141,7 @@ public class CDCResponseHandler {
         String removeLoginEmailsJson = (removeLoginEmails != null) ? removeLoginEmails : "";
         String usernameJson = (username != null) ? username : "";
 
-        GSResponse cdcResponse = cdcAccountsService.setUserInfo(uid, dataJson, profileJson, removeLoginEmailsJson, usernameJson);
+        GSResponse cdcResponse = gigyaApi.setUserInfo(uid, dataJson, profileJson, removeLoginEmailsJson, usernameJson);
 
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         if (cdcResponse.getErrorCode() == GigyaCodes.SUCCESS.getValue()) {
@@ -157,12 +157,12 @@ public class CDCResponseHandler {
     }
 
     public CDCResponseData register(CDCNewAccount newAccount) throws IOException {
-        GSResponse gsResponse = cdcAccountsService.register(newAccount);
+        GSResponse gsResponse = gigyaApi.register(newAccount);
         return new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
     }
 
     public CDCResponseData register(CDCNewAccountV2 newAccount) throws IOException {
-        GSResponse gsResponse = cdcAccountsService.register(newAccount);
+        GSResponse gsResponse = gigyaApi.register(newAccount);
         return new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
     }
 
@@ -171,7 +171,7 @@ public class CDCResponseHandler {
         boolean UNSUCCESSFUL_UPDATE = false;
 
         logger.info(String.format("A process has started to change the account status for a user. UID: %s", uid));
-        GSResponse changeStatusResponse = cdcAccountsService.changeAccountStatus(uid, false);
+        GSResponse changeStatusResponse = gigyaApi.changeAccountStatus(uid, false);
 
         if (changeStatusResponse.getErrorCode() == 0) {
             return SUCCESSFUL_UPDATE;
@@ -181,7 +181,7 @@ public class CDCResponseHandler {
     }
 
     public CDCResponseData sendVerificationEmail(String uid) throws IOException {
-        GSResponse gsResponse = cdcAccountsService.sendVerificationEmail(uid);
+        GSResponse gsResponse = gigyaApi.sendVerificationEmail(uid);
         CDCResponseData cdcResponseData = new CDCResponseData();
 
         if (gsResponse != null) {
@@ -196,7 +196,7 @@ public class CDCResponseHandler {
 
     public String getEmailByUsername(String userName) throws IOException {
         String query = String.format("SELECT emails,loginIDs FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
-        GSResponse gsResponse = cdcAccountsService.search(query, AccountType.FULL, mainApiDomain);
+        GSResponse gsResponse = gigyaApi.search(query, AccountType.FULL, mainApiDomain);
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()) {
@@ -215,7 +215,7 @@ public class CDCResponseHandler {
         String username = "";
         try {
             String query = String.format("select profile.username from accounts where emails.verified contains '%1$s' or emails.unverified contains '%1$s'", email);
-            GSResponse gsResponse = cdcAccountsService.search(query, AccountType.FULL, mainApiDomain);
+            GSResponse gsResponse = gigyaApi.search(query, AccountType.FULL, mainApiDomain);
 
             if (gsResponse.getErrorCode() == 0) {
                 GSObject obj = gsResponse.getData();
@@ -235,7 +235,7 @@ public class CDCResponseHandler {
 
     public String getUIDByEmail(String email) throws IOException {
         String query = String.format("select UID from accounts where emails.verified contains '%1$s' or emails.unverified contains '%1$s'", email);
-        GSResponse gsResponse = cdcAccountsService.search(query, AccountType.FULL, mainApiDomain);
+        GSResponse gsResponse = gigyaApi.search(query, AccountType.FULL, mainApiDomain);
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
 
         for (CDCAccount result : cdcSearchResponse.getResults()) {
@@ -250,7 +250,7 @@ public class CDCResponseHandler {
         GSObject requestParams = new GSObject();
         requestParams.put("loginID", username);
         requestParams.put("sendEmail", SEND_EMAIL);
-        GSResponse gsResponse = cdcAccountsService.resetPassword(requestParams);
+        GSResponse gsResponse = gigyaApi.resetPassword(requestParams);
 
         if (gsResponse.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
             String message = String.format("LoginID: %s does not exist.", username);
@@ -270,7 +270,7 @@ public class CDCResponseHandler {
         resetParams.put("passwordResetToken", resetPassword.getResetPasswordToken());
         resetParams.put("newPassword", resetPassword.getNewPassword());
 
-        GSResponse gsResponse = cdcAccountsService.resetPassword(resetParams);
+        GSResponse gsResponse = gigyaApi.resetPassword(resetParams);
 
         return ResetPasswordResponse
             .builder()
@@ -296,7 +296,7 @@ public class CDCResponseHandler {
 
     private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
         final String IS_AVAILABLE_PARAM = "isAvailable";
-        GSResponse gsResponse = cdcAccountsService.isAvailableLoginId(loginId, apiDomain);
+        GSResponse gsResponse = gigyaApi.isAvailableLoginId(loginId, apiDomain);
 
         logger.info(String.format("Error code: %d", gsResponse.getErrorCode()));
         if (isErrorResponse(gsResponse)) {
@@ -322,7 +322,7 @@ public class CDCResponseHandler {
 
     public JWTPublicKey getJWTPublicKey() throws CustomGigyaErrorException, GSKeyNotFoundException {
         logger.info("Getting JWTPublicKey from CDC.");
-        GSResponse gsResponse = cdcAccountsService.getJWTPublicKey();
+        GSResponse gsResponse = gigyaApi.getJWTPublicKey();
         logger.info("Got JWTPublicKey.");
 
         if (isErrorResponse(gsResponse)) {
@@ -340,7 +340,7 @@ public class CDCResponseHandler {
     }
 
     public CDCSearchResponse search(String query, AccountType accountType, String apiDomain) throws CustomGigyaErrorException, IOException {
-        GSResponse gsResponse = cdcAccountsService.search(query, accountType, apiDomain);
+        GSResponse gsResponse = gigyaApi.search(query, accountType, apiDomain);
 
         if (isErrorResponse(gsResponse)) {
             throw new CustomGigyaErrorException(gsResponse.getErrorMessage(), gsResponse.getErrorCode());
@@ -376,7 +376,7 @@ public class CDCResponseHandler {
     }
 
     public CDCResponseData registerLiteAccount(String email) throws IOException, CustomGigyaErrorException, GSKeyNotFoundException {
-        GSResponse gsResponse = cdcAccountsService.registerLiteAccount(email);
+        GSResponse gsResponse = gigyaApi.registerLiteAccount(email);
         CDCResponseData cdcResponseData = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
 
         if (isErrorResponse(gsResponse)) {
@@ -389,7 +389,7 @@ public class CDCResponseHandler {
     }
 
     public OpenIdRelyingParty getRP(String clientId) throws CustomGigyaErrorException, GSKeyNotFoundException {
-        GSResponse gsResponse = cdcAccountsService.getRP(clientId);
+        GSResponse gsResponse = gigyaApi.getRP(clientId);
         if (isErrorResponse(gsResponse)) {
             String error = String.format("Error on getRP. Error code: %d. Message: %s.", gsResponse.getErrorCode(), gsResponse.getErrorMessage());
             logger.error(error);
@@ -414,7 +414,7 @@ public class CDCResponseHandler {
     }
 
     public void updateRequirePasswordCheck(String uid) throws CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.updateRequirePasswordCheck(uid);
+        GSResponse gsResponse = gigyaApi.updateRequirePasswordCheck(uid);
         if (isErrorResponse(gsResponse)) {
             String error = String.format("Error updating requirePasswordCheck. Error code: %d. Error Message: %s.", gsResponse.getErrorCode(), gsResponse.getErrorMessage());
             throw new CustomGigyaErrorException(error);
@@ -422,11 +422,25 @@ public class CDCResponseHandler {
     }
 
     public void setAccountInfo(CDCAccount cdcAccount) throws CustomGigyaErrorException {
-        GSResponse gsResponse = cdcAccountsService.setAccountInfo(cdcAccount);
+        GSResponse gsResponse = gigyaApi.setAccountInfo(cdcAccount);
 
         if (isErrorResponse(gsResponse)) {
             throw new CustomGigyaErrorException(gsResponse.getErrorMessage());
         }
+    }
+
+    public CDCResponse setAccountInfo(Map<String, String> params) throws CustomGigyaErrorException {
+        GSObject gsParams = new GSObject();
+        for (Entry<String, String> entry : params.entrySet()) {
+            gsParams.put(entry.getKey(), entry.getValue());
+        }
+
+        GSResponse gsResponse = gigyaApi.setAccountInfo(gsParams);
+        if (isErrorResponse(gsResponse)) {
+            throw new CustomGigyaErrorException(gsResponse.getErrorMessage());
+        }
+
+        return new Gson().fromJson(gsResponse.getResponseText(), CDCResponse.class);
     }
 
     private boolean isErrorResponse(GSResponse gsResponse) {

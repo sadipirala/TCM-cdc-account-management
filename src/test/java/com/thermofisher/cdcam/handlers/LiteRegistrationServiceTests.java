@@ -26,7 +26,7 @@ import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 
 import org.junit.Assert;
@@ -52,7 +52,7 @@ public class LiteRegistrationServiceTests {
     LiteRegistrationService liteRegistrationService;
 
     @Mock
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Before
     public void setup() {
@@ -116,7 +116,7 @@ public class LiteRegistrationServiceTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -145,8 +145,8 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -173,12 +173,12 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
-        when(cdcResponseHandler.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
+        when(gigyaService.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -194,7 +194,7 @@ public class LiteRegistrationServiceTests {
         assertFalse(userV2.getIsRegistered());
         assertFalse(userV2.getIsActive());
         assertEquals(isAvailable, userV2.getIsAvailable());
-        verify(cdcResponseHandler).registerLiteAccount(anyString());
+        verify(gigyaService).registerLiteAccount(anyString());
     }
 
     @Test
@@ -203,7 +203,7 @@ public class LiteRegistrationServiceTests {
         final String errorMessage = "Error";
         final int errorCode = 400;
 
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
+        when(gigyaService.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -221,7 +221,7 @@ public class LiteRegistrationServiceTests {
     @Test
     public void createLiteAccountsV2_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenThrow(new IOException());
+        when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -282,7 +282,7 @@ public class LiteRegistrationServiceTests {
         accounts.add(account);
         CDCSearchResponse searchResponse = new CDCSearchResponse();
         searchResponse.setResults(accounts);
-        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -313,8 +313,8 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -339,12 +339,12 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
-        when(cdcResponseHandler.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
+        when(gigyaService.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -359,7 +359,7 @@ public class LiteRegistrationServiceTests {
         assertNull(userV1.getUsername());
         assertFalse(userV1.getRegistered());
         assertEquals(isAvailable, userV1.getIsAvailable());
-        verify(cdcResponseHandler).registerLiteAccount(anyString());
+        verify(gigyaService).registerLiteAccount(anyString());
     }
 
     @Test
@@ -368,7 +368,7 @@ public class LiteRegistrationServiceTests {
         final String errorMessage = "Error";
         final int errorCode = 400;
 
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
+        when(gigyaService.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -386,7 +386,7 @@ public class LiteRegistrationServiceTests {
     @Test
     public void createLiteAccountsV1_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
-        when(cdcResponseHandler.search(anyString(), any(), anyString())).thenThrow(new IOException());
+        when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
         emails.add("test1");
@@ -417,8 +417,8 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-        when(cdcResponseHandler.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
-        when(cdcResponseHandler.searchInBothDC(anyString())).thenReturn(searchResponse);
+        when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
         emails.add("test1");

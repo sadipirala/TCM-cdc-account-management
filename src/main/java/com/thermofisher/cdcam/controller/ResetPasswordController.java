@@ -24,12 +24,17 @@ import com.thermofisher.cdcam.model.dto.RequestResetPasswordDTO;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.*;
+import com.thermofisher.cdcam.services.CookieService;
+import com.thermofisher.cdcam.services.EncodeService;
+import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.IdentityAuthorizationService;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.SecretsService;
+import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
-import io.swagger.annotations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -38,7 +43,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/identity/reset-password")
@@ -53,7 +71,7 @@ public class ResetPasswordController {
     private String rpRedirectUri;
 
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Autowired
     NotificationService notificationService;
@@ -94,7 +112,7 @@ public class ResetPasswordController {
             String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
             logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
-            String passwordToken = cdcResponseHandler.resetPasswordRequest(body.getUsername());
+            String passwordToken = gigyaService.resetPasswordRequest(body.getUsername());
             logger.info(String.format("Request reset password was successfully for: %s", body.getUsername()));
             RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()
                     .passwordToken(passwordToken)
@@ -144,7 +162,7 @@ public class ResetPasswordController {
         }
 
         try {
-            ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(body);
+            ResetPasswordResponse response = gigyaService.resetPasswordSubmit(body);
 
             if (response.getResponseCode() != 0) {
                 if (response.getResponseCode() == EXPIRED_TOKEN_ERROR) {
@@ -159,7 +177,7 @@ public class ResetPasswordController {
             }
 
             try {
-                cdcResponseHandler.updateRequirePasswordCheck(body.getUid());
+                gigyaService.updateRequirePasswordCheck(body.getUid());
             } catch (CustomGigyaErrorException e) {
                 logger.error(e.getMessage());
             }
@@ -223,7 +241,7 @@ public class ResetPasswordController {
         try {
             boolean uriExists = false;
             logger.info("Getting RP data");
-            OpenIdRelyingParty openIdRelyingParty = cdcResponseHandler.getRP(cipAuthData.getClientId());
+            OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(cipAuthData.getClientId());
             for (String uri : openIdRelyingParty.getRedirectUris()) {
                 logger.info(String.format("Find %s in OpenId redirectURIs", cipAuthData.getRedirectUri()));
                 if (uri.equalsIgnoreCase(cipAuthData.getRedirectUri())) {
@@ -269,8 +287,8 @@ public class ResetPasswordController {
 
     private void sendRequestResetPasswordEmail(String username, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException, CustomGigyaErrorException {
         logger.info("Preparing request reset password confirmation email");
-        String email = cdcResponseHandler.getEmailByUsername(username);
-        AccountInfo account = cdcResponseHandler.getAccountInfoByEmail(email);
+        String email = gigyaService.getEmailByUsername(username);
+        AccountInfo account = gigyaService.getAccountInfoByEmail(email);
         notificationService.sendRequestResetPasswordEmailNotification(account, requestResetPasswordDTO);
         logger.info("Request reset password email sent");
     }

@@ -3,16 +3,16 @@ package com.thermofisher.cdcam.controller;
 import java.io.UnsupportedEncodingException;
 
 import com.gigya.socialize.GSKeyNotFoundException;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.google.gson.JsonParseException;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.IdentityAuthorizationService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
@@ -62,7 +62,7 @@ public class RegistrationController {
     String identityResponseType;
 
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Autowired
     CookieService cookieService;
@@ -120,7 +120,7 @@ public class RegistrationController {
             try {
                 boolean uriExists = false;
                 logger.info("Getting RP data");
-                OpenIdRelyingParty openIdRelyingParty = cdcResponseHandler.getRP(cipAuthData.getClientId());
+                OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(cipAuthData.getClientId());
                 for (String uri : openIdRelyingParty.getRedirectUris()) {
                     logger.info(String.format("Find %s in OpenId redirectURIs", cipAuthData.getRedirectUri()));
                     if (uri.equalsIgnoreCase(cipAuthData.getRedirectUri())) {

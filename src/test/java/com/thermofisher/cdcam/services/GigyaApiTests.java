@@ -1,6 +1,13 @@
 package com.thermofisher.cdcam.services;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
@@ -15,8 +22,8 @@ import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.utils.AccountUtils;
-
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.junit.Test;
@@ -34,13 +41,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-public class CDCAccountsServiceTests {
+public class GigyaApiTests {
 
     @Value("${cdc.main.datacenter}")
     private String mainApiDomain;
 
     @InjectMocks
-    CDCAccountsService cdcAccountsService;
+    GigyaApi gigyaApi;
 
     @Mock
     SecretsService secretsService;
@@ -50,7 +57,6 @@ public class CDCAccountsServiceTests {
         // given
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
         CDCAccount account = AccountUtils.getCDCAccount(accountInfo);
-
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
@@ -60,7 +66,27 @@ public class CDCAccountsServiceTests {
             gsRequestFactoryMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.setAccountInfo(account);
+            gigyaApi.setAccountInfo(account);
+
+            // then
+            verify(gsRequestMock).send();
+        }
+    }
+
+    @Test
+    public void setAccountInfo_ShouldSendSetAccountInfoRequest() throws JSONException {
+        // given
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        GSObject gsObjectMock = mock(GSObject.class);
+        doNothing().when(gsRequestMock).setParams(eq(gsObjectMock));
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestFactoryMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestFactoryMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
+
+            // when
+            gigyaApi.setAccountInfo(gsObjectMock);
 
             // then
             verify(gsRequestMock).send();
@@ -82,7 +108,7 @@ public class CDCAccountsServiceTests {
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
-            cdcAccountsService.changePassword(uid, newPassword, oldPassword);
+            gigyaApi.changePassword(uid, newPassword, oldPassword);
 
             verify(gsRequestMock).send();
         }
@@ -102,7 +128,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.getAccount(uid);
+            gigyaApi.getAccount(uid);
 
             // then
             verify(gsRequestMock).send();
@@ -123,13 +149,12 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
 
             // when
-            cdcAccountsService.getAccount(uid);
+            gigyaApi.getAccount(uid);
 
             // then
             verify(gsRequestMock, times(0)).send();
         }
     }
-
 
     @Test
     public void getAccount_v2_givenParametersToMakeGetAccountRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
@@ -145,7 +170,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.getAccountV2(uid);
+            gigyaApi.getAccountV2(uid);
 
             // then
             verify(gsRequestMock).send();
@@ -166,7 +191,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
 
             // when
-            cdcAccountsService.getAccountV2(uid);
+            gigyaApi.getAccountV2(uid);
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -186,7 +211,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.getJWTPublicKey();
+            gigyaApi.getJWTPublicKey();
 
             // then
             verify(gsRequestMock).send();
@@ -211,7 +236,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.setUserInfo(uid, data, profile, removeLoginEmails, username);
+            gigyaApi.setUserInfo(uid, data, profile, removeLoginEmails, username);
 
             // then
             verify(gsRequestMock).send();
@@ -236,7 +261,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.setUserInfo(uid, data, profile, removeLoginEmails, username);
+            gigyaApi.setUserInfo(uid, data, profile, removeLoginEmails, username);
 
             // then
             verify(gsRequestMock).send();
@@ -261,7 +286,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.setUserInfo(uid, data, profile, removeLoginEmails, username);
+            gigyaApi.setUserInfo(uid, data, profile, removeLoginEmails, username);
 
             // then
             verify(gsRequestMock).send();
@@ -282,7 +307,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.changeAccountStatus(uid, true);
+            gigyaApi.changeAccountStatus(uid, true);
 
             // then
             verify(gsRequestMock).send();
@@ -303,7 +328,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
 
             // when
-            cdcAccountsService.changeAccountStatus(uid, true);
+            gigyaApi.changeAccountStatus(uid, true);
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -331,7 +356,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.registerLiteAccount(email);
+            gigyaApi.registerLiteAccount(email);
 
             // then
             verify(gsRequestMock, times(2)).send();
@@ -359,7 +384,7 @@ public class CDCAccountsServiceTests {
             cdcUtils.when(() -> CDCUtils.isErrorResponse(any())).thenReturn(true);
 
             // when
-            cdcAccountsService.registerLiteAccount(email);
+            gigyaApi.registerLiteAccount(email);
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -380,7 +405,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.search(query, AccountType.FULL, mainApiDomain);
+            gigyaApi.search(query, AccountType.FULL, mainApiDomain);
 
             // then
             verify(gsRequestMock).send();
@@ -401,7 +426,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.register(cdcNewAccount);
+            gigyaApi.register(cdcNewAccount);
 
             // then
             verify(gsRequestMock).send();
@@ -422,7 +447,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
 
             // when
-            GSResponse response = cdcAccountsService.register(cdcNewAccount);
+            GSResponse response = gigyaApi.register(cdcNewAccount);
 
             // then
             assertNull(response);
@@ -443,7 +468,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.register(cdcNewAccount);
+            gigyaApi.register(cdcNewAccount);
 
             // then
             verify(gsRequestMock).send();
@@ -464,7 +489,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
 
             // when
-            GSResponse response = cdcAccountsService.register(cdcNewAccount);
+            GSResponse response = gigyaApi.register(cdcNewAccount);
 
             // then
             assertNull(response);
@@ -485,7 +510,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.sendVerificationEmail(uid);
+            gigyaApi.sendVerificationEmail(uid);
 
             // then
             verify(gsRequestMock).send();
@@ -506,7 +531,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
 
             // when
-            GSResponse response = cdcAccountsService.sendVerificationEmail(uid);
+            GSResponse response = gigyaApi.sendVerificationEmail(uid);
 
             // then
             assertNull(response);
@@ -528,7 +553,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.isAvailableLoginId(loginId, apiDomain);
+            gigyaApi.isAvailableLoginId(loginId, apiDomain);
 
             // then
             verify(gsRequestMock).send();
@@ -549,7 +574,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.createWithParams(any(), any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.resetPassword(gsObject);
+            gigyaApi.resetPassword(gsObject);
 
             // then
             verify(gsRequestMock).send();
@@ -570,7 +595,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
 
             // when
-            GSResponse response = cdcAccountsService.resetPassword(gsObject);
+            GSResponse response = gigyaApi.resetPassword(gsObject);
 
             // then
             assertNull(response);
@@ -591,7 +616,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.getRP(clientID);
+            gigyaApi.getRP(clientID);
 
             // then
             verify(gsRequestMock).send();
@@ -612,7 +637,7 @@ public class CDCAccountsServiceTests {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
 
             // when
-            cdcAccountsService.updateRequirePasswordCheck(uid);
+            gigyaApi.updateRequirePasswordCheck(uid);
 
             // then
             verify(gsRequestMock).send();
@@ -622,10 +647,10 @@ public class CDCAccountsServiceTests {
     @Test
     public void setCredentials_shouldSetCredentialsForMainDataCenter() throws JSONException {
         // given
-        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+        ReflectionTestUtils.setField(gigyaApi, "env", "dev");
 
         // when
-        cdcAccountsService.setCredentials();
+        gigyaApi.setCredentials();
 
         // then
         verify(secretsService).get(any());
@@ -634,13 +659,13 @@ public class CDCAccountsServiceTests {
     @Test
     public void setCredentials_shouldSetCredentialsForSecondaryDataCenter() throws JSONException {
         // given
-        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+        ReflectionTestUtils.setField(gigyaApi, "env", "dev");
 
         try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            cdcAccountsService.setCredentials();
+            gigyaApi.setCredentials();
 
             // then
             verify(secretsService, times(2)).get(any());
@@ -650,13 +675,13 @@ public class CDCAccountsServiceTests {
     @Test
     public void setCredentials_shouldNotSetCredentials_whenEnvIsTest() throws JSONException {
         // given
-        ReflectionTestUtils.setField(cdcAccountsService, "env", "test");
+        ReflectionTestUtils.setField(gigyaApi, "env", "test");
 
         try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            cdcAccountsService.setCredentials();
+            gigyaApi.setCredentials();
 
             // then
             verify(secretsService, times(0)).get(any());
@@ -666,13 +691,13 @@ public class CDCAccountsServiceTests {
     @Test
     public void setCredentials_shouldNotSetCredentials_whenEnvIsLocal() throws JSONException {
         // given
-        ReflectionTestUtils.setField(cdcAccountsService, "env", "local");
+        ReflectionTestUtils.setField(gigyaApi, "env", "local");
 
         try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtils.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            cdcAccountsService.setCredentials();
+            gigyaApi.setCredentials();
 
             // then
             verify(secretsService, times(0)).get(any());
@@ -682,11 +707,11 @@ public class CDCAccountsServiceTests {
     @Test
     public void setCredentials_shouldThrowASONException() throws JSONException {
         // given
-        ReflectionTestUtils.setField(cdcAccountsService, "env", "dev");
+        ReflectionTestUtils.setField(gigyaApi, "env", "dev");
         when(secretsService.get(any())).thenThrow(JSONException.class);
 
         // when
-        cdcAccountsService.setCredentials();
+        gigyaApi.setCredentials();
 
         // then
         verify(secretsService, times(1)).get(any());

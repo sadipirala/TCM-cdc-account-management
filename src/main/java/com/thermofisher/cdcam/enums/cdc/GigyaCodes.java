@@ -6,6 +6,7 @@ package com.thermofisher.cdcam.enums.cdc;
  */
 public enum GigyaCodes {
     SUCCESS(0),
+    PENDING_CODE_VERIFICATION(206006),
     LOGIN_ID_DOES_NOT_EXIST(403047),
     UID_NOT_FOUND(403005);
 

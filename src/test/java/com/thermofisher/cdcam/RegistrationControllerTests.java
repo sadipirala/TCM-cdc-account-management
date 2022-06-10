@@ -21,10 +21,10 @@ import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.IdentityAuthorizationService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
@@ -61,7 +61,7 @@ public class RegistrationControllerTests {
     RegistrationController registrationController;
 
     @Mock
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Mock
     CookieService cookieService;
@@ -93,7 +93,7 @@ public class RegistrationControllerTests {
             .build();
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
-        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+        when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
         when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
 
         // when
@@ -119,7 +119,7 @@ public class RegistrationControllerTests {
             .build();
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
-        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+        when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, redirectUtl, STATE, RESPONSE_TYPE, SCOPE);
@@ -133,7 +133,7 @@ public class RegistrationControllerTests {
         //given
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
+        when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -147,7 +147,7 @@ public class RegistrationControllerTests {
         //given
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
+        when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -189,7 +189,7 @@ public class RegistrationControllerTests {
         ReflectionTestUtils.setField(registrationController, "getOidcLoginEndpointPath", GET_LOGIN_ENDPOINT_PATH);
         String params = "?state=state&redirect_uri=redirect";
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
+        when(gigyaService.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
         when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
 
         // when

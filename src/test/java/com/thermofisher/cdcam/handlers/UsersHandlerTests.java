@@ -4,13 +4,13 @@ import com.gigya.socialize.GSResponse;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.services.CDCAccountsService;
+import com.thermofisher.cdcam.services.GigyaApi;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.AccountUtils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.junit.Assert;
@@ -45,10 +45,10 @@ public class UsersHandlerTests {
     UsersHandler usersHandler;
 
     @Mock
-    CDCAccountsService cdcAccountsService;
+    GigyaApi gigyaApi;
     
     @Mock
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Before
     public void setup() {
@@ -82,7 +82,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
         //execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
@@ -127,7 +127,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
         //execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
@@ -155,7 +155,7 @@ public class UsersHandlerTests {
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
         // execution
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
@@ -172,7 +172,7 @@ public class UsersHandlerTests {
         AccountInfo accountInfoMock = AccountUtils.getSiteAccount();
         ProfileInfoDTO profileInfoDTOMock = ProfileInfoDTO.build(accountInfoMock);
         
-        when(cdcResponseHandler.getAccountInfo(anyString())).thenReturn(accountInfoMock);
+        when(gigyaService.getAccountInfo(anyString())).thenReturn(accountInfoMock);
 
         //execution
         ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
@@ -186,7 +186,7 @@ public class UsersHandlerTests {
         //setup
         String uid = "001";
 
-        when(cdcResponseHandler.getAccountInfo(anyString())).thenThrow(new CustomGigyaErrorException("UserNotFound"));
+        when(gigyaService.getAccountInfo(anyString())).thenThrow(new CustomGigyaErrorException("UserNotFound"));
 
         //execution
         ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);

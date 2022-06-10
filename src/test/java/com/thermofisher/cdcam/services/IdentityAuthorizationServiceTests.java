@@ -1,6 +1,14 @@
 package com.thermofisher.cdcam.services;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import com.thermofisher.CdcamApplication;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -10,12 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -57,7 +59,7 @@ public class IdentityAuthorizationServiceTests {
         ReflectionTestUtils.setField(identityAuthorizationService,"u","https://www.dev3.thermofisher.com/order/catalog/en/US/adirect/lt?cmd=partnerMktLogin&newAccount=true&LoginData-referer=true&LoginData-ReturnURL=");
 
         try (MockedStatic<URLEncoder> urlEncoder = Mockito.mockStatic(URLEncoder.class)) {
-            urlEncoder.when(() -> URLEncoder.encode(any(), any())).thenThrow(UnsupportedEncodingException.class);
+            urlEncoder.when(() -> URLEncoder.encode(anyString(), anyString())).thenThrow(UnsupportedEncodingException.class);
 
             // when
             String expectedGeneratedString = identityAuthorizationService.generateRedirectAuthUrl(redirectUrl);

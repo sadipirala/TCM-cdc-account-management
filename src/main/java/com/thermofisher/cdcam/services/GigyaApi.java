@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CDCAccountsService {
+public class GigyaApi {
     private Logger logger = LogManager.getLogger(this.getClass());
     private String mainCdcSecretKey;
     private String secondaryDCSecretKey;
@@ -115,6 +115,22 @@ public class CDCAccountsService {
 
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
         request.setParam("mainApiKey", mainApiKey);
+        return request.send();
+    }
+
+    /**
+     * Updates an account's data in CDC.
+     * 
+     * @param params object containing data to update.
+     * 
+     * @return {@code GSResponse} that holds response and error codes from CDC.
+     * 
+     * @see <a href="https://help.sap.com/viewer/8b8d6fffe113457094a17701f63e3d6a/LATEST/en-US/41398a8670b21014bbc5a10ce4041860.html">accounts.setAccountInfo</a>
+     */
+    public GSResponse setAccountInfo(GSObject params) {
+        String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
+        GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+        request.setParams(params);
         return request.send();
     }
 

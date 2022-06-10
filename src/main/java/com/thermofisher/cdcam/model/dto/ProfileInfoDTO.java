@@ -1,16 +1,16 @@
 package com.thermofisher.cdcam.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.thermofisher.cdcam.utils.Utils;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.utils.Utils;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @Builder
 @Getter

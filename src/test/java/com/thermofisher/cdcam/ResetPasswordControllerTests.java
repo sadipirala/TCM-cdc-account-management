@@ -32,7 +32,6 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import com.thermofisher.cdcam.services.*;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
@@ -71,7 +70,7 @@ public class ResetPasswordControllerTests {
     ResetPasswordController resetPasswordController;
 
     @Mock
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Mock
     NotificationService notificationService;
@@ -209,8 +208,8 @@ public class ResetPasswordControllerTests {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn("");
+        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
+        when(gigyaService.resetPasswordRequest(username)).thenReturn("");
 
         //when
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
@@ -226,8 +225,8 @@ public class ResetPasswordControllerTests {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenReturn("");
+        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
+        when(gigyaService.resetPasswordRequest(username)).thenReturn("");
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
@@ -244,8 +243,8 @@ public class ResetPasswordControllerTests {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new LoginIdDoesNotExistException(""));
+        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
+        when(gigyaService.resetPasswordRequest(username)).thenThrow(new LoginIdDoesNotExistException(""));
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
@@ -262,8 +261,8 @@ public class ResetPasswordControllerTests {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new CustomGigyaErrorException(""));
+        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
+        when(gigyaService.resetPasswordRequest(username)).thenThrow(new CustomGigyaErrorException(""));
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
@@ -280,8 +279,8 @@ public class ResetPasswordControllerTests {
         //given
         setSendResetPasswordEmailMocks();
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(cdcResponseHandler.getEmailByUsername(username)).thenReturn(email);
-        when(cdcResponseHandler.resetPasswordRequest(username)).thenThrow(new NullPointerException(""));
+        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
+        when(gigyaService.resetPasswordRequest(username)).thenThrow(new NullPointerException(""));
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
@@ -300,8 +299,8 @@ public class ResetPasswordControllerTests {
             .uid("62623d97356b4815a9965d912fa3331a")
             .build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
-        when(cdcResponseHandler.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
+        when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
         doNothing().when(notificationService).sendPasswordUpdateNotification(any());
 
         //when
@@ -319,7 +318,7 @@ public class ResetPasswordControllerTests {
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
+        when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
 
         // when
@@ -337,7 +336,7 @@ public class ResetPasswordControllerTests {
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
-        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
+        when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
         doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
 
         //when
@@ -355,7 +354,7 @@ public class ResetPasswordControllerTests {
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(40001);
-        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
+        when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 
 
         //when
@@ -373,7 +372,7 @@ public class ResetPasswordControllerTests {
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(403025);
-        when(cdcResponseHandler.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
+        when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 
 
         //when
@@ -394,7 +393,7 @@ public class ResetPasswordControllerTests {
                 .description(description)
                 .redirectUris(redirectUris)
                 .build();
-        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+        when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
         when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(cookieService.createCIPAuthDataCookie(any(), any())).thenReturn(anyString());
         // when
@@ -417,7 +416,7 @@ public class ResetPasswordControllerTests {
                 .description(description)
                 .redirectUris(redirectUris)
                 .build();
-        when(cdcResponseHandler.getRP(anyString())).thenReturn(openIdRelyingParty);
+        when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
 
         // when
         ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, redirectUtl, STATE, RESPONSE_TYPE, SCOPE);
@@ -429,7 +428,7 @@ public class ResetPasswordControllerTests {
     @Test
     public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
         // given
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
+        when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
 
         // when
         ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -441,7 +440,7 @@ public class ResetPasswordControllerTests {
     @Test
     public void getRPResetPasswordConfig_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
         // given
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
+        when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
 
         // when
         ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -470,7 +469,7 @@ public class ResetPasswordControllerTests {
 
     @Test
     public void getRPResetPasswordConfig_WhenExceptionJSONExceptionIsThrown_ThenReturnHttpStatusInternalServerError() throws Exception {
-        when(cdcResponseHandler.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
+        when(gigyaService.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
 
         // when
         ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -486,14 +485,14 @@ public class ResetPasswordControllerTests {
             .newPassword("testPassword1")
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
-        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
-        doNothing().when(cdcResponseHandler).updateRequirePasswordCheck(any());
+        when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
+        doNothing().when(gigyaService).updateRequirePasswordCheck(any());
         
         // when
         ResponseEntity<ResetPasswordResponse> response = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         // then
-        verify(cdcResponseHandler).updateRequirePasswordCheck(any());
+        verify(gigyaService).updateRequirePasswordCheck(any());
         assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 
@@ -504,14 +503,14 @@ public class ResetPasswordControllerTests {
             .newPassword("testPassword1")
             .resetPasswordToken("testTkn")
             .uid("62623d97356b4815a9965d912fa3331a").build();
-        when(cdcResponseHandler.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
-        doThrow(CustomGigyaErrorException.class).when(cdcResponseHandler).updateRequirePasswordCheck(any());
+        when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
+        doThrow(CustomGigyaErrorException.class).when(gigyaService).updateRequirePasswordCheck(any());
         
         // when
         ResponseEntity<ResetPasswordResponse> response = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         // then
-        verify(cdcResponseHandler).updateRequirePasswordCheck(any());
+        verify(gigyaService).updateRequirePasswordCheck(any());
         assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 }

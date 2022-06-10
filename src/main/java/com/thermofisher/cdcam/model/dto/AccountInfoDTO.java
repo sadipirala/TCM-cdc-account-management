@@ -1,12 +1,15 @@
 package com.thermofisher.cdcam.model.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.Objects;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.util.Objects;
+
+import com.thermofisher.cdcam.model.Ciphertext;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @Builder
 @Getter
@@ -69,5 +72,11 @@ public class AccountInfoDTO {
 
     public String getInterests() {
         return Objects.isNull(this.interests) ? "" : String.join(",", this.interests);
+    }
+
+    public void setCiphertextData(Ciphertext ciphertext) {
+        this.setFirstName(ciphertext.getFirstName());
+        this.setLastName(ciphertext.getLastName());
+        this.setEmailAddress(ciphertext.getEmail());
     }
 }

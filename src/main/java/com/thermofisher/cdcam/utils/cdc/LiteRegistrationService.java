@@ -15,6 +15,7 @@ import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -34,7 +35,7 @@ public class LiteRegistrationService {
     public String mainDataCenterName;
 
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     public List<EECUserV2> registerEmailAccounts(EmailList emailList) throws IOException {
         logger.info("Lite registration initiated. %d users requested.", emailList.getEmails().size());
@@ -67,7 +68,7 @@ public class LiteRegistrationService {
     }
 
     public EECUserV2 registerEmailAccount(String email) throws IOException, GSKeyNotFoundException, CustomGigyaErrorException {
-        SearchResponse searchResponse = cdcResponseHandler.searchInBothDC(email);
+        SearchResponse searchResponse = gigyaService.searchInBothDC(email);
         CDCSearchResponse cdcSearchResponse = searchResponse.getCdcSearchResponse();
         List<CDCAccount> accounts = cdcSearchResponse.getResults();
 
@@ -87,7 +88,7 @@ public class LiteRegistrationService {
 
     private EECUserV2 createLiteAccount(String email) throws GSKeyNotFoundException, IOException, CustomGigyaErrorException {
         logger.info(String.format("Registering lite account: %s", email));
-        CDCResponseData cdcResponseData = cdcResponseHandler.registerLiteAccount(email);
+        CDCResponseData cdcResponseData = gigyaService.registerLiteAccount(email);
         String UID = cdcResponseData.getUID();
         return EECUserV2.buildLiteRegisteredUser(UID, email);
     }

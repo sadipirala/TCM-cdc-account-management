@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
@@ -426,6 +427,21 @@ public class AccountUtils {
             .china(china)
             .korea(korea)
             .openIdProvider(openIdProvider)
+            .build();
+    }
+
+    public static Ciphertext getCiphertext() {
+        return Ciphertext.builder()
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .source("IAC")
+                .build();
+    }
+
+    public static CDCResponse getCdcResponse() {
+        return CDCResponse.builder()
+            .errorCode(0)
             .build();
     }
 

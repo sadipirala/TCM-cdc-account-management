@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,7 +46,7 @@ public class UpdateAccountServiceTests {
     private UpdateAccountService updateAccountService;
 
     @Mock
-    private CDCResponseHandler cdcAccountsService;
+    private GigyaService gigyaService;
 
     @Before
     public void setup() {
@@ -60,7 +59,7 @@ public class UpdateAccountServiceTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
-        when(cdcAccountsService.update(any())).thenReturn(response);
+        when(gigyaService.update(any())).thenReturn(response);
 
         // execution
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
@@ -75,7 +74,7 @@ public class UpdateAccountServiceTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("log", "");
-        when(cdcAccountsService.update(any())).thenReturn(response);
+        when(gigyaService.update(any())).thenReturn(response);
 
         // execution
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
@@ -90,7 +89,7 @@ public class UpdateAccountServiceTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
-        when(cdcAccountsService.update(any())).thenReturn(response);
+        when(gigyaService.update(any())).thenReturn(response);
 
         // execution
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
@@ -105,7 +104,7 @@ public class UpdateAccountServiceTests {
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.BAD_REQUEST.value());
         response.put("log", "");
-        when(cdcAccountsService.update(any())).thenReturn(response);
+        when(gigyaService.update(any())).thenReturn(response);
 
         // execution
         HttpStatus updateResponse = updateAccountService.updateProfile(ProfileInfoDTO.builder().uid("").build());
@@ -124,7 +123,7 @@ public class UpdateAccountServiceTests {
         ReflectionTestUtils.setField(updateAccountService, "isLegacyValidationEnabled", true);
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
-        when(cdcAccountsService.update(any())).thenReturn(response);
+        when(gigyaService.update(any())).thenReturn(response);
 
         // execution
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);

@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +25,7 @@ public class UpdateAccountService {
     private boolean isLegacyValidationEnabled;
 
     @Autowired
-    CDCResponseHandler cdcAccountsService;
+    GigyaService gigyaService;
 
     public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException {
         logger.info(String.format("Account update for time zone triggered. UID: %s", uid));
@@ -38,7 +37,7 @@ public class UpdateAccountService {
 
         jsonAccount.put("uid", uid);
         jsonAccount.put("profile", cleanProfile);
-        ObjectNode response = cdcAccountsService.update(jsonAccount);
+        ObjectNode response = gigyaService.update(jsonAccount);
 
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info(String.format("Account update success. UID: %s", uid));
@@ -70,7 +69,7 @@ public class UpdateAccountService {
         jsonAccount.put("uid", uid);
         jsonAccount.put("profile", cleanProfile);
 
-        ObjectNode response = cdcAccountsService.update(jsonAccount);
+        ObjectNode response = gigyaService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
             logger.info(String.format("Profile update success. UID: %s", uid));
         } else {

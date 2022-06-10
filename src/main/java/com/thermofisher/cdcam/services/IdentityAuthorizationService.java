@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class IdentityAuthorizationService {
@@ -40,7 +41,7 @@ public class IdentityAuthorizationService {
         String uString = "{\"u\":\"" + u.concat(redirectUrl) + "\"}";
         String uEncoded = null;
         try {
-            uEncoded = URLEncoder.encode(uString, "UTF-8");
+            uEncoded = URLEncoder.encode(uString, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException e) {
             logger.error(e);
         }

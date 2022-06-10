@@ -7,8 +7,9 @@ import com.thermofisher.cdcam.model.MarketingConsentUpdatedNotification;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.EmailVerificationDTO;
 import com.thermofisher.cdcam.model.dto.UpdateMarketingConsentDTO;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
+
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -31,7 +32,7 @@ public class NotificationController {
     NotificationService notificationService;
 
     @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @PostMapping("/emailVerification")
     @ApiOperation(value = "Call sns of type accountUpdated")
@@ -43,7 +44,7 @@ public class NotificationController {
         try {
             String uid = emailVerificationDTO.getUid();
             logger.info(String.format("Email verification process for %s started.", uid));
-            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building AccountUpdatedNotification object.");
             EmailUpdatedNotification emailUpdatedNotification = EmailUpdatedNotification.build(accountInfo);
             logger.info("Sending accountUpdated notification.");
@@ -68,7 +69,7 @@ public class NotificationController {
         try {
             String uid = updateMarketingConsentDTO.getUid();
             logger.info(String.format("Marketing consent updated notification started for: %s", uid));
-            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building marketingConsentUpdated object.");
             MarketingConsentUpdatedNotification marketingConsentUpdatedNotification = MarketingConsentUpdatedNotification.build(accountInfo);
             logger.info("Sending marketingConsentUpdated notification.");

@@ -1,4 +1,4 @@
-package com.thermofisher.cdcam.handlers;
+package com.thermofisher.cdcam.services;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -14,7 +14,9 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,12 +33,18 @@ import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
+import com.thermofisher.cdcam.model.cdc.SearchResponse;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import com.thermofisher.cdcam.services.CDCAccountsService;
-import com.thermofisher.cdcam.services.CDCIdentityProviderService;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -47,6 +55,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -57,13 +67,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/**
- * CDCAccountsServiceTests
- */
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
-public class CDCResponseHandlerTests {
+public class GigyaServiceTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
     private final String emailAddress = "federatedUser@OIDC.com";
@@ -80,10 +87,10 @@ public class CDCResponseHandlerTests {
     private String objV2 = "{\"socialProviders\":\"site,oidc-fedspikegidp\",\"lastLogin\":\"2019-08-21T23:13:38.284Z\",\"userInfo\":{\"country\":\"United States\",\"isTempUser\":false,\"oldestDataAge\":-2147483648,\"capabilities\":\"None\",\"isSiteUID\":true,\"loginProviderUID\":\"ef632aa3f52140aa836673469378d0ac\",\"city\":\"city\",\"isConnected\":true,\"errorCode\":0,\"isSiteUser\":true,\"loginProvider\":\"oidc-fedspikegidp\",\"oldestDataUpdatedTimestamp\":0,\"UID\":\"ffb10070d8174a518f2e8b403c1efe5d\",\"identities\":[{\"country\":\"United States\",\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"lastUpdatedTimestamp\":1566429217356,\"isExpiredSession\":false,\"allowsLogin\":false,\"city\":\"city\",\"provider\":\"site\",\"isLoginIdentity\":false,\"oldestDataUpdated\":\"0001-01-01T00:00:00Z\",\"oldestDataUpdatedTimestamp\":0,\"providerUID\":\"ffb10070d8174a518f2e8b403c1efe5d\"},{\"lastUpdated\":\"2019-08-21T23:13:38.284Z\",\"lastUpdatedTimestamp\":1566429218284,\"isExpiredSession\":false,\"allowsLogin\":true,\"provider\":\"oidc-fedspikegidp\",\"isLoginIdentity\":true,\"nickname\":\"federatedUser\",\"oldestDataUpdated\":\"2019-08-21T23:01:23.988Z\",\"oidcData\":{},\"oldestDataUpdatedTimestamp\":1566428483988,\"email\":\"test@gmail.com\",\"providerUID\":\"ef632aa3f52140aa836673469378d0ac\"}],\"statusReason\":\"OK\",\"nickname\":\"federatedUser\",\"isLoggedIn\":true,\"time\":\"2019-08-23T23:50:35.918Z\",\"email\":\"test@gmail.com\",\"providers\":\"site,oidc-fedspikegidp\",\"statusCode\":200},\"data\":{\"terms\":true},\"isVerified\":true,\"errorCode\":0,\"registered\":\"2019-08-19T21:11:52.372Z\",\"isActive\":true,\"oldestDataUpdatedTimestamp\":1566248846440,\"emails\":{\"verified\":[\"test@gmail.com\"],\"unverified\":[]},\"preferences\":{\"marketing\":{\"consent\":{\"isConsentGranted\":true}},\"korea\":{\"receiveMarketingInformation\":{\"isConsentGranted\":false},\"thirdPartyTransferPersonalInfoMandatory\":{\"isConsentGranted\":false},\"thirdPartyTransferPersonalInfoOptional\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoMandatory\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoOptional\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoMarketing\":{\"isConsentGranted\":false},\"overseasTransferPersonalInfoMandatory\":{\"isConsentGranted\":false},\"overseasTransferPersonalInfoOptional\":{\"isConsentGranted\":false}}},\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"apiVersion\":2,\"statusReason\":\"OK\",\"verifiedTimestamp\":1566248848104,\"oldestDataUpdated\":\"2019-08-19T21:07:26.440Z\",\"callId\":\"52317e98c0a849438f432669c5d198f0\",\"lastUpdatedTimestamp\":1566429217356,\"created\":\"2019-08-19T21:07:26.440Z\",\"createdTimestamp\":1566248846000,\"profile\":{\"firstName\":\"firstName\",\"lastName\":\"lastName\",\"work\":{\"company\":\"company\"},\"country\":\"country\",\"city\":\"city\",\"nickname\":\"federatedUser\",\"email\":\"arm@test.com\"},\"regSource\":\"http://dev2.apps.thermofisher.com/apps/fedspike/enterpriselogin\",\"verified\":\"2019-08-19T21:07:28.104Z\",\"registeredTimestamp\":1566249112000,\"loginProvider\":\"oidc-fedspikegidp\",\"lastLoginTimestamp\":1566429218000,\"UID\":\"10293847\",\"isRegistered\":true,\"time\":\"2019-08-23T23:50:35.919Z\",\"statusCode\":200}";
 
     @InjectMocks
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Mock
-    CDCAccountsService cdcAccountsService;
+    GigyaApi gigyaApi;
 
     @Mock
     AccountBuilder accountBuilder;
@@ -94,31 +101,34 @@ public class CDCResponseHandlerTests {
     @Mock
     IdentityProviderBuilder identityProviderBuilder;
 
+    @Captor
+    ArgumentCaptor<GSObject> gsObjectCaptor;
+
     @Before
     public void setup() {
         ReflectionTestUtils.setField(accountBuilder, "logger", LogManager.getLogger(AccountBuilder.class));
     }
 
     private void setProperties() {
-        ReflectionTestUtils.setField(cdcResponseHandler, "mainApiDomain", mainApiDomain);
-        ReflectionTestUtils.setField(cdcResponseHandler, "mainDataCenter", "us");
-        ReflectionTestUtils.setField(cdcResponseHandler, "secondaryApiDomain", secondaryApiDomain);
-        ReflectionTestUtils.setField(cdcResponseHandler, "secondaryDataCenter", "cn");
+        ReflectionTestUtils.setField(gigyaService, "mainApiDomain", mainApiDomain);
+        ReflectionTestUtils.setField(gigyaService, "mainDataCenter", "us");
+        ReflectionTestUtils.setField(gigyaService, "secondaryApiDomain", secondaryApiDomain);
+        ReflectionTestUtils.setField(gigyaService, "secondaryDataCenter", "cn");
     }
 
     @Test
     public void getAccount_WhenAGetAccountRequestInfoIsMade_ShouldReturnAnAccountInfoObjectWithResponseData() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", false);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", false);
         GSResponse gsResponse = Mockito.mock(GSResponse.class);
         GSObject mockedGSObject = new GSObject(obj);
-        when(cdcAccountsService.getAccount(anyString())).thenReturn(gsResponse);
+        when(gigyaApi.getAccount(anyString())).thenReturn(gsResponse);
         when(gsResponse.getData()).thenReturn(mockedGSObject);
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
         AccountInfo accountInfo = accountBuilder.getAccountInfo(new GSObject(obj));
 
         // when
-        AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
+        AccountInfo account = gigyaService.getAccountInfo(uid);
 
         // then
         String _accountInfo = mapper.writeValueAsString(accountInfo);
@@ -129,16 +139,16 @@ public class CDCResponseHandlerTests {
     @Test
     public void getAccount_WhenAGetAccountRequestInfoIsMade_ShouldReturnAnAccountInfoObjectWithResponseData_V2() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", true);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         GSResponse gsResponse = Mockito.mock(GSResponse.class);
         GSObject mockedGSObject = new GSObject(obj);
-        when(cdcAccountsService.getAccountV2(anyString())).thenReturn(gsResponse);
+        when(gigyaApi.getAccountV2(anyString())).thenReturn(gsResponse);
         when(gsResponse.getData()).thenReturn(mockedGSObject);
         when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
         AccountInfo accountInfo = accountBuilder.getAccountInfoV2(new GSObject(obj));
 
         // when
-        AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
+        AccountInfo account = gigyaService.getAccountInfo(uid);
 
         // then
         String _accountInfo = mapper.writeValueAsString(accountInfo);
@@ -149,27 +159,27 @@ public class CDCResponseHandlerTests {
     @Test(expected = CustomGigyaErrorException.class)
     public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldThrowCustomGigyaErrorException() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", false);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", false);
         final int ERROR_CODE = new Random().nextInt(10) + 1;
         GSResponse gsResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.getAccount(anyString())).thenReturn(gsResponse);
+        when(gigyaApi.getAccount(anyString())).thenReturn(gsResponse);
         when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
         // when
-        cdcResponseHandler.getAccountInfo(uid);
+        gigyaService.getAccountInfo(uid);
     }
     
     @Test(expected = CustomGigyaErrorException.class)
     public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldThrowCustomGigyaErrorException_V2() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", true);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         final int ERROR_CODE = new Random().nextInt(10) + 1;
         GSResponse gsResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.getAccountV2(anyString())).thenReturn(gsResponse);
+        when(gigyaApi.getAccountV2(anyString())).thenReturn(gsResponse);
         when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
         // when
-        cdcResponseHandler.getAccountInfo(uid);
+        gigyaService.getAccountInfo(uid);
     }
 
     @Test
@@ -177,14 +187,14 @@ public class CDCResponseHandlerTests {
         // given
         String message = "Success";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(0);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         JSONObject user = new JSONObject("{\"data\":{\"regStatus\":true},\"profile\":{\"username\":\"test@test.com\"}}");
 
         // when
-        ObjectNode updateResponse = cdcResponseHandler.update(user);
+        ObjectNode updateResponse = gigyaService.update(user);
 
         // then
         Assert.assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
@@ -198,14 +208,14 @@ public class CDCResponseHandlerTests {
         String message = "Something went bad.";
         int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         JSONObject user = new JSONObject("{\"data\":{\"regStatus\":true},\"profile\":{\"username\":\"test@test.com\"}}");
 
         // when
-        ObjectNode updateResponse = cdcResponseHandler.update(user);
+        ObjectNode updateResponse = gigyaService.update(user);
 
         // then
         Assert.assertEquals(errorCode, updateResponse.get("code").asInt());
@@ -218,12 +228,12 @@ public class CDCResponseHandlerTests {
         String message = "Something went bad.";
         int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         // when
-        ObjectNode updateResponse = cdcResponseHandler.update(null);
+        ObjectNode updateResponse = gigyaService.update(null);
 
         // then
         assertNull(updateResponse);
@@ -234,14 +244,14 @@ public class CDCResponseHandlerTests {
         // given
         String message = "Success";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.setUserInfo(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(0);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         JSONObject user = new JSONObject("{}");
 
         // when
-        ObjectNode updateResponse = cdcResponseHandler.update(user);
+        ObjectNode updateResponse = gigyaService.update(user);
 
         // then
         assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
@@ -260,11 +270,11 @@ public class CDCResponseHandlerTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        Mockito.when(cdcAccountsService.changeAccountStatus(anyString(),anyBoolean())).thenReturn(mockChangeStatusResponse);
+        Mockito.when(gigyaApi.changeAccountStatus(anyString(),anyBoolean())).thenReturn(mockChangeStatusResponse);
         Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(successCode);
 
         // when
-        boolean updateResponse = cdcResponseHandler.disableAccount(uid);
+        boolean updateResponse = gigyaService.disableAccount(uid);
 
         // then
         Assert.assertTrue(updateResponse);
@@ -279,15 +289,15 @@ public class CDCResponseHandlerTests {
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         GSResponse mockChangeStatusResponse = Mockito.mock(GSResponse.class);
 
-        Mockito.when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(errorCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        Mockito.when(cdcAccountsService.changeAccountStatus(anyString(), anyBoolean())).thenReturn(mockChangeStatusResponse);
+        Mockito.when(gigyaApi.changeAccountStatus(anyString(), anyBoolean())).thenReturn(mockChangeStatusResponse);
         Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(errorCode);
 
         // when
-        boolean updateResponse = cdcResponseHandler.disableAccount(uid);
+        boolean updateResponse = gigyaService.disableAccount(uid);
 
         // then
         Assert.assertFalse(updateResponse);
@@ -299,10 +309,10 @@ public class CDCResponseHandlerTests {
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
         String mockResponseText = "{\"statusCode\": 200,\"statusReason\": \"OK\"}";
         when(mockCdcResponse.getResponseText()).thenReturn(mockResponseText);
-        when(cdcAccountsService.sendVerificationEmail(any())).thenReturn(mockCdcResponse);
+        when(gigyaApi.sendVerificationEmail(any())).thenReturn(mockCdcResponse);
 
         // when
-        CDCResponseData response = cdcResponseHandler.sendVerificationEmail("test");
+        CDCResponseData response = gigyaService.sendVerificationEmail("test");
 
         // then
         Assert.assertEquals(response.getStatusCode(), HttpStatus.OK.value());
@@ -311,10 +321,10 @@ public class CDCResponseHandlerTests {
     @Test
     public void sendVerificationEmail_whenGSResponseIsNull_returnResponseAsWithInternalServerErrorStatus() throws IOException {
         // given
-        when(cdcAccountsService.sendVerificationEmail(any())).thenReturn(null);
+        when(gigyaApi.sendVerificationEmail(any())).thenReturn(null);
 
         // when
-        CDCResponseData response = cdcResponseHandler.sendVerificationEmail("test");
+        CDCResponseData response = gigyaService.sendVerificationEmail("test");
 
         // then
         Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -328,15 +338,15 @@ public class CDCResponseHandlerTests {
         gsObject.put("passwordResetToken","");
         gsObject.put("requirePasswordCheck", false);
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
 
         // when
-        cdcResponseHandler.resetPasswordRequest("armvalidtest@mail.com");
+        gigyaService.resetPasswordRequest("armvalidtest@mail.com");
 
         // then
-        verify(cdcAccountsService).resetPassword(any());
+        verify(gigyaApi).resetPassword(any());
     }
 
     @Test(expected = LoginIdDoesNotExistException.class)
@@ -344,11 +354,11 @@ public class CDCResponseHandlerTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue());
 
         // when
-        cdcResponseHandler.resetPasswordRequest("arminvalidtest@mail.com");
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
     }
 
     @Test(expected = CustomGigyaErrorException.class)
@@ -356,11 +366,11 @@ public class CDCResponseHandlerTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
         // given
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
         // when
-        cdcResponseHandler.resetPasswordRequest("arminvalidtest@mail.com");
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
     }
 
     @Test
@@ -371,11 +381,11 @@ public class CDCResponseHandlerTests {
         String newPassword = "testPassword1";
         int errorResponseCode = 40016;
         ResetPasswordSubmit request = ResetPasswordSubmit.builder().resetPasswordToken(token).newPassword(newPassword).build();
-        when(cdcAccountsService.resetPassword(any())).thenReturn(mockErrorCdcResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockErrorCdcResponse);
         when(mockErrorCdcResponse.getErrorCode()).thenReturn(errorResponseCode);
 
         // when
-        ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(request);
+        ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
         Assert.assertEquals(response.getResponseCode(),errorResponseCode);
@@ -390,11 +400,11 @@ public class CDCResponseHandlerTests {
         int successResponseCode = 0;
         ResetPasswordSubmit request = ResetPasswordSubmit.builder().resetPasswordToken(token).newPassword(newPassword).build();
 
-        when(cdcAccountsService.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(successResponseCode);
 
         // when
-        ResetPasswordResponse response = cdcResponseHandler.resetPasswordSubmit(request);
+        ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
         Assert.assertEquals(response.getResponseCode(),successResponseCode);
@@ -405,12 +415,12 @@ public class CDCResponseHandlerTests {
         // given
         GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [],\"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
         when(mockResponse.getData()).thenReturn(jsonResponse);
 
         // when
-        String username = cdcResponseHandler.getUsernameByEmail("test");
+        String username = gigyaService.getUsernameByEmail("test");
 
         // then
         assertTrue(username.isEmpty());
@@ -422,12 +432,12 @@ public class CDCResponseHandlerTests {
         String testEmail = "this-is-a-test-88@mail.com";
         GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [{\"profile\": {\"username\":\"" + testEmail + "\"}}], \"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
         when(mockResponse.getData()).thenReturn(jsonResponse);
 
         // when
-        String username = cdcResponseHandler.getUsernameByEmail("test");
+        String username = gigyaService.getUsernameByEmail("test");
 
         // then
         assertEquals(username, testEmail);
@@ -440,10 +450,10 @@ public class CDCResponseHandlerTests {
         GSObject gsObject = Mockito.mock(GSObject.class);
         when(gsObject.getArray(any())).thenThrow(GSKeyNotFoundException.class);
         when(mockResponse.getData()).thenReturn(gsObject);
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
 
         // when
-        String username = cdcResponseHandler.getUsernameByEmail("test");
+        String username = gigyaService.getUsernameByEmail("test");
 
         // then
         assertTrue(username.isEmpty());
@@ -458,10 +468,10 @@ public class CDCResponseHandlerTests {
         GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
         when(mockGSResponse.getErrorCode()).thenReturn(0);
         when(mockGSResponse.getData()).thenReturn(gsObject);
-        when(cdcAccountsService.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
 
         // when
-        boolean response = cdcResponseHandler.isAvailableLoginId("test");
+        boolean response = gigyaService.isAvailableLoginId("test");
 
         // then
         assertEquals(response, mockResponse);
@@ -483,13 +493,13 @@ public class CDCResponseHandlerTests {
         when(secondaryGsResponse.getErrorCode()).thenReturn(0);
         when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
         
-        when(cdcAccountsService.isAvailableLoginId(any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
+        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
 
             // when
-            boolean response = cdcResponseHandler.isAvailableLoginId("test");
+            boolean response = gigyaService.isAvailableLoginId("test");
 
             // then
             assertEquals(response, expectedResponse);
@@ -502,10 +512,10 @@ public class CDCResponseHandlerTests {
         int errorCode = 1;
         GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
-        when(cdcAccountsService.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
 
         // when
-        cdcResponseHandler.isAvailableLoginId("test");
+        gigyaService.isAvailableLoginId("test");
     }
 
     @Test
@@ -524,7 +534,7 @@ public class CDCResponseHandlerTests {
         IdentityProviderResponse expectedResponse = identityProviderBuilder.getIdPInformation(new GSObject(data));
 
         // when
-        IdentityProviderResponse result = cdcResponseHandler.getIdPInformation(IDP_NAME);
+        IdentityProviderResponse result = gigyaService.getIdPInformation(IDP_NAME);
 
         // then
         assertTrue(expectedResponse.getName() .equals(result.getName())
@@ -542,7 +552,7 @@ public class CDCResponseHandlerTests {
         when(mockGSResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
         // when
-        IdentityProviderResponse result = cdcResponseHandler.getIdPInformation(IDP_NAME);
+        IdentityProviderResponse result = gigyaService.getIdPInformation(IDP_NAME);
 
         // then
         assertNull(result);
@@ -555,11 +565,11 @@ public class CDCResponseHandlerTests {
         String e = "SDAI";
         String responseData = String.format("{\"alg\":\"RS256\",\"apiVersion\":2,\"callId\":\"a98f09e409284cf788bd392e2aabd62c\",\"e\":\"%s\",\"errorCode\":0,\"kid\":\"REQ0MUQ5N0NCRTJEMzk3M0U1RkNDQ0U0Q0M1REFBRjhDMjdENUFBQg\",\"kty\":\"RSA\",\"n\":\"%s\",\"statusCode\":200,\"statusReason\":\"OK\",\"time\":\"2021-03-05T20:37:46.273Z\",\"use\":\"sig\"}", e, n);
         GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.getJWTPublicKey()).thenReturn(mockGSResponse);
+        when(gigyaApi.getJWTPublicKey()).thenReturn(mockGSResponse);
         when(mockGSResponse.getData()).thenReturn(new GSObject(responseData));
 
         // when
-        JWTPublicKey result = cdcResponseHandler.getJWTPublicKey();
+        JWTPublicKey result = gigyaService.getJWTPublicKey();
 
         // then
         assertEquals(n, result.getN());
@@ -571,11 +581,11 @@ public class CDCResponseHandlerTests {
         // given
         int errorCode = 400404;
         GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-        when(cdcAccountsService.getJWTPublicKey()).thenReturn(mockGSResponse);
+        when(gigyaApi.getJWTPublicKey()).thenReturn(mockGSResponse);
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
 
         // when
-        cdcResponseHandler.getJWTPublicKey();
+        gigyaService.getJWTPublicKey();
     }
 
     @Test(expected = CustomGigyaErrorException.class)
@@ -584,12 +594,12 @@ public class CDCResponseHandlerTests {
         String query = "";
         String message = "Error";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         // when
-        cdcResponseHandler.search(query, AccountType.FULL_LITE, mainApiDomain);
+        gigyaService.search(query, AccountType.FULL_LITE, mainApiDomain);
     }
 
     @Test
@@ -600,10 +610,10 @@ public class CDCResponseHandlerTests {
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{\"totalCount\": 1,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[{\"UID\":\"" + uid + "\",\"isRegistered\":true,\"profile\":{\"username\":\"armatest\",\"country\":\"MX\"}}]}";
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponseJson);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
         // when
-        CDCSearchResponse searchResponse = cdcResponseHandler.search(query, AccountType.FULL_LITE, mainApiDomain);
+        CDCSearchResponse searchResponse = gigyaService.search(query, AccountType.FULL_LITE, mainApiDomain);
         List<CDCAccount> accounts = searchResponse.getResults();
 
         // then
@@ -619,10 +629,10 @@ public class CDCResponseHandlerTests {
         GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
         String liteRegResponse = "{\"callId\": \"5c62541d1ce341eba0faf1d14642c191\",\"UID\": \"" + uid + "\",\"apiVersion\": 2,\"statusReason\": \"OK\",\"errorCode\": 0,\"time\": \"2019-09-19T16:14:24.983Z\",\"statusCode\": 200}";
         when(cdcMockResponse.getResponseText()).thenReturn(liteRegResponse);
-        when(cdcAccountsService.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
+        when(gigyaApi.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        CDCResponseData cdcResponse = cdcResponseHandler.registerLiteAccount("");
+        CDCResponseData cdcResponse = gigyaService.registerLiteAccount("");
 
         // then
         assertEquals(uid, cdcResponse.getUID());
@@ -636,10 +646,10 @@ public class CDCResponseHandlerTests {
         String liteRegError = "{\"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\"apiVersion\": 2,\"statusReason\": \"Bad Request\",\"errorMessage\": \"Invalid parameter value\", \"errorCode\": " + errorCode + ", \"validationErrors\": [{\"fieldName\": \"profile.email\",\"errorCode\": 400006,\"message\": \"Unallowed value for field: email\"}], \"time\": \"2019-09-19T16:15:20.508Z\",\"errorDetails\": \"Schema validation failed\", \"statusCode\":" + errorCode + "}";
         when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
         when(cdcMockResponse.getResponseText()).thenReturn(liteRegError);
-        when(cdcAccountsService.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
+        when(gigyaApi.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        cdcResponseHandler.registerLiteAccount("");
+        gigyaService.registerLiteAccount("");
     }
 
     @Test(expected = CustomGigyaErrorException.class)
@@ -653,10 +663,10 @@ public class CDCResponseHandlerTests {
         String gsResponse = "{\"callId\": \"349272dd0ec242d89e2be84c6692d0d2\",\"apiVersion\": 2,\"statusReason\": \"Bad Request\",\"errorMessage\": \"Invalid parameter value\", \"errorCode\": " + errorCode + ", \"validationErrors\": [{\"fieldName\": \"profile.email\",\"errorCode\": 400006,\"message\": \"Unallowed value for field: email\"}], \"time\": \"2019-09-19T16:15:20.508Z\",\"errorDetails\": \"Schema validation failed\", \"statusCode\":" + errorCode + "}";
         when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
         when(cdcMockResponse.getResponseText()).thenReturn(gsResponse);
-        when(cdcAccountsService.changePassword(anyString(), anyString(), anyString())).thenReturn(cdcMockResponse);
+        when(gigyaApi.changePassword(anyString(), anyString(), anyString())).thenReturn(cdcMockResponse);
 
         // when
-        cdcResponseHandler.changePassword(uid, newPassword, oldPassword);
+        gigyaService.changePassword(uid, newPassword, oldPassword);
     }
 
     @Test
@@ -669,10 +679,10 @@ public class CDCResponseHandlerTests {
         GSResponse mockGSResponse = mock(GSResponse.class);
         String responseData = String.format("{ \"statusCode\": 200, \"errorCode\": 0, \"statusReason\": \"OK\", \"callId\": \"0ac740a1d1444e\", \"time\": \"2016-03-22T10:20:18.732Z\", \"description\": \"This is a THIRD RP\", \"redirectUris\": [ \"http://example.com\", \"http://example2.com\" ], \"allowedScopes\": [ \"openid\", \"email\", \"profile\" ], \"clientID\": \"%s\", \"clientSecret\": \"7_CbWuu6UqokqyjAfhD9sz4xpHnBhW3r2KkI4\", \"supportedResponseTypes\": [ \"code\", \"id_token\", \"id_token token\", \"code id_token\", \"code token\", \"code id_token token\" ], \"subjectIdentifierType\": \"pairwise\" }", clientId);
         when(mockGSResponse.getData()).thenReturn(new GSObject(responseData));
-        when(cdcAccountsService.getRP(clientId)).thenReturn(mockGSResponse);
+        when(gigyaApi.getRP(clientId)).thenReturn(mockGSResponse);
 
         //when
-        OpenIdRelyingParty result = cdcResponseHandler.getRP(clientId);
+        OpenIdRelyingParty result = gigyaService.getRP(clientId);
 
         //then
         assertTrue(clientId.equals(result.getClientId()));
@@ -688,10 +698,10 @@ public class CDCResponseHandlerTests {
         String responseData = String.format("{ \"statusCode\": 404, \"errorCode\": 404000, \"statusReason\": \"NOT_FOUND\", \"callId\": \"0ac740a1d1444e\", \"time\": \"2016-03-22T10:20:18.732Z\", \"description\": \"This is a THIRD RP\", \"redirectUris\": [ \"http://example.com\", \"http://example2.com\" ], \"allowedScopes\": [ \"openid\", \"email\", \"profile\" ], \"clientID\": \"%s\", \"clientSecret\": \"7_CbWuu6UqokqyjAfhD9sz4xpHnBhW3r2KkI4\", \"supportedResponseTypes\": [ \"code\", \"id_token\", \"id_token token\", \"code id_token\", \"code token\", \"code id_token token\" ], \"subjectIdentifierType\": \"pairwise\" }", clientId);
         when(mockGSResponse.getData()).thenReturn(new GSObject(responseData));
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
-        when(cdcAccountsService.getRP(clientId)).thenReturn(mockGSResponse);
+        when(gigyaApi.getRP(clientId)).thenReturn(mockGSResponse);
 
         //when
-        cdcResponseHandler.getRP(clientId);
+        gigyaService.getRP(clientId);
     }
 
     @Test(expected = CustomGigyaErrorException.class)
@@ -701,10 +711,10 @@ public class CDCResponseHandlerTests {
         int errorCode = 400;
         GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
         when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
-        when(cdcAccountsService.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
+        when(gigyaApi.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        cdcResponseHandler.updateRequirePasswordCheck(uid);
+        gigyaService.updateRequirePasswordCheck(uid);
     }
 
     @Test
@@ -714,13 +724,13 @@ public class CDCResponseHandlerTests {
         GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
         String requirePasswordCheckResponse = "{\"callId\": \"5c62541d1ce341eba0faf1d14642c191\",\"UID\": \"" + uid + "\",\"apiVersion\": 2,\"statusReason\": \"OK\",\"errorCode\": 0,\"time\": \"2019-09-19T16:14:24.983Z\",\"statusCode\": 200}";
         when(cdcMockResponse.getResponseText()).thenReturn(requirePasswordCheckResponse);
-        when(cdcAccountsService.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
+        when(gigyaApi.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        cdcResponseHandler.updateRequirePasswordCheck(uid);
+        gigyaService.updateRequirePasswordCheck(uid);
 
         // then
-        verify(cdcAccountsService).updateRequirePasswordCheck(uid);
+        verify(gigyaApi).updateRequirePasswordCheck(uid);
     }
 
     @Test
@@ -728,13 +738,13 @@ public class CDCResponseHandlerTests {
         // given
         CDCAccount cdcAccount = CDCAccount.builder().build();
         GSResponse gsResponseMock = mock(GSResponse.class);
-        when(cdcAccountsService.setAccountInfo(any())).thenReturn(gsResponseMock);
+        when(gigyaApi.setAccountInfo(any(CDCAccount.class))).thenReturn(gsResponseMock);
 
         // when
-        cdcResponseHandler.setAccountInfo(cdcAccount);
+        gigyaService.setAccountInfo(cdcAccount);
 
         // then
-        verify(cdcAccountsService).setAccountInfo(cdcAccount);
+        verify(gigyaApi).setAccountInfo(cdcAccount);
     }
 
     @Test(expected = CustomGigyaErrorException.class)
@@ -743,10 +753,40 @@ public class CDCResponseHandlerTests {
         CDCAccount cdcAccount = CDCAccount.builder().build();
         GSResponse gsResponseMock = mock(GSResponse.class);
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
-        when(cdcAccountsService.setAccountInfo(any())).thenReturn(gsResponseMock);
+        when(gigyaApi.setAccountInfo(any(CDCAccount.class))).thenReturn(gsResponseMock);
 
         // when
-        cdcResponseHandler.setAccountInfo(cdcAccount);
+        gigyaService.setAccountInfo(cdcAccount);
+    }
+
+    @Test
+    public void setAccountInfo_WhenParamsArePassed_ShouldSetCDCAccountData() throws CustomGigyaErrorException, GSKeyNotFoundException {
+        // given
+        String mockValue = "GeneralKenobi";
+        Map<String, String> params = new HashMap<>();
+        params.put("HelloThere", mockValue);
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gigyaApi.setAccountInfo(any(GSObject.class))).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.setAccountInfo(params);
+
+        // then
+        verify(gigyaApi).setAccountInfo(gsObjectCaptor.capture());
+        GSObject gsObject = gsObjectCaptor.getValue();
+        assertEquals(gsObject.get("HelloThere"), mockValue);
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void setAccountInfo_WhenParamsArePassed_AndTheresAnError_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
+        // given
+        Map<String, String> params = new HashMap<>();
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gsResponseMock.getErrorCode()).thenReturn(400001);
+        when(gigyaApi.setAccountInfo(any(GSObject.class))).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.setAccountInfo(params);
     }
 
     @Test
@@ -759,12 +799,12 @@ public class CDCResponseHandlerTests {
                 "  \"results\": [\n" +
                 "  ]\n" +
                 "}";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String email = cdcResponseHandler.getEmailByUsername("test");
+        String email = gigyaService.getEmailByUsername("test");
 
         // then
         assertTrue(email.isEmpty());
@@ -776,12 +816,12 @@ public class CDCResponseHandlerTests {
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String emailMock = "test@mail.com";
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [\"" + emailMock + "\", \"test-two@mail.com\"] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String email = cdcResponseHandler.getEmailByUsername("test");
+        String email = gigyaService.getEmailByUsername("test");
 
         // then
         assertEquals(email, emailMock);
@@ -793,12 +833,12 @@ public class CDCResponseHandlerTests {
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String emailMock = "test@mail.com";
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [\"" + emailMock + "\", \"test-two@mail.com\"] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String email = cdcResponseHandler.getEmailByUsername("test");
+        String email = gigyaService.getEmailByUsername("test");
 
         // then
         assertEquals(email, emailMock);
@@ -809,12 +849,12 @@ public class CDCResponseHandlerTests {
         // given
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String email = cdcResponseHandler.getEmailByUsername("test");
+        String email = gigyaService.getEmailByUsername("test");
 
         // then
         assertEquals("", email);
@@ -826,12 +866,12 @@ public class CDCResponseHandlerTests {
         String uidMock = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String uid = cdcResponseHandler.getUIDByEmail("email@mail.com");
+        String uid = gigyaService.getUIDByEmail("email@mail.com");
 
         // then
         assertEquals(uidMock, uid);
@@ -843,12 +883,12 @@ public class CDCResponseHandlerTests {
         String uidMock = "";
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        String uid = cdcResponseHandler.getUIDByEmail("email@mail.com");
+        String uid = gigyaService.getUIDByEmail("email@mail.com");
 
         // then
         assertEquals(uidMock, uid);
@@ -859,14 +899,14 @@ public class CDCResponseHandlerTests {
         // given
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
-        when(cdcAccountsService.getAccount(any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.getAccount(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(obj));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        AccountInfo accountInfo = cdcResponseHandler.getAccountInfoByEmail("email@mail.com");
+        AccountInfo accountInfo = gigyaService.getAccountInfoByEmail("email@mail.com");
 
         // then
         assertNull(accountInfo);
@@ -875,17 +915,17 @@ public class CDCResponseHandlerTests {
     @Test
     public void getAccountInfoByEmail_givenAnInvalidEmail_whenMethodIsCalled_thenShouldReturnAccountInfoAsNull() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", false);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", false);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 404, \"statusReason\": \"NOT_FOUND\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
-        when(cdcAccountsService.getAccount(any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.getAccount(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(obj));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        AccountInfo accountInfo = cdcResponseHandler.getAccountInfoByEmail("email@mail.com");
+        AccountInfo accountInfo = gigyaService.getAccountInfoByEmail("email@mail.com");
 
         // then
         assertNull(accountInfo);
@@ -894,17 +934,17 @@ public class CDCResponseHandlerTests {
     @Test
     public void getAccountInfoByEmail_givenAnInvalidEmail_whenMethodIsCalled_thenShouldReturnAccountInfoAsNull_V2() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", true);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 401, \"statusReason\": \"NOT_FOUND\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
-        when(cdcAccountsService.getAccountV2(any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.getAccountV2(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(objV2));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        AccountInfo accountInfo = cdcResponseHandler.getAccountInfoByEmail("email@mail.com");
+        AccountInfo accountInfo = gigyaService.getAccountInfoByEmail("email@mail.com");
 
         // then
         assertNull(accountInfo);
@@ -913,19 +953,19 @@ public class CDCResponseHandlerTests {
     @Test
     public void getAccountInfoByEmail_givenAValidEmail_whenMethodIsCalled_thenShouldReturnAccountInfol_V2() throws Exception {
         // given
-        ReflectionTestUtils.setField(cdcResponseHandler, "isNewMarketingConsentEnabled", true);
+        ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"10293847\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(cdcAccountsService.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
 
-        when(cdcAccountsService.getAccountV2(any())).thenReturn(mockResponse);
+        when(gigyaApi.getAccountV2(any())).thenReturn(mockResponse);
 
         when(mockResponse.getData()).thenReturn(new GSObject(objV2));
         when(mockResponse.getErrorCode()).thenReturn(0);
 
         // when
-        AccountInfo accountInfo = cdcResponseHandler.getAccountInfoByEmail("email@mail.com");
+        AccountInfo accountInfo = gigyaService.getAccountInfoByEmail("email@mail.com");
 
         // then
         assertEquals(accountInfo.getUid(), "10293847");
@@ -938,12 +978,12 @@ public class CDCResponseHandlerTests {
         String username = "armatest@test.com";
         String message = "Error";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
-        Mockito.when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
+        Mockito.when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockCdcResponse);
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
         // when
-        cdcResponseHandler.searchInBothDC(username);
+        gigyaService.searchInBothDC(username);
     }
 
     @Test
@@ -954,13 +994,13 @@ public class CDCResponseHandlerTests {
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{\"totalCount\": 1,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[{\"UID\":\"" + uid + "\",\"isRegistered\":true,\"profile\":{\"username\":\"" + username + "\",\"country\":\"MX\"}}]}";
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponseJson);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtilsMock.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            SearchResponse searchResponse = cdcResponseHandler.searchInBothDC(username);
+            SearchResponse searchResponse = gigyaService.searchInBothDC(username);
             List<CDCAccount> accounts = searchResponse.getCdcSearchResponse().getResults();
 
             // then
@@ -981,14 +1021,14 @@ public class CDCResponseHandlerTests {
         String secondaryDCResponseJson = "{\"totalCount\": 1,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[{\"UID\":\"" + uid + "\",\"isRegistered\":true,\"profile\":{\"username\":\"" + username + "\",\"country\":\"MX\"}}]}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(mainDCSearchResponseJson, secondaryDCResponseJson);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtilsMock.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            SearchResponse searchResponse = cdcResponseHandler.searchInBothDC(username);
+            SearchResponse searchResponse = gigyaService.searchInBothDC(username);
             List<CDCAccount> accounts = searchResponse.getCdcSearchResponse().getResults();
 
             // then
@@ -1009,14 +1049,14 @@ public class CDCResponseHandlerTests {
         String secondaryDCResponseJson = "{\"totalCount\": 0,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[]}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(mainDCSearchResponseJson, secondaryDCResponseJson);
-        when(cdcAccountsService.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtilsMock.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(true);
 
             // when
-            SearchResponse searchResponse = cdcResponseHandler.searchInBothDC(username);
+            SearchResponse searchResponse = gigyaService.searchInBothDC(username);
             List<CDCAccount> accounts = searchResponse.getCdcSearchResponse().getResults();
 
             // then
@@ -1035,20 +1075,20 @@ public class CDCResponseHandlerTests {
         String secondaryDCResponseJson = "{\"totalCount\": 0,\"errorCode\":0,\"statusCode\":200,\"statusReason\":\"OK\",\"results\":[]}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(mainDCSearchResponseJson, secondaryDCResponseJson);
-        when(cdcAccountsService.search(anyString(), eq(AccountType.FULL_LITE), eq(mainApiDomain))).thenReturn(mockSearchResponse);
-        when(cdcAccountsService.search(anyString(), eq(AccountType.FULL_LITE), eq(secondaryApiDomain))).thenCallRealMethod();
+        when(gigyaApi.search(anyString(), eq(AccountType.FULL_LITE), eq(mainApiDomain))).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(anyString(), eq(AccountType.FULL_LITE), eq(secondaryApiDomain))).thenCallRealMethod();
 
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtilsMock.when(() -> CDCUtils.isSecondaryDCSupported(any())).thenReturn(false);
 
             // when
-            SearchResponse searchResponse = cdcResponseHandler.searchInBothDC(username);
+            SearchResponse searchResponse = gigyaService.searchInBothDC(username);
             searchResponse.getCdcSearchResponse().getResults();
 
             // then
-            verify(cdcAccountsService).search(anyString(), eq(AccountType.FULL_LITE), eq(mainApiDomain));
-            verify(cdcAccountsService, times(0)).search(anyString(), eq(AccountType.FULL_LITE), eq(secondaryApiDomain));
+            verify(gigyaApi).search(anyString(), eq(AccountType.FULL_LITE), eq(mainApiDomain));
+            verify(gigyaApi, times(0)).search(anyString(), eq(AccountType.FULL_LITE), eq(secondaryApiDomain));
         }
     }
 
@@ -1059,16 +1099,15 @@ public class CDCResponseHandlerTests {
         String response = "{\"statusCode\": 200,\"statusReason\": \"OK\"}";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
 
-        when(cdcAccountsService.register(cdcNewAccount)).thenReturn(mockCdcResponse);
+        when(gigyaApi.register(cdcNewAccount)).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getResponseText()).thenReturn(response);
 
         // when
-        CDCResponseData cdcResponse = cdcResponseHandler.register(cdcNewAccount);
+        CDCResponseData cdcResponse = gigyaService.register(cdcNewAccount);
 
         // then
-        verify(cdcAccountsService).register(any(CDCNewAccount.class));
+        verify(gigyaApi).register(any(CDCNewAccount.class));
         assertEquals(cdcResponse.getStatusCode(), 200);
-
     }
 
     @Test
@@ -1078,15 +1117,14 @@ public class CDCResponseHandlerTests {
         String response = "{\"statusCode\": 200,\"statusReason\": \"OK\"}";
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
 
-        when(cdcAccountsService.register(cdcNewAccount)).thenReturn(mockCdcResponse);
+        when(gigyaApi.register(cdcNewAccount)).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getResponseText()).thenReturn(response);
 
         // when
-        CDCResponseData cdcResponse = cdcResponseHandler.register(cdcNewAccount);
+        CDCResponseData cdcResponse = gigyaService.register(cdcNewAccount);
 
         // then
-        verify(cdcAccountsService).register(any(CDCNewAccountV2.class));
+        verify(gigyaApi).register(any(CDCNewAccountV2.class));
         assertEquals(cdcResponse.getStatusCode(), 200);
-
     }
 }

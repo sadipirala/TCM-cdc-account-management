@@ -1,6 +1,8 @@
 package com.thermofisher.cdcam.services;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.validation.constraints.NotBlank;
@@ -12,6 +14,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCValidationError;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
@@ -23,7 +26,6 @@ import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
-import com.thermofisher.cdcam.utils.cdc.CDCResponseHandler;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +38,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AccountRequestService {
+public class AccountsService {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final int FED_PASSWORD_LENGTH = 10;
 
@@ -47,10 +49,7 @@ public class AccountRequestService {
     private boolean isNewMarketingConsentEnabled;
 
     @Autowired
-    CDCAccountsService cdcAccountsService;
-
-    @Autowired
-    CDCResponseHandler cdcResponseHandler;
+    GigyaService gigyaService;
 
     @Autowired
     NotificationService notificationService;
@@ -64,7 +63,7 @@ public class AccountRequestService {
         Objects.requireNonNull(uid);
 
         try {
-            AccountInfo account = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo account = gigyaService.getAccountInfo(uid);
             
             try {
                 logger.info("Saving post registration data.");
@@ -101,7 +100,7 @@ public class AccountRequestService {
         
         Registration registration = Registration.builder().build();
         if (StringUtils.isNotBlank(account.getOpenIdProviderId())) {
-            OpenIdRelyingParty openIdRelyingParty = cdcResponseHandler.getRP(account.getOpenIdProviderId());
+            OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(account.getOpenIdProviderId());
             OpenIdProvider openIdProvider = OpenIdProvider.builder()
                 .providerName(openIdRelyingParty.getDescription())
                 .build();
@@ -119,7 +118,7 @@ public class AccountRequestService {
             .data(data)
             .build();
 
-        cdcResponseHandler.setAccountInfo(cdcAccount);
+        gigyaService.setAccountInfo(cdcAccount);
     }
 
     public CDCResponseData createAccount(AccountInfo accountInfo) throws JSONException, IOException, CustomGigyaErrorException {
@@ -128,10 +127,10 @@ public class AccountRequestService {
 
         if (isNewMarketingConsentEnabled) {
             CDCNewAccountV2 newAccountV2 = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
-            accountCreationResponse = cdcResponseHandler.register(newAccountV2);
+            accountCreationResponse = gigyaService.register(newAccountV2);
         } else {
             CDCNewAccount newAccount = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-            accountCreationResponse = cdcResponseHandler.register(newAccount);
+            accountCreationResponse = gigyaService.register(newAccount);
         }
 
         if (!HttpStatus.valueOf(accountCreationResponse.getStatusCode()).is2xxSuccessful()) {
@@ -141,7 +140,7 @@ public class AccountRequestService {
                 }
             }
 
-            String error = String.format("Error on account registration request. Username: %s. Error: %d %s", accountInfo.getUsername(), accountCreationResponse.getStatusCode(), accountCreationResponse.getStatusReason());
+            String error = String.format("Error on account registration request. Username: %s. Error: %d %s", accountInfo.getUsername(), accountCreationResponse.getErrorCode(), accountCreationResponse.getErrorDetails());
             throw new CustomGigyaErrorException(error);
         }
 
@@ -161,7 +160,7 @@ public class AccountRequestService {
         CDCResponseData response = new CDCResponseData();
 
         try {
-            response = cdcResponseHandler.sendVerificationEmail(uid);
+            response = gigyaService.sendVerificationEmail(uid);
             HttpStatus status = HttpStatus.valueOf(response.getStatusCode());
 
             if (status.is2xxSuccessful()) {
@@ -187,7 +186,7 @@ public class AccountRequestService {
 
         logger.info(String.format("Account linking merge process started for UID: %s", uid));
         try {
-            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             if (!accountInfo.isFederatedAccount()) {
                 logger.info(String.format("Merge update process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
                 return;
@@ -209,7 +208,7 @@ public class AccountRequestService {
     public void onAccountUpdated(@NotBlank String uid) {
         logger.info(String.format("Account linking update process started for UID: %s", uid));
         try {
-            AccountInfo accountInfo = cdcResponseHandler.getAccountInfo(uid);
+            AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             if (!accountInfo.isFederatedAccount()) {
                 logger.info(String.format("Update process stopped. Account %s with UID %s is not federated. Update is only supported for federated accounts.", accountInfo.getUsername(), uid));
                 return;
@@ -223,5 +222,12 @@ public class AccountRequestService {
         } catch (Exception e) {
             logger.error(String.format("onAccountUpdated - Something went wrong. %s.", e.getMessage()));
         }
+    }
+
+    public CDCResponse verify(AccountInfo account) throws CustomGigyaErrorException {
+        Map<String, String> params = new HashMap<>();
+        params.put("UID", account.getUid());
+        params.put("isVerified", "true");
+        return gigyaService.setAccountInfo(params);
     }
 }
