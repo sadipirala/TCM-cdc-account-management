@@ -34,10 +34,12 @@ public class DataProtectionService {
         JSONObject decryptedCiphertext = decrypt(ciphertext);
         JSONObject body = decryptedCiphertext.getJSONObject("body");
         logger.info(String.format("Decrypted ciphertext: %s", decryptedCiphertext.toString()));
+        String firstName = body.has("firstName") ? body.getString("firstName") : null;
+        String lastName = body.has("lastName") ? body.getString("lastName") : null;
         String source = body.has("source") ? body.getString("source") : null;
         return Ciphertext.builder()
-                .firstName(body.getString("firstName"))
-                .lastName(body.getString("lastName"))
+                .firstName(firstName)
+                .lastName(lastName)
                 .email(body.getString("email"))
                 .source(source)
                 .build();

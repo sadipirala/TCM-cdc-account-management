@@ -75,8 +75,14 @@ public class AccountInfoDTO {
     }
 
     public void setCiphertextData(Ciphertext ciphertext) {
-        this.setFirstName(ciphertext.getFirstName());
-        this.setLastName(ciphertext.getLastName());
+        if (ciphertext.getFirstName() != null) {
+            this.setFirstName(ciphertext.getFirstName());
+        }
+
+        if (ciphertext.getLastName() != null) {
+            this.setLastName(ciphertext.getLastName());
+        }
+
         this.setEmailAddress(ciphertext.getEmail());
     }
 }
