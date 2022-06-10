@@ -279,4 +279,5 @@ public class EmailAccountsControllerTests {
         // then
         assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
+    
 }

@@ -38,7 +38,7 @@ environments:
       - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
 
   qa:
-    branch: release/*
+    branch: development/*
     cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -53,10 +53,9 @@ environments:
       targetMemoryUtilizationPercentage: 70
     ingressDomains:
       - cdcam.tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
-    promotion:
-      to: prod
-      mergeTo: master
+
   prod:
+    branch: release/*
     cluster: tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
     env:
       - name: spring.profiles.active
