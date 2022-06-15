@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class AccountBuilder {
-
     private Logger logger = LogManager.getLogger(this.getClass());
 
     public AccountInfo getAccountInfo(GSObject obj) {
@@ -120,7 +119,6 @@ public class AccountBuilder {
             }
 
             String providerClientId = getProviderClientId(registration);
-
             Korea koreaConsents = getKoreaConsents(preferences);
 
             return AccountInfo.builder()

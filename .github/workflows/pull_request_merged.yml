@@ -18,11 +18,11 @@ jobs:
 
       - name: Installs maven
         run: |
-          curl -O https://dlcdn.apache.org/maven/maven-3/3.8.5/binaries/apache-maven-3.8.5-bin.tar.gz
-          tar xzvf apache-maven-3.8.5-bin.tar.gz
+          curl -O https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+          tar xzvf apache-maven-3.8.6-bin.tar.gz
 
       - name: Build with Maven
-        run: apache-maven-3.8.5/bin/mvn --batch-mode --update-snapshots test
+        run: apache-maven-3.8.6/bin/mvn --batch-mode --update-snapshots test
 
       - name: Upload coverage report
         if: ${{ always() }}

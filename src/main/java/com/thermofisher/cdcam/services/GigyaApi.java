@@ -85,8 +85,8 @@ public class GigyaApi {
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
-            request.setParam("include", "emails, profile, data, password, userInfo, regSource, identities");
-            request.setParam("extraProfileFields", "username, locale, work");
+            request.setParam("include", "emails,profile,data,password,userInfo,regSource,identities");
+            request.setParam("extraProfileFields", "username,locale,work");
             return request.send();
         } catch (Exception e) {
             logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
@@ -101,7 +101,8 @@ public class GigyaApi {
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
-            request.setParam("include", "emails, profile, data, password, userInfo, preferences, regSource, identities");
+            request.setParam("include", "emails,profile,data,password,userInfo,preferences,regSource,identities");
+            request.setParam("extraProfileFields", "username,locale,work");
             return request.send();
         } catch (Exception e) {
             logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
