@@ -591,6 +591,7 @@ public class AccountsControllerTests {
     @Test
     public void newAccount_GivenSuccessfulRegistration_ThenNotifyAccountRegistrationWithHashedPassword() throws CustomGigyaErrorException, IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException {
         // given
+        ReflectionTestUtils.setField(accountsController, "isRegistrationNotificationEnabled", true);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);

@@ -116,7 +116,6 @@ public class AccountInfoHandler {
 
     private static ObjectNode removePropertiesForNotification(ObjectNode objectNode) {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("regAttempts");
@@ -132,14 +131,12 @@ public class AccountInfoHandler {
         propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
         propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
         propertiesToRemove.add("overseasTransferPersonalInfoOptional");
-        propertiesToRemove.add("hiraganaName");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
         propertiesToRemove.add("openIdProviderId");
-        propertiesToRemove.add("phoneNumber");
 
         return objectNode.remove(propertiesToRemove);
     }

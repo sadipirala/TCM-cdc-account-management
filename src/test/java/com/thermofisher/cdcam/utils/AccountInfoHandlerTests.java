@@ -40,7 +40,6 @@ public class AccountInfoHandlerTests {
     
     private String prepareJsonForNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
-        propertiesToRemove.add("localeName");
         propertiesToRemove.add("loginProvider");
         propertiesToRemove.add("socialProviders");
         propertiesToRemove.add("regAttempts");
@@ -56,14 +55,12 @@ public class AccountInfoHandlerTests {
         propertiesToRemove.add("collectionAndUsePersonalInfoMarketing");
         propertiesToRemove.add("overseasTransferPersonalInfoMandatory");
         propertiesToRemove.add("overseasTransferPersonalInfoOptional");
-        propertiesToRemove.add("hiraganaName");
         propertiesToRemove.add("acceptsAspireEnrollmentConsent");
         propertiesToRemove.add("isHealthcareProfessional");
         propertiesToRemove.add("isGovernmentEmployee");
         propertiesToRemove.add("isProhibitedFromAcceptingGifts");
         propertiesToRemove.add("acceptsAspireTermsAndConditions");
         propertiesToRemove.add("openIdProviderId");
-        propertiesToRemove.add("phoneNumber");
         json.put("uuid", json.get("uid").asText());
         json.put("cipdc", MOCK_CIPDC);
         json.remove(propertiesToRemove);
@@ -136,7 +133,6 @@ public class AccountInfoHandlerTests {
         
         // then
         assertEquals(parsedAccount.indexOf("\"password\""), -1);
-        assertEquals(parsedAccount.indexOf("\"phoneNumber\""), -1);
         assertEquals(expectedAccountToNotify, parsedAccount);
     }
 

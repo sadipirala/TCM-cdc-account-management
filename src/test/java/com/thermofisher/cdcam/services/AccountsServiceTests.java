@@ -230,6 +230,7 @@ public class AccountsServiceTests {
     public void onAccountRegistered_GivenNewAccountRegistered_ThenSendAccountRegistrationNotification() throws IOException, CustomGigyaErrorException {
         // given
         ReflectionTestUtils.setField(accountsService, "cipdc", "us");
+        ReflectionTestUtils.setField(accountsService, "isRegistrationNotificationEnabled", true);
         String uid = UUID.randomUUID().toString();
         when(gigyaService.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
         doNothing().when(notificationService).sendAccountRegisteredNotification(any(), anyString());

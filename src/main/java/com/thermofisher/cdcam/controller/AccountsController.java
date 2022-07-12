@@ -91,6 +91,9 @@ public class AccountsController {
     @Value("${identity.oidc.rp.id}")
     private String defaultClientId;
 
+    @Value("${is-registration-notification-enabled}")
+    private boolean isRegistrationNotificationEnabled;
+
     @Autowired
     AccountsService accountsService;
 
@@ -297,9 +300,12 @@ public class AccountsController {
             // TODO: Move into a service. Or simply create a model for this notification?
             String hashedPassword = HashingService.toMD5(account.getPassword());
             account.setPassword(hashedPassword);
-            logger.info(String.format("Sending account registered notification for UID: %s", newAccountUid));
-            notificationService.sendAccountRegisteredNotification(account, cipdc);
-            logger.info(String.format("Account registered notification sent for UID: %s", newAccountUid));
+            
+            if (isRegistrationNotificationEnabled) {
+                logger.info(String.format("Sending account registered notification for UID: %s", newAccountUid));
+                notificationService.sendAccountRegisteredNotification(account, cipdc);
+                logger.info(String.format("Account registered notification sent for UID: %s", newAccountUid));
+            }
 
             // TODO: Check notifications possible error scenarios
             if (isAspireRegistrationValid(account)) {

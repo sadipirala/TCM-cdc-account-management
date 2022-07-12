@@ -48,6 +48,9 @@ public class AccountsService {
     @Value("${is-new-marketing-enabled}")
     private boolean isNewMarketingConsentEnabled;
 
+    @Value("${is-registration-notification-enabled}")
+    private boolean isRegistrationNotificationEnabled;
+
     @Autowired
     GigyaService gigyaService;
 
@@ -85,9 +88,11 @@ public class AccountsService {
                     account.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
                 }
 
-                logger.info(String.format("Sending account registration notification for federated account. UID: %s", account.getUid()));
-                notificationService.sendAccountRegisteredNotification(account, cipdc);
-                logger.info(String.format("Account registration notification sent successfully for federated account. UID: %s", account.getUid()));
+                if (isRegistrationNotificationEnabled) {
+                    logger.info(String.format("Sending account registration notification for federated account. UID: %s", account.getUid()));
+                    notificationService.sendAccountRegisteredNotification(account, cipdc);
+                    logger.info(String.format("Account registration notification sent successfully for federated account. UID: %s", account.getUid()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

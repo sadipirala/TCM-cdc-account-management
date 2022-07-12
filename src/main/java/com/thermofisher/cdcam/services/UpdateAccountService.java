@@ -59,7 +59,9 @@ public class UpdateAccountService {
         Profile profile = Profile.build(profileInfoDTO);
         JSONObject jsonAccount = new JSONObject();
         if (!Utils.isNullOrEmpty(profileInfoDTO.getEmail())) {
-            jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
+            if(!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
+                jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
+            }
             if (isLegacyValidationEnabled && !profileInfoDTO.isALegacyProfile()) {
                 jsonAccount.put("username", profileInfoDTO.getEmail());
             }
