@@ -15,8 +15,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Utils {
+    private final static String VALID_EMAIL_REGEX = "^(?=(.{1,64}@.{1,255}))([!#$%&'*+\\-\\/=?\\^_`{|}~a-zA-Z0-9}]{1,64}(\\.[!#$%&'*+\\-\\/=?\\^_`{|}~a-zA-Z0-9]{0,}){0,})@((\\[(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}\\])|([a-zA-Z0-9-]{1,63}(\\.[a-zA-Z0-9-]{2,63}){1,}))$";
     private final static String CHINA_LOCALE = "zh-cn";
     private final static String TAIWAN_LOCALE = "zh-tw";
+
+    public static boolean isValidEmail(String email) {
+        return email.matches(VALID_EMAIL_REGEX);
+    }
 
     public static String getAlphaNumericString(int length) {
         final String ALPHANUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
@@ -63,12 +68,12 @@ public class Utils {
     }
 
     private static boolean isChinaLocale(String locale) {
-        return locale.toLowerCase().equals("zh");
+        return locale.equalsIgnoreCase("zh");
     }
 
     private static boolean isTaiwanLocale(String locale) {
         final String TFCOM_LANG_FOR_TAIWAN = "zt";
-        return locale.toLowerCase().equals(TFCOM_LANG_FOR_TAIWAN);
+        return locale.equalsIgnoreCase(TFCOM_LANG_FOR_TAIWAN);
     }
 
     public static String stackTraceToString(Exception e) {

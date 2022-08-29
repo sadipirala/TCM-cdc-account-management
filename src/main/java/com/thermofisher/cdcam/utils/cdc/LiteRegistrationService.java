@@ -29,7 +29,11 @@ import org.springframework.stereotype.Service;
 public class LiteRegistrationService {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final int GENERIC_ERROR_CODE = 500;
+    private final int BAD_REQUEST_ERROR_CODE = 400;
     private final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
+
+    @Value("${is-email-validation-enabled}")
+    private boolean isEmailValidationEnabled;
 
     @Value("${cdc.main.datacenter.name}")
     public String mainDataCenterName;
@@ -38,7 +42,7 @@ public class LiteRegistrationService {
     GigyaService gigyaService;
 
     public List<EECUserV2> registerEmailAccounts(EmailList emailList) throws IOException {
-        logger.info("Lite registration initiated. %d users requested.", emailList.getEmails().size());
+        logger.info(String.format("Lite registration initiated. %d users requested.", emailList.getEmails().size()));
 
         List<EECUserV2> emailAccounts = new ArrayList<>();
         List<String> emails = emailList.getEmails();
@@ -50,11 +54,19 @@ public class LiteRegistrationService {
 
         for (String email : emails) {
             try {
+                if (isEmailValidationEnabled && !Utils.isValidEmail(email)) {
+                    String error = "Email is invalid.";
+                    throw new IllegalArgumentException(error);
+                }
                 EECUserV2 user = registerEmailAccount(email);
                 emailAccounts.add(user);
             } catch (CustomGigyaErrorException e) {
                 logger.error(String.format("Error with email: %s. CDC Error code: %d. CDC Error message: %s", email, e.getErrorCode(), e.getMessage()));
                 EECUserV2 invalidEECUser = EECUserV2.buildInvalidUser(email, e.getErrorCode(), e.getMessage());
+                emailAccounts.add(invalidEECUser);
+            } catch (IllegalArgumentException e) {
+                logger.error(String.format("Error with email: %s. Cause: %s", email, e));
+                EECUserV2 invalidEECUser = EECUserV2.buildInvalidUser(email, BAD_REQUEST_ERROR_CODE, e.getMessage());
                 emailAccounts.add(invalidEECUser);
             } catch (Throwable e) {
                 logger.error(String.format("Error with email: %s. Cause: %s", email, e));

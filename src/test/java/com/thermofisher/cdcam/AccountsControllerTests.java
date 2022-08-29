@@ -29,7 +29,6 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
@@ -541,6 +540,23 @@ public class AccountsControllerTests {
     }
 
     @Test
+    public void newAccount_GivenAnAccountWithInvalidEmail_ThenShouldReturnBadResponseError() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, CustomGigyaErrorException {
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        String invalidEmail = "invalid@.com";
+        accountDTO.setEmailAddress(invalidEmail);
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
+
+        // when
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
     public void newAccount_givenAnAccountIsCreated_AndItComesFromInvite_ItShouldBeVerified() throws IOException, JSONException, ReCaptchaLowScoreException,
             ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -704,6 +720,41 @@ public class AccountsControllerTests {
 
         // then
         verify(notificationService, times(1)).sendAspireRegistrationNotification(any());
+    }
+
+    @Test
+    public void newAccount_givenRegistrationIsValid_ThenSendNotifyAccountInfoNotification() throws IOException, CustomGigyaErrorException, JSONException, ReCaptchaUnsuccessfulResponseException, ReCaptchaLowScoreException {
+        // given
+        ReflectionTestUtils.setField(accountsController, "cipdc", "us");
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        CDCResponseData cdcResponseData = getValidCDCResponse(AccountUtils.uid);
+        when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        verify(notificationService, times(1)).sendNotifyAccountInfoNotification(any(), anyString());
+    }
+
+    @Test
+    public void newAccount_GivenRegistrationNotSuccessful_ThenSendNotifyAccountInfoNotificationShouldNotBeSent() throws IOException,
+            JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
+        // given
+        reCaptchaResponse.put("success", true);
+        reCaptchaResponse.put("score", 0.5);
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(accountsService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+
+        // when
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+
+        // then
+        verify(notificationService, times(0)).sendNotifyAccountInfoNotification(any(), anyString());
     }
 
     @Test

@@ -20,7 +20,7 @@ public class URLService {
 
         StringBuilder stringQueries = new StringBuilder();
         for (String key : map.keySet()){
-            if (Utils.isNullOrEmpty(String.valueOf(map.get(key)))){
+            if (Utils.isNullOrEmpty(String.valueOf(map.get(key))) || String.valueOf(map.get(key)) == "null") {
                 continue;
             }
             stringQueries.append(key);

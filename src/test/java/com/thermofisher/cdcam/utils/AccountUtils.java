@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.services.LocaleNameService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
@@ -234,7 +235,9 @@ public class AccountUtils {
     }
 
     public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {
-        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
+        LocaleNameService localeNameService = new LocaleNameService();
+        String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
+
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
             .build();
@@ -259,7 +262,9 @@ public class AccountUtils {
     }
 
     public static CDCNewAccountV2 getNewCDCAccountV2(AccountInfo accountInfo) throws JSONException {
-        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
+        LocaleNameService localeNameService = new LocaleNameService();
+        String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
+
         Thermofisher thermofisher = Thermofisher.builder()
                 .legacyUsername(accountInfo.getUsername())
                 .build();
@@ -285,7 +290,9 @@ public class AccountUtils {
     }
 
     public static CDCAccount getCDCAccount(AccountInfo accountInfo) throws JSONException {
-        String locale = accountInfo.getLocaleName() != null ? Utils.parseLocale(accountInfo.getLocaleName()) : null;
+        LocaleNameService localeNameService = new LocaleNameService();
+        String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
+
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
             .build();

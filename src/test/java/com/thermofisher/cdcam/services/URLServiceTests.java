@@ -47,8 +47,7 @@ public class URLServiceTests {
         String paramString = urlService.queryParamMapper(cipAuthData);
 
         // then
-        String EXPECTED_STRING = "https://www.thermofisher.com?redirect_uri=redirect&state=null&scope=null&response_type=null";
-        assertEquals(EXPECTED_STRING, paramString);
+        assertEquals("https://www.thermofisher.com?redirect_uri=redirect", paramString);
     }
 
     public CIPAuthDataDTO generateCipAuthDataDTO() {

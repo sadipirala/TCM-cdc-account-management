@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
@@ -194,36 +192,6 @@ public class AccountsServiceTests {
 
         // when
         accountsService.onAccountRegistered(uid);
-    }
-
-    @Test
-    public void onAccountRegistered_GivenNewAccountRegistered_ThenSendNotifyAccountInfoNotification() throws IOException, CustomGigyaErrorException {
-        // given
-        ReflectionTestUtils.setField(accountsService, "cipdc", "us");
-        String uid = UUID.randomUUID().toString();
-        when(gigyaService.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
-        doNothing().when(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
-
-        // when
-        accountsService.onAccountRegistered(uid);
-
-        // then
-        verify(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
-    }
-
-    @Test
-    public void onAccountRegistered_GivenJsonProcessingExceptionIsThrown_ThenDoNotSendNotifyAccountInfoNotification() throws IOException, CustomGigyaErrorException {
-        // given
-        ReflectionTestUtils.setField(accountsService, "cipdc", "us");
-        String uid = UUID.randomUUID().toString();
-        when(gigyaService.getAccountInfo(anyString())).thenReturn(AccountUtils.getFederatedAccount());
-        doThrow(JsonProcessingException.class).when(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
-
-        // when
-        accountsService.onAccountRegistered(uid);
-
-        // then
-        verify(notificationService).sendNotifyAccountInfoNotification(any(), anyString());
     }
 
     @Test

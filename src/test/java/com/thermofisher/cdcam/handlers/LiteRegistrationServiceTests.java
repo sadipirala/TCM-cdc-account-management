@@ -95,6 +95,38 @@ public class LiteRegistrationServiceTests {
     }
 
     @Test
+    public void createLiteAccountsV2_GivenEmailValidationIsEnabled_AndTheEmailListContainsAnInvalidEmail_ThenReturnEECUserWith400Error() throws IOException, CustomGigyaErrorException {
+        // given
+        final boolean isActive = false;
+        final boolean isRegistered = false;
+        final String errorMessage = "Email is invalid.";
+        final int errorCode = 400;
+
+        ReflectionTestUtils.setField(liteRegistrationService, "isEmailValidationEnabled", true);
+        CDCAccount account = buildAccount(uid, isActive, isRegistered, null);
+        List<CDCAccount> accounts = new ArrayList<>();
+        accounts.add(account);
+        CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
+        cdcSearchResponse.setResults(accounts);
+        SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
+        when(gigyaService.search(anyString(), any(), anyString())).thenReturn(cdcSearchResponse);
+        when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
+
+        ArrayList<String> emails = new ArrayList<>();
+        emails.add("inavalid@.com");
+        emails.add("valid@test.com");
+        EmailList emailList = EmailList.builder().emails(emails).build();
+
+        // when
+        List<EECUserV2> output = liteRegistrationService.registerEmailAccounts(emailList);
+
+        EECUser user = output.get(0);
+        assertNull(user.getUid());
+        assertEquals(errorMessage, user.getResponseMessage());
+        assertEquals(errorCode, user.getResponseCode());
+    }
+
+    @Test
     public void createLiteAccountsV2_givenEmailListEmpty_returnEmptyEECUserList() throws IOException {
         // given
         EmailList emailList = EmailList.builder().emails(new ArrayList<>()).build();
@@ -119,9 +151,9 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
-        emails.add("test2");
-        emails.add("test3");
+        emails.add("test1@mail.com");
+        emails.add("test2@mail.com");
+        emails.add("test3@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -149,7 +181,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -181,7 +213,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -206,7 +238,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -224,7 +256,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -285,9 +317,9 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.search(anyString(), any(), anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
-        emails.add("test2");
-        emails.add("test3");
+        emails.add("test1@mail.com");
+        emails.add("test2@mail.com");
+        emails.add("test3@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -317,7 +349,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -347,7 +379,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.registerLiteAccount(anyString())).thenReturn(cdcResponseData);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -371,7 +403,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.searchInBothDC(anyString())).thenThrow(new CustomGigyaErrorException(errorMessage, errorCode));
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -389,7 +421,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
         
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when
@@ -421,7 +453,7 @@ public class LiteRegistrationServiceTests {
         when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         List<String> emails = new ArrayList<String>();
-        emails.add("test1");
+        emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
 
         // when

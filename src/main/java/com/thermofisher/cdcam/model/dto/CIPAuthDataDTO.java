@@ -34,6 +34,15 @@ public class CIPAuthDataDTO {
     @JsonProperty("response_type")
     private String responseType;
 
+    @SerializedName("regRedirectUri")
+    private String regRedirectUri;
+  
+    @SerializedName("signInRedirectUri")
+    private String signInRedirectUri;
+  
+    @SerializedName("returnUrl")
+    private String returnUrl;
+
     @JsonIgnore
     public boolean areClientIdAndRedirectUriInvalid() {
         return (Utils.isNullOrEmpty(this.clientId) || Utils.isNullOrEmpty(this.redirectUri));
@@ -41,10 +50,12 @@ public class CIPAuthDataDTO {
 
     @JsonIgnore
     public boolean isCipAuthDataValid() {
-        return this.clientId != null &&
-                this.redirectUri != null &&
-                this.scope != null &&
-                this.responseType != null;
+        return (this.clientId != null && this.redirectUri != null && this.scope != null && this.responseType != null) 
+        || (this.clientId != null && this.regRedirectUri != null && this.signInRedirectUri != null);
     }
 
+    @JsonIgnore
+    public boolean hasOidcCustomProperties() {
+        return this.clientId != null && this.regRedirectUri != null && this.signInRedirectUri != null;
+    }
 }

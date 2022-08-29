@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.*;
-import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.services.LocaleNameService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
@@ -13,7 +13,8 @@ import org.json.JSONException;
 public class CDCAccountsHandler {
 
     public static CDCNewAccount buildCDCNewAccount(AccountInfo accountInfo) throws JSONException {
-        String locale = (accountInfo.getLocaleName() == null) ? null : Utils.parseLocale(accountInfo.getLocaleName());
+        LocaleNameService localeNameService = new LocaleNameService();
+        String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
 
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())
@@ -40,7 +41,8 @@ public class CDCAccountsHandler {
     }
 
     public static CDCNewAccountV2 buildCDCNewAccountV2(AccountInfo accountInfo) throws JSONException {
-        String locale = (accountInfo.getLocaleName() == null) ? null : Utils.parseLocale(accountInfo.getLocaleName());
+        LocaleNameService localeNameService = new LocaleNameService();
+        String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
 
         Thermofisher thermofisher = Thermofisher.builder()
             .legacyUsername(accountInfo.getUsername())

@@ -53,6 +53,7 @@ public class RegistrationControllerTests {
     private String SCOPE = "scope";
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private String COOKIE_CIP_AUTHDATA_INVALID = "eyJyZWRpcmVjdFVyaSI6InJlZGlyZWN0VXJpIiwic3RhdGUiOiJzdGF0ZSIsInNjb3BlIjoic2NvcGUiLCJyZXNwb25zZVR5cGUiOiJyZXNwb25zZVR5cGUifQ==";
+    private String CUSTOM_RP_CIP_AUTHDATA_COOKIE = "eyJjbGllbnRfaWQiOiI3bnp2N0ptSlQtM1IxWjBGWkVxX1Y1RTgiLCJyZWdSZWRpcmVjdFVyaSI6Imh0dHBzOi8vd3d3LnFhNC50aGVybW9maXNoZXIuY29tL2F1dGgvbG9naW4vY3JlYXRlIiwic2lnbkluUmVkaXJlY3RVcmkiOiJodHRwczovL3d3dy5xYTQudGhlcm1vZmlzaGVyLmNvbS9hdXRoL2xvZ2luIiwicmV0dXJuVXJsIjoiaHR0cHM6Ly93d3cucWE0LnRoZXJtb2Zpc2hlci5jb20ifQ==";
     private String CREATE_ACCOUNT_ENDPOINT_PATH = "/api-gateway/accounts";
     private String GET_LOGIN_ENDPOINT_PATH = "/api-gateway/identity/registration/redirect/login";
     private boolean IS_SIGN_IN_URL = true;
@@ -356,5 +357,25 @@ public class RegistrationControllerTests {
 
         // then
         assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    // given the cip_authdata cookie has the custom rp properties, it should return the signInRedirectUri property
+    public void returnSignInRedirectUri() throws UnsupportedEncodingException {
+        // given
+        String signInRedirectUri = "https://www.thermofisher.com";
+        cipAuthData = CIPAuthDataDTO.builder()
+            .clientId("clientId")
+            .regRedirectUri("regRedirectUri")
+            .signInRedirectUri(signInRedirectUri)
+            .returnUrl("returnUrl")
+            .build();
+        when(cookieService.decodeCIPAuthDataCookie(CUSTOM_RP_CIP_AUTHDATA_COOKIE)).thenReturn(cipAuthData);
+
+        // when
+        ResponseEntity<?> response = registrationController.redirectLoginAuth(CUSTOM_RP_CIP_AUTHDATA_COOKIE, REDIRECT_URL, IS_SIGN_IN_URL);
+
+        // then
+        assertEquals(signInRedirectUri, response.getBody());
     }
 }

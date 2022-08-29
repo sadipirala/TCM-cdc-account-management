@@ -74,14 +74,6 @@ public class AccountsService {
             } catch (Exception e) {
                 logger.error(String.format("Error on saving post registration data. %s", e.getMessage()));
             }
-            
-            try {
-                logger.info(String.format("Sending account info notification for UID: %s", uid));
-                notificationService.sendNotifyAccountInfoNotification(account, cipdc);
-                logger.info(String.format("Account info notification sent for UID: %s", uid));
-            } catch (Exception e) {
-                logger.error(String.format("Account info notification error: %s", e.getMessage()));
-            }
 
             if (hasFederationProvider(account)) {
                 if (account.getPassword().isEmpty()) {

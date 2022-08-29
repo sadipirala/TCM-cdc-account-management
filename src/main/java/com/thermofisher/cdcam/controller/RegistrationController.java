@@ -174,7 +174,11 @@ public class RegistrationController {
     @ApiImplicitParams({
         @ApiImplicitParam(name = "redirectUrl", value = "URL to redirect, only used to redirect if cip_authdata cookie doesn't exist", required = false, dataType = "String", paramType = "query")
     })
-    public ResponseEntity<?> redirectLoginAuth(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestParam(required = false) String redirectUrl, @RequestParam(required = false) boolean isSignInUrl) throws UnsupportedEncodingException {
+    public ResponseEntity<?> redirectLoginAuth(
+        @CookieValue(name = "cip_authdata", required = false) String cipAuthData,
+        @RequestParam(required = false) String redirectUrl,
+        @RequestParam(required = false) boolean isSignInUrl
+    ) throws UnsupportedEncodingException {
         logger.info("Validation for redirection started");
         try {
             if (ObjectUtils.isEmpty(cipAuthData) && ObjectUtils.isNotEmpty(redirectUrl) && !isSignInUrl) {
@@ -202,6 +206,16 @@ public class RegistrationController {
             } else if (ObjectUtils.isNotEmpty(cipAuthData)) {
                 logger.info("Decoding cip_authdata.");
                 CIPAuthDataDTO cipAuthDataDTO = cookieService.decodeCIPAuthDataCookie(cipAuthData);
+
+                // #region Custom RP implementation. Temporarily here as this endpoint was moved to the Idenity API.
+
+                if (cipAuthDataDTO.hasOidcCustomProperties()) {
+                    return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(cipAuthDataDTO.getSignInRedirectUri());
+                }
+
+                // #endregion 
 
                 logger.info("Validating cip_authdata.");
                 if (cipAuthDataDTO.isCipAuthDataValid()) {

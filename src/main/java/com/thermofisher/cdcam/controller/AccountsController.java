@@ -254,6 +254,11 @@ public class AccountsController {
             logger.error(String.format("One or more errors occurred while creating the account. %s", violations.toArray()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+
+        if (!Utils.isValidEmail(accountInfoDTO.getEmailAddress())) {
+            logger.error(String.format("Email is invalid. %s", accountInfoDTO.getEmailAddress()));
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         
         try {
             String reCaptchaSecretKey = accountInfoDTO.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
@@ -306,6 +311,10 @@ public class AccountsController {
                 notificationService.sendAccountRegisteredNotification(account, cipdc);
                 logger.info(String.format("Account registered notification sent for UID: %s", newAccountUid));
             }
+
+            logger.info(String.format("Sending account info notification for UID: %s", newAccountUid));
+            notificationService.sendNotifyAccountInfoNotification(account, cipdc);
+            logger.info(String.format("Account info notification sent for UID: %s", newAccountUid));
 
             // TODO: Check notifications possible error scenarios
             if (isAspireRegistrationValid(account)) {
@@ -416,7 +425,7 @@ public class AccountsController {
     public ResponseEntity<String> sendRecoverUsernameEmail(@RequestBody @Valid UsernameRecoveryDTO usernameRecoveryDTO) {
         try {
             String email = usernameRecoveryDTO.getUserInfo().getEmail();
-            logger.info("Username recovery email requested by %s", email);
+            logger.info(String.format("Username recovery email requested by %s", email));
             AccountInfo account = gigyaService.getAccountInfoByEmail(email);
 
             if (account == null) {
