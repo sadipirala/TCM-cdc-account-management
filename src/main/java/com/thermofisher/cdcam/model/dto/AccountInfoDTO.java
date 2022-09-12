@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.model.dto;
 import java.util.Objects;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Null;
 import javax.validation.constraints.Size;
 
 import com.thermofisher.cdcam.model.Ciphertext;
@@ -65,6 +66,12 @@ public class AccountInfoDTO {
     private boolean collectionAndUsePersonalInfoMarketing;
     private boolean overseasTransferPersonalInfoMandatory;
     private boolean overseasTransferPersonalInfoOptional;
+
+    // honeypot
+    @Null
+    private String hname;
+    @Null
+    private String hemailAddress;
 
     public String getJobRoles() {
         return Objects.isNull(this.jobRoles) ? "" : String.join(",", this.jobRoles);

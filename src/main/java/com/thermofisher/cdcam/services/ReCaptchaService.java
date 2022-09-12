@@ -1,17 +1,30 @@
 package com.thermofisher.cdcam.services;
 
-import com.thermofisher.cdcam.model.HttpServiceResponse;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
+import com.thermofisher.cdcam.model.HttpServiceResponse;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+
 @Service
 public class ReCaptchaService {
+    Logger logger = LoggerFactory.getLogger(ReCaptchaService.class);
+    public static final String CAPTCHA_TOKEN_HEADER = "x-captcha-token";
+    private String reCaptchaV3Secret;
+    private String reCaptchaV2Secret;
+
+    @Value("${env.name}")
+    private String env;
 
     @Value("${recaptcha.siteverify.url}")
     private String siteVerifyUrl;
@@ -20,12 +33,25 @@ public class ReCaptchaService {
     private double RECAPTCHA_MIN_THRESHOLD;
 
     @Autowired
+    JWTService jwtService;
+
+    @Autowired
+    SecretsService secretsService;
+
+    @PostConstruct
+    public void setup() throws JSONException {
+        if (env.equals("local") || env.equals("test")) return;
+        reCaptchaV3Secret = secretsService.get(CdcamSecrets.RECAPTCHAV3.getKey());
+        reCaptchaV2Secret = secretsService.get(CdcamSecrets.RECAPTCHAV2.getKey());
+    }
+
+    @Autowired
     HttpService httpService;
 
-    public JSONObject verifyToken(String reCaptchaToken, String reCaptchaSecret) throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+    public JSONObject verifyToken(String reCaptchaToken, String captchaValidationJWT) throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
+        String reCaptchaSecret = this.getReCaptchaSecret(captchaValidationJWT);
         String url = String.format("%s?secret=%s&response=%s", siteVerifyUrl, reCaptchaSecret, reCaptchaToken);
         HttpServiceResponse response = httpService.post(url);
-
         JSONObject reCaptchaResponse = response.getResponseBody();
 
         if (reCaptchaResponse.has("score") && !isReCaptchaV3ResponseValid(reCaptchaResponse)) {
@@ -35,6 +61,18 @@ public class ReCaptchaService {
         }
 
         return reCaptchaResponse;
+    }
+
+    private String getReCaptchaSecret(String captchaValidationJWT) {
+        if (StringUtils.isBlank(captchaValidationJWT)) {
+            logger.info("No captcha token, using reCaptcha v3.");
+            return reCaptchaV3Secret;
+        } else {
+            logger.info("Captcha validation token received, verifying JWT: {}", captchaValidationJWT);
+            jwtService.verify(captchaValidationJWT);
+            logger.info("Valid captcha JWT, using reCaptchaV2.");
+            return reCaptchaV2Secret;
+        }
     }
 
     private boolean isReCaptchaResponseValid(JSONObject reCaptchaResponse) throws JSONException {

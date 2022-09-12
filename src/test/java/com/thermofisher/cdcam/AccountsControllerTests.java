@@ -2,9 +2,11 @@ package com.thermofisher.cdcam;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -16,46 +18,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.gigya.socialize.GSKeyNotFoundException;
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.controller.AccountsController;
-import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
-import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
-import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.Ciphertext;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.cdc.CDCResponseData;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
-import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
-import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountsService;
-import com.thermofisher.cdcam.services.CookieService;
-import com.thermofisher.cdcam.services.DataProtectionService;
-import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.JWTValidator;
-import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.SecretsService;
-import com.thermofisher.cdcam.services.UpdateAccountService;
-import com.thermofisher.cdcam.services.hashing.HashingService;
-import com.thermofisher.cdcam.utils.AccountUtils;
-import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
-import com.thermofisher.cdcam.utils.IdentityProviderUtils;
-import com.thermofisher.cdcam.utils.PasswordUtils;
-import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
@@ -80,6 +42,46 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.gigya.socialize.GSKeyNotFoundException;
+import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.controller.AccountsController;
+import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
+import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Ciphertext;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
+import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
+import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
+import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
+import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+import com.thermofisher.cdcam.services.AccountsService;
+import com.thermofisher.cdcam.services.CookieService;
+import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.JWTService;
+import com.thermofisher.cdcam.services.JWTValidator;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.SecretsService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.hashing.HashingService;
+import com.thermofisher.cdcam.utils.AccountUtils;
+import com.thermofisher.cdcam.utils.EmailRequestBuilderUtils;
+import com.thermofisher.cdcam.utils.IdentityProviderUtils;
+import com.thermofisher.cdcam.utils.PasswordUtils;
+import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 @ActiveProfiles("test")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -121,13 +123,16 @@ public class AccountsControllerTests {
     AccountsService accountsService;
 
     @Mock
-    GigyaService gigyaService;
-
-    @Mock
     CookieService cookieService;
 
     @Mock
     DataProtectionService dataProtectionService;
+
+    @Mock
+    GigyaService gigyaService;
+
+    @Mock
+    JWTService jwtService;
 
     @Mock
     NotificationService notificationService;
@@ -197,7 +202,6 @@ public class AccountsControllerTests {
 
         // then
         Assert.assertEquals(resp.getStatusCode(), HttpStatus.OK);
-
     }
 
     @Test
@@ -329,40 +333,32 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
+    public void newAccount_givenHoneypotFieldsAreFilled_ThenReturnBadRequest()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
-        String expectedReCaptchaV2Secret = RandomStringUtils.random(10);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        accountDTO.setIsReCaptchaV2(true);
-        when(secretsService.get(CdcamSecrets.RECAPTCHAV2.getKey())).thenReturn(expectedReCaptchaV2Secret);
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        accountDTO.setHemailAddress(RandomStringUtils.random(10));
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<?> result = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
-        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
-        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(expectedReCaptchaV2Secret, reCaptchaSecret);
+        assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    public void newAccount_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
+    public void newAccount_ShouldVerifyTheReCaptchaToken()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, IOException {
         // given
-        String expectedReCaptchaV3Secret = RandomStringUtils.random(10);
+        String captchaValidationToken = RandomStringUtils.random(10);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
-        when(secretsService.get(CdcamSecrets.RECAPTCHAV3.getKey())).thenReturn(expectedReCaptchaV3Secret);
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(reCaptchaService.verifyToken(any(), eq(captchaValidationToken))).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, captchaValidationToken);
 
         // then
-        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
-        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(expectedReCaptchaV3Secret, reCaptchaSecret);
+        verify(reCaptchaService).verifyToken(anyString(), eq(captchaValidationToken));
     }
 
     @Test
@@ -371,12 +367,15 @@ public class AccountsControllerTests {
         // given
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaLowScoreException(""));
+        when(jwtService.create()).thenReturn(RandomStringUtils.random(10));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.ACCEPTED.value());
+        assertNotNull(response.getHeaders().get(ReCaptchaService.CAPTCHA_TOKEN_HEADER));
+        verify(jwtService).create();
     }
 
     @Test
@@ -387,7 +386,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaUnsuccessfulResponseException(""));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
@@ -401,7 +400,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new JSONException(""));
 
         // when
-        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<?> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(response.getStatusCode().value(), HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -416,7 +415,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService).createAccount(any());
@@ -434,7 +433,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(dataProtectionService).decrypCiphertext(CIPHERTEXT);
@@ -453,7 +452,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(accountInfo.getFirstName(),accountDTO.getFirstName());
@@ -468,7 +467,7 @@ public class AccountsControllerTests {
         accountDTO.setPassword("");
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -483,7 +482,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(new CDCResponseData());
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService).createAccount(accountInfoCaptor.capture());
@@ -501,7 +500,7 @@ public class AccountsControllerTests {
         ReflectionTestUtils.setField(accountsController, "defaultClientId", defaultClientId);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_INVALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_INVALID, null);
 
         // then
         verify(accountsService).createAccount(accountInfoCaptor.capture());
@@ -518,7 +517,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenThrow(new CustomGigyaErrorException(""));
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
@@ -533,7 +532,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
@@ -550,7 +549,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -567,7 +566,7 @@ public class AccountsControllerTests {
         when(accountsService.verify(any())).thenReturn(AccountUtils.getCdcResponse());
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService).verify(any());
@@ -583,7 +582,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, null);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, null, null);
 
         // then
         Assert.assertEquals(response.getBody().getUID(), AccountUtils.uid);
@@ -598,7 +597,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(cdcResponseData);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(cdcResponseData.getErrorCode(), response.getBody().getErrorCode());
@@ -615,7 +614,7 @@ public class AccountsControllerTests {
         doNothing().when(notificationService).sendAccountRegisteredNotification(any(), any());
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService).sendAccountRegisteredNotification(accountInfoCaptor.capture(), any());
@@ -636,7 +635,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService, times(1)).sendVerificationEmail(any());
@@ -653,7 +652,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService, times(0)).sendVerificationEmail(any());
@@ -674,7 +673,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(accountsService, times(0)).sendVerificationEmail(any());
@@ -695,7 +694,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -716,7 +715,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(1)).sendAspireRegistrationNotification(any());
@@ -734,7 +733,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(1)).sendNotifyAccountInfoNotification(any(), anyString());
@@ -751,7 +750,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendNotifyAccountInfoNotification(any(), anyString());
@@ -772,7 +771,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -793,7 +792,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -814,7 +813,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendAspireRegistrationNotification(any());
@@ -833,7 +832,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(1)).sendConfirmationEmailNotification(any());
@@ -852,7 +851,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         verify(notificationService, times(0)).sendConfirmationEmailNotification(any());
@@ -969,7 +968,7 @@ public class AccountsControllerTests {
         accountDTO.setFirstName(LONG_FIRST_NAME);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -983,7 +982,7 @@ public class AccountsControllerTests {
         accountDTO.setLastName(LONG_LAST_NAME);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -997,7 +996,7 @@ public class AccountsControllerTests {
         accountDTO.setEmailAddress(LONG_EMAIL);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1011,7 +1010,7 @@ public class AccountsControllerTests {
         accountDTO.setPassword(SHORT_PASSWORD);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1025,7 +1024,7 @@ public class AccountsControllerTests {
         accountDTO.setPassword(LONG_PASSWORD);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1039,7 +1038,7 @@ public class AccountsControllerTests {
         accountDTO.setCompany(LONG_COMPANY);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1053,7 +1052,7 @@ public class AccountsControllerTests {
         accountDTO.setCity(LONG_CITY);
 
         // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID);
+        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1175,7 +1174,7 @@ public class AccountsControllerTests {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
 
             // when
-            ResponseEntity<String> resp = accountsController.onAccountsMerge(jwt, body);
+            accountsController.onAccountsMerge(jwt, body);
 
             // then
             verify(accountsService, never()).onAccountMerged(anyString());

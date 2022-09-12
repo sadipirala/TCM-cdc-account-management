@@ -1,9 +1,11 @@
 package com.thermofisher.cdcam;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -73,6 +75,18 @@ public class ResetPasswordControllerTests {
     GigyaService gigyaService;
 
     @Mock
+    CookieService cookieService;
+    
+    @Mock
+    EncodeService encodeService;
+
+    @Mock
+    IdentityAuthorizationService identityAuthorizationService;
+
+    @Mock
+    JWTService jwtService;
+
+    @Mock
     NotificationService notificationService;
 
     @Mock
@@ -81,14 +95,6 @@ public class ResetPasswordControllerTests {
     @Mock
     SecretsService secretsService;
 
-    @Mock
-    EncodeService encodeService;
-
-    @Mock
-    CookieService cookieService;
-
-    @Mock
-    IdentityAuthorizationService identityAuthorizationService;
     
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
@@ -107,40 +113,18 @@ public class ResetPasswordControllerTests {
     }
 
     @Test
-    public void sendResetPasswordEmail_givenReCaptchaVersionIsV2_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV2Secret()
+    public void sendResetPasswordEmail_ShouldVerifyTheReCaptchaToken()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
-        String expectedReCaptchaV2Secret = RandomStringUtils.random(10);
-        when(secretsService.get(CdcamSecrets.RECAPTCHAV2.getKey())).thenReturn(expectedReCaptchaV2Secret);
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(resetPasswordRequestBody.getIsReCaptchaV2()).thenReturn(true);
+        String captchaValidationToken = RandomStringUtils.random(10);
+        when(reCaptchaService.verifyToken(any(), eq(captchaValidationToken))).thenReturn(reCaptchaResponse);
         setSendResetPasswordEmailMocks();
 
         // when
-        resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, captchaValidationToken);
 
         // then
-        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
-        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(expectedReCaptchaV2Secret, reCaptchaSecret);
-    }
-
-    @Test
-    public void sendResetPasswordEmail_givenReCaptchaVersionIsV3_ThenReCaptchaServiceShouldGetCalledWithReCaptchaV3Secret()
-            throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
-        // given
-        String expectedReCaptchaV3Secret = RandomStringUtils.random(10);
-        when(secretsService.get(CdcamSecrets.RECAPTCHAV3.getKey())).thenReturn(expectedReCaptchaV3Secret);
-        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        setSendResetPasswordEmailMocks();
-
-        // when
-        resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
-
-        // then
-        verify(reCaptchaService).verifyToken(anyString(), reCaptchaSecretCaptor.capture());
-        String reCaptchaSecret = reCaptchaSecretCaptor.getValue();
-        assertEquals(expectedReCaptchaV3Secret, reCaptchaSecret);
+        verify(reCaptchaService).verifyToken(anyString(), eq(captchaValidationToken));
     }
 
     @Test
@@ -148,13 +132,16 @@ public class ResetPasswordControllerTests {
             ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
         when(reCaptchaService.verifyToken(any(), any())).thenThrow(new ReCaptchaLowScoreException(""));
+        when(jwtService.create()).thenReturn(RandomStringUtils.random(10));
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(result.getStatusCode().value(), HttpStatus.ACCEPTED.value());
+        assertNotNull(result.getHeaders().get(ReCaptchaService.CAPTCHA_TOKEN_HEADER));
+        verify(jwtService).create();
     }
 
     @Test
@@ -165,7 +152,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(result.getStatusCode().value(), HttpStatus.BAD_REQUEST.value());
@@ -181,7 +168,7 @@ public class ResetPasswordControllerTests {
         setSendResetPasswordEmailMocks();
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -195,7 +182,7 @@ public class ResetPasswordControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 
         // when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -212,7 +199,7 @@ public class ResetPasswordControllerTests {
         when(gigyaService.resetPasswordRequest(username)).thenReturn("");
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(COOKIE_CIP_AUTHDATA_VALID,resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, COOKIE_CIP_AUTHDATA_VALID, null);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -230,7 +217,7 @@ public class ResetPasswordControllerTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(),resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, new String(), null);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -248,7 +235,7 @@ public class ResetPasswordControllerTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, new String(), null);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.OK);
@@ -266,7 +253,7 @@ public class ResetPasswordControllerTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, new String(), null);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -284,7 +271,7 @@ public class ResetPasswordControllerTests {
         when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
-        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(new String(), resetPasswordRequestBody);
+        ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, new String(), null);
 
         //then
         assertEquals(result.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);

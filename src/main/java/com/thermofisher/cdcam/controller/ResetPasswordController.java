@@ -9,9 +9,26 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.cdcam.enums.CookieType;
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
@@ -28,29 +45,13 @@ import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.IdentityAuthorizationService;
+import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.Utils;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -71,7 +72,19 @@ public class ResetPasswordController {
     private String rpRedirectUri;
 
     @Autowired
+    CookieService cookieService;
+
+    @Autowired
+    EncodeService encodeService;
+
+    @Autowired
     GigyaService gigyaService;
+
+    @Autowired
+    IdentityAuthorizationService identityAuthorizationService;
+
+    @Autowired
+    JWTService jwtService;
 
     @Autowired
     NotificationService notificationService;
@@ -83,15 +96,6 @@ public class ResetPasswordController {
     SecretsService secretsService;
 
     @Autowired
-    IdentityAuthorizationService identityAuthorizationService;
-
-    @Autowired
-    CookieService cookieService;
-
-    @Autowired
-    EncodeService encodeService;
-
-    @Autowired
     URLService urlService;
 
     @PostMapping("/email")
@@ -101,16 +105,18 @@ public class ResetPasswordController {
         @ApiResponse(code = 400, message = "Bad request."),
         @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<?> sendResetPasswordEmail(@CookieValue(name = "cip_authdata", required = false) String cipAuthData, @RequestBody ResetPasswordRequest body) {
+    public ResponseEntity<?> sendResetPasswordEmail(
+        @RequestBody ResetPasswordRequest body,
+        @CookieValue(name = "cip_authdata", required = false) String cipAuthData,
+        @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
+    ) {
         logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
         if (Utils.isNullOrEmpty(cipAuthData)) {
             logger.info("Cookie not present.");
             cipAuthData = cookieService.buildDefaultCipAuthDataCookie(CookieType.RESET_PASSWORD);
         }
         try {
-            String reCaptchaSecretKey = body.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
-            String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
-            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), reCaptchaSecret);
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), captchaValidationToken);
             logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
             String passwordToken = gigyaService.resetPasswordRequest(body.getUsername());
             logger.info(String.format("Request reset password was successfully for: %s", body.getUsername()));
@@ -130,8 +136,9 @@ public class ResetPasswordController {
             logger.error(e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (ReCaptchaLowScoreException v3Exception) {
+            String jwtToken = jwtService.create();
             logger.error(String.format("reCaptcha v3 error for: %s. message: %s", body.getUsername(), v3Exception.getMessage()));
-            return ResponseEntity.accepted().build();
+            return ResponseEntity.accepted().header(ReCaptchaService.CAPTCHA_TOKEN_HEADER, jwtToken).build();
         } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
             logger.error(String.format("reCaptcha v2 error for: %s. message: %s", body.getUsername(), v2Exception.getMessage()));
             return ResponseEntity.badRequest().build();

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.thermofisher.cdcam.aws.SecretsManager;
+import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
@@ -23,21 +23,19 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {
-    ReCaptchaService.class,
-    HttpService.class,
-    SecretsService.class,
-    SecretsManager.class
-})
+@SpringBootTest(classes = CdcamApplication.class)
 public class ReCaptchaServiceTests {
     private final String reCaptchaToken = "";
-    private final String reCaptchaSecret = "";
+    private final String captchaValidationJWT = "";
 
     @InjectMocks
     ReCaptchaService reCaptchaService;
 
     @Mock
     HttpService httpService;
+
+    @Mock
+    JWTService jwtService;
 
     @Mock
     SecretsService secretsService;
@@ -58,7 +56,7 @@ public class ReCaptchaServiceTests {
         when(httpService.post(any())).thenReturn(httpResponse);
 
         // then
-        JSONObject response = reCaptchaService.verifyToken(reCaptchaToken, reCaptchaSecret);
+        JSONObject response = reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
 
         // then
         assertTrue(reCaptchaResponse.equals(response));
@@ -75,7 +73,7 @@ public class ReCaptchaServiceTests {
         when(httpService.post(any())).thenReturn(httpResponse);
 
         // then
-        reCaptchaService.verifyToken(reCaptchaToken, reCaptchaSecret);
+        reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
     }
 
     @Test(expected = ReCaptchaUnsuccessfulResponseException.class)
@@ -88,6 +86,6 @@ public class ReCaptchaServiceTests {
         when(httpService.post(any())).thenReturn(httpResponse);
 
         // then
-        reCaptchaService.verifyToken(reCaptchaToken, reCaptchaSecret);
+        reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
     }
 }

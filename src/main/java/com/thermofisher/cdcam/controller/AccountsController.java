@@ -15,7 +15,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.enums.InviteSource;
 import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
@@ -40,6 +39,7 @@ import com.thermofisher.cdcam.services.AccountsService;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
 import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -105,6 +105,9 @@ public class AccountsController {
 
     @Autowired
     DataProtectionService dataProtectionService;
+
+    @Autowired
+    JWTService jwtService;
 
     @Autowired
     NotificationService notificationService;
@@ -242,11 +245,13 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<CDCResponseData> newAccount(@RequestBody @Valid AccountInfoDTO accountInfoDTO, @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString) throws IOException, JSONException {
+    public ResponseEntity<CDCResponseData> newAccount(
+        @RequestBody @Valid AccountInfoDTO accountInfoDTO, 
+        @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString,
+        @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
+    ) throws IOException, JSONException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfoDTO.getUsername()));
-
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<AccountInfoDTO>> violations = validator.validate(accountInfoDTO);
 
@@ -261,13 +266,12 @@ public class AccountsController {
         }
         
         try {
-            String reCaptchaSecretKey = accountInfoDTO.getIsReCaptchaV2() ? CdcamSecrets.RECAPTCHAV2.getKey() : CdcamSecrets.RECAPTCHAV3.getKey();
-            String reCaptchaSecret = secretsService.get(reCaptchaSecretKey);
-            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), reCaptchaSecret);
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), captchaValidationToken);
             logger.info(String.format("reCaptcha response for %s: %s", accountInfoDTO.getUsername(), reCaptchaResponse.toString()));
         } catch (ReCaptchaLowScoreException v3Exception) {
+            String jwtToken = jwtService.create();
             logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfoDTO.getUsername(), v3Exception.getMessage()));
-            return ResponseEntity.accepted().build();
+            return ResponseEntity.accepted().header(ReCaptchaService.CAPTCHA_TOKEN_HEADER, jwtToken).build();
         } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
             logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfoDTO.getUsername(), v2Exception.getMessage()));
             return ResponseEntity.badRequest().build();

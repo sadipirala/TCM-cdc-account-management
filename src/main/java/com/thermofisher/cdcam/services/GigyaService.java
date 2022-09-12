@@ -298,9 +298,13 @@ public class GigyaService {
         final String IS_AVAILABLE_PARAM = "isAvailable";
         GSResponse gsResponse = gigyaApi.isAvailableLoginId(loginId, apiDomain);
 
-        logger.info(String.format("Error code: %d", gsResponse.getErrorCode()));
         if (isErrorResponse(gsResponse)) {
-            String errorMessage = String.format("Error on isAvailableLoginID::%s: %s - %s", apiDomain, gsResponse.getErrorCode(), gsResponse.getErrorMessage());
+            String errorMessage = String.format("[CDC ERROR] - Error on accounts.isAvailableLoginId. Domain: %s. Code: %d", apiDomain, gsResponse.getErrorCode());
+            logger.error(errorMessage);
+            logger.error(String.format("[CDC ERROR] - Log: %s", gsResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", gsResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", gsResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", gsResponse.getResponseText()));
             throw new CustomGigyaErrorException(errorMessage);
         }
 
@@ -343,6 +347,12 @@ public class GigyaService {
         GSResponse gsResponse = gigyaApi.search(query, accountType, apiDomain);
 
         if (isErrorResponse(gsResponse)) {
+            logger.error(String.format("[CDC ERROR] - Error on accounts.search. Domain: %s. Code: %d", apiDomain, gsResponse.getErrorCode()));
+            logger.error(String.format("[CDC ERROR] - Query: %s", query));
+            logger.error(String.format("[CDC ERROR] - Log: %s", gsResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", gsResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", gsResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", gsResponse.getResponseText()));
             throw new CustomGigyaErrorException(gsResponse.getErrorMessage(), gsResponse.getErrorCode());
         }
 
@@ -380,9 +390,15 @@ public class GigyaService {
         CDCResponseData cdcResponseData = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
 
         if (isErrorResponse(gsResponse)) {
-            String errorList = Utils.convertJavaToJsonString(cdcResponseData.getValidationErrors());
-            String errorDetails = String.format("%s: %s", gsResponse.getErrorMessage(), errorList);
-            throw new CustomGigyaErrorException(errorDetails, gsResponse.getErrorCode());
+            logger.error(String.format("[CDC ERROR] - Error on registerLiteAccount. Code: %d", gsResponse.getErrorCode()));
+            logger.error(String.format("[CDC ERROR] - Email: %s", email));
+            logger.error(String.format("[CDC ERROR] - Log: %s", gsResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", gsResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", gsResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", gsResponse.getResponseText()));
+            String validationErrors = Utils.convertJavaToJsonString(cdcResponseData.getValidationErrors());
+            String errorMessage = String.format("Validation errors: %s", validationErrors);
+            throw new CustomGigyaErrorException(errorMessage, gsResponse.getErrorCode());
         };
 
         return cdcResponseData;

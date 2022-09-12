@@ -15,12 +15,12 @@ public class MarketingConsentUpdatedNotification {
     private String city;
     private String country;
     private String company;
-    private Boolean consent;
+    private Boolean marketingConsent;
 
     public static MarketingConsentUpdatedNotification build(AccountInfo accountInfo) {
         return MarketingConsentUpdatedNotification.builder()
                 .uid(accountInfo.getUid())
-                .consent(accountInfo.isMarketingConsent())
+                .marketingConsent(accountInfo.isMarketingConsent())
                 .city(accountInfo.getCity())
                 .country(accountInfo.getCountry())
                 .company(accountInfo.getCompany())
