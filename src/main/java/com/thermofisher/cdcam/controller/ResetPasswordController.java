@@ -44,7 +44,7 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
 import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.IdentityAuthorizationService;
+import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
@@ -81,7 +81,7 @@ public class ResetPasswordController {
     GigyaService gigyaService;
 
     @Autowired
-    IdentityAuthorizationService identityAuthorizationService;
+    LoginService loginService;
 
     @Autowired
     JWTService jwtService;

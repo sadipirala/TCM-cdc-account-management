@@ -1,5 +1,7 @@
 package com.thermofisher.cdcam.services;
 
+import java.util.UUID;
+
 import javax.annotation.PostConstruct;
 
 import com.gigya.socialize.GSKeyNotFoundException;
@@ -192,6 +194,11 @@ public class GigyaApi {
         final boolean isLite = true;
         GSResponse initRegResponse = initRegistration(isLite);        
         if (CDCUtils.isErrorResponse(initRegResponse)) {
+            logger.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
+            logger.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
             throw new CustomGigyaErrorException("Error during lite registration. Error code: " + initRegResponse.getErrorCode());
         }
         
@@ -212,6 +219,11 @@ public class GigyaApi {
         GSRequest request = buildGSRequest(apiMethod, apiDomain);
         request.setParam("accountTypes", accountType.getValue());
         request.setParam("query", query);
+        
+        String context = String.format("search/%s", UUID.randomUUID().toString());
+        request.setParam("context", context);
+        logger.info(String.format("%s called. Context: %s", apiMethod, context));
+    
         return request.send();
     }
 
@@ -287,6 +299,11 @@ public class GigyaApi {
         String apiMethod = APIMethods.IS_AVAILABLE_LOGINID.getValue();
         GSRequest request = buildGSRequest(apiMethod, apiDomain);
         request.setParam("loginID", loginId);
+
+        String context = String.format("isAvailableLoginId/%s", UUID.randomUUID().toString());
+        request.setParam("context", context);
+        logger.info(String.format("%s called. Context: %s", apiMethod, context));
+
         return request.send();
     }
 
@@ -327,10 +344,12 @@ public class GigyaApi {
 
     private GSResponse initRegistration(boolean isLite) {
         String apiMethod = APIMethods.INIT_REGISTRATION.getValue();
-        logger.info(String.format("%s triggered. Lite: %s", apiMethod, Boolean.toString(isLite)));
-
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
         request.setParam("isLite", isLite);
+
+        String context = String.format("initRegistration/%s", UUID.randomUUID().toString());;
+        request.setParam("context", context);
+        logger.info(String.format("%s called. Context: %s", apiMethod, context));
 
         return request.send();
     }

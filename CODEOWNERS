@@ -3,4 +3,4 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
 # users will be requested for review when someone opens a pull request.
-* @gustavo-mungarro @hogilber-quintana @jessica-pardo @anavaleria-gonzalez @juan-brambila
+* @gustavo-mungarro @hogilber-quintana @jessica-pardo @juan-brambila

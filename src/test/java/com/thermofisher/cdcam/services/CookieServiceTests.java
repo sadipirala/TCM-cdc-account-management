@@ -43,8 +43,6 @@ public class CookieServiceTests {
         ReflectionTestUtils.setField(cookieService, "identityResetPasswordRedirectUri", "redirectUri");
         ReflectionTestUtils.setField(cookieService, "identityResetPasswordResponseType", "responseType");
         ReflectionTestUtils.setField(cookieService, "identityResetPasswordScope", "scope");
-        ReflectionTestUtils.setField(cookieService, "u", "https://www.dev3.thermofisher.com/order/catalog/en/US/adirect/lt?cmd=partnerMktLogin&newAccount=true&LoginData-referer=true&LoginData-ReturnURL=");
-        ReflectionTestUtils.setField(cookieService, "tfHome", "https://www.thermofisher.com/");
     }
 
     @Test

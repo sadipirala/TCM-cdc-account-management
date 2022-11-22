@@ -22,7 +22,6 @@ import java.util.List;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.ResetPasswordController;
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.ResetPasswordRequest;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
@@ -81,7 +80,7 @@ public class ResetPasswordControllerTests {
     EncodeService encodeService;
 
     @Mock
-    IdentityAuthorizationService identityAuthorizationService;
+    LoginService loginService;
 
     @Mock
     JWTService jwtService;
@@ -162,9 +161,9 @@ public class ResetPasswordControllerTests {
     public void sendResetPasswordEmail_WhenReCaptchaVerificationIsSuccessful_returnOk() throws JSONException,
             ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
+        String redirectUrl = "http://test.com";
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
-        when(identityAuthorizationService.generateDefaultRedirectSignInUrl()).thenReturn("");
-        when(identityAuthorizationService.buildDefaultStateProperty(anyString())).thenReturn("");
+        when(loginService.generateDefaultLoginUrl(redirectUrl)).thenReturn("");
         setSendResetPasswordEmailMocks();
 
         // when

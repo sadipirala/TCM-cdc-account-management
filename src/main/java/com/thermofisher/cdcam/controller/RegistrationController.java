@@ -10,7 +10,7 @@ import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
 import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.IdentityAuthorizationService;
+import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -52,14 +52,8 @@ public class RegistrationController {
     @Value("${identity.authorization.path}")
     String cipAuthdataAuthorizationPath;
 
-    @Value("${identity.oidc.default.scope}")
-    String identityScope;
-
-    @Value("${identity.oidc.identity.authorization.redirect_uri}")
-    String identityRedirectUri;
-
-    @Value("${identity.oidc.response_type}")
-    String identityResponseType;
+    @Value("${default.login.path}")
+    String loginEndpoint;
 
     @Autowired
     GigyaService gigyaService;
@@ -74,7 +68,7 @@ public class RegistrationController {
     URLService urlService;
 
     @Autowired
-    IdentityAuthorizationService identityAuthorizationService;
+    LoginService loginService;
 
     @GetMapping(value = {"/oidc/rp", "/rp"})
     @ApiOperation(value = "Validate RP Client Id and Redirect Uri")
@@ -160,7 +154,7 @@ public class RegistrationController {
             }
     }
 
-    private boolean isTfcomClientId(String clientId) {
+    private boolean isDefaultClientId(String clientId) {
         return clientId.equals(tfComClientId);
     }
 
@@ -184,24 +178,9 @@ public class RegistrationController {
             if (ObjectUtils.isEmpty(cipAuthData) && ObjectUtils.isNotEmpty(redirectUrl) && !isSignInUrl) {
                 logger.info("Cookie not present.");
                 logger.info(String.format("Using default tf.com configuration and returning URL %s", redirectUrl));
-                String loginAuthUrl = identityAuthorizationService.generateRedirectAuthUrl(redirectUrl);
-                String state = identityAuthorizationService.buildDefaultStateProperty(redirectUrl);
-                logger.info(String.format("Building cip_authdata cookie in path %s", cipAuthdataAuthorizationPath));
-
-                CIPAuthDataDTO cipAuthDataDTO = CIPAuthDataDTO.builder()
-                        .clientId(tfComClientId)
-                        .redirectUri(identityRedirectUri)
-                        .state(state)
-                        .responseType(identityResponseType)
-                        .scope(identityScope)
-                        .build();
-
-                logger.info("cip_authdata cookie built.");
-                String newCipAuthData = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
-
+                String loginAuthUrl = loginService.generateDefaultLoginUrl(redirectUrl);
                 return ResponseEntity
                         .status(HttpStatus.OK)
-                        .header(HttpHeaders.SET_COOKIE, newCipAuthData)
                         .body(loginAuthUrl);
             } else if (ObjectUtils.isNotEmpty(cipAuthData)) {
                 logger.info("Decoding cip_authdata.");
@@ -219,28 +198,29 @@ public class RegistrationController {
 
                 logger.info("Validating cip_authdata.");
                 if (cipAuthDataDTO.isCipAuthDataValid()) {
+                    String loginUrl;
                     String expectedReturnCookie = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
                     if (!Utils.isNullOrEmpty(cipAuthDataDTO.getState())) {
                         String state = cipAuthDataDTO.getState();
                         // TODO: remove temporary fix to redirect to thank you page while coming from login page for tfcom
-                        if (isTfcomClientId(cipAuthDataDTO.getClientId()) && !isSignInUrl) {
-                            state = identityAuthorizationService.buildDefaultStateProperty(redirectUrl);
-                            logger.info("Building CIP_AUTHDATA cookie with new state for tfcom");
-                            cipAuthDataDTO.setState(state);
-                            expectedReturnCookie = cookieService.createCIPAuthDataCookie(cipAuthDataDTO, cipAuthdataAuthorizationPath);
-                            logger.info("CIP_AUTHDATA cookie built.");
+                        if (isDefaultClientId(cipAuthDataDTO.getClientId()) && !isSignInUrl) {
+                            logger.info("Returning login url for default RP");
+                            loginUrl = loginService.generateDefaultLoginUrl(redirectUrl);
+                            return ResponseEntity
+                                    .status(HttpStatus.OK)
+                                    .body(loginUrl);
                         }
                         logger.info(String.format("state: %s", state));
                         String encodedState = encodeService.encodeUTF8(state);
                         cipAuthDataDTO.setState(encodedState);
                     }
 
-                    String authRedirectUrl = urlService.queryParamMapper(cipAuthDataDTO);
+                    loginUrl = urlService.queryParamMapper(cipAuthDataDTO);
                     logger.info("Returning Login URL with parameters from cookie.");
                     return ResponseEntity
                             .status(HttpStatus.OK)
                             .header(HttpHeaders.SET_COOKIE, expectedReturnCookie)
-                            .body(authRedirectUrl);
+                            .body(loginUrl);
                 }
 
                 logger.info("Invalid cip_authdata. Bad request.");
@@ -249,10 +229,9 @@ public class RegistrationController {
                         .build();
             } else {
                 logger.info("Generating default redirect Sign in URL");
-                String loginAuthUrl = identityAuthorizationService.generateDefaultRedirectSignInUrl();
                 return ResponseEntity
                         .status(HttpStatus.OK)
-                        .body(loginAuthUrl);
+                        .body(loginEndpoint);
             }
         } catch (JsonParseException j) {
             logger.error(String.format("JsonParseException: %s", Utils.stackTraceToString(j)));

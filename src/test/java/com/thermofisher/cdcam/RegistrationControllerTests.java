@@ -22,7 +22,7 @@ import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
 import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.IdentityAuthorizationService;
+import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -77,7 +77,7 @@ public class RegistrationControllerTests {
     EncodeService encodeService;
 
     @Mock
-    IdentityAuthorizationService identityAuthorizationService;
+    LoginService loginService;
 
     @Test
     public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValid_ThenShouldReturnFoundStatusAndCIP_AUTDATAShouldBePresentInHeaders() throws Exception {
@@ -233,7 +233,6 @@ public class RegistrationControllerTests {
                 .state("state")
                 .build();
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_INVALID)).thenReturn(cipAuthData);
-        when(identityAuthorizationService.generateRedirectAuthUrl("https://www.thermofisher.com/")).thenReturn("%7B%22u%22%3A%22https%3A%2F%2Fwww.dev3.thermofisher.com%2Forder%2Fcatalog%2Fen%2FUS%2Fadirect%2Flt%3Fcmd%3DpartnerMktLogin%26newAccount%3Dtrue%26LoginData-referer%3Dtrue%26LoginData-ReturnURL%3D http%3A%2F%2Fthermofisher.com%22%7D");
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_INVALID, REDIRECT_URL, IS_SIGN_IN_URL);
@@ -248,7 +247,7 @@ public class RegistrationControllerTests {
         String cookie = null;
         cipAuthData = null;
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_INVALID)).thenReturn(cipAuthData);
-        when(identityAuthorizationService.generateRedirectAuthUrl("https://www.thermofisher.com/")).thenReturn("%7B%22u%22%3A%22https%3A%2F%2Fwww.dev3.thermofisher.com%2Forder%2Fcatalog%2Fen%2FUS%2Fadirect%2Flt%3Fcmd%3DpartnerMktLogin%26newAccount%3Dtrue%26LoginData-referer%3Dtrue%26LoginData-ReturnURL%3D http%3A%2F%2Fthermofisher.com%22%7D");
+        when(loginService.generateDefaultLoginUrl("https://www.thermofisher.com/")).thenReturn("https://www.dev3.thermofisher.com/auth/login?returnUrl=http://example.com");
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, REDIRECT_URL, IS_SIGN_IN_URL);

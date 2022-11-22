@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS}{PST} - %-5p - [requestId = %X{X-Request-ID}] - %c{1}.%M Line(%L) - %m%n</Property>
+    </Properties>
     <Appenders>
         <Console name="Console">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
         <File name="CdcamLogFile" fileName="./logs/cdcam.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS}{PST} [%t] %-5p %c{1}.%M Line(%L) - %m%n"/>
+            <PatternLayout pattern="${LOG_PATTERN}"/>
         </File>
     </Appenders>
     <Loggers>

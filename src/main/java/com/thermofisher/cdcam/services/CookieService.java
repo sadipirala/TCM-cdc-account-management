@@ -31,12 +31,6 @@ public class CookieService {
     @Value("${identity.reset-password.oidc.rp.response_type}")
     String identityResetPasswordResponseType;
 
-    @Value("${identity.oidc.u}")
-    String u;
-
-    @Value("${tf.home}")
-    String tfHome;
-
     public String createCIPAuthDataCookie(CIPAuthDataDTO cipAuthData, String path) {
         String cipAuthDataBase64 = new String(encodeService.encodeBase64(new GsonBuilder().disableHtmlEscaping().create().toJson(cipAuthData)));
         return String.format("cip_authdata=%s; Path=%s; Domain=%s", cipAuthDataBase64, path, cipAuthDataDomain);
@@ -52,11 +46,9 @@ public class CookieService {
     public String buildDefaultCipAuthDataCookie(CookieType type) {
         switch (type){
             case RESET_PASSWORD:
-                String state = buildDefaultStateProperty();
                 CIPAuthDataDTO cipAuthDataDTO = CIPAuthDataDTO.builder()
                         .clientId(identityResetPasswordClientId)
                         .redirectUri(identityResetPasswordRedirectUri)
-                        .state(state)
                         .responseType(identityResetPasswordResponseType)
                         .scope(identityResetPasswordScope)
                         .build();
@@ -64,9 +56,5 @@ public class CookieService {
             default:
                 return "";
         }
-    }
-
-    public String buildDefaultStateProperty() {
-        return String.format("{\"u\":\"%s\"}", u.concat(tfHome));
     }
 }
