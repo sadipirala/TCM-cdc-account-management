@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.enums;
 
 public enum CountryCodes {
+    CANADA("ca"),
     KOREA("kr"),
     CHINA("cn"),
     JAPAN("jp");

@@ -138,7 +138,7 @@ public class UsersHandlerTests {
 
     @Test
     public void getUsers_GivenAnInValidListOfUIDs_returnEmptyList() throws IOException {
-        // setup
+        // given
         List<String> uids = new ArrayList<>();
         uids.add("001");
         uids.add("002");
@@ -157,10 +157,10 @@ public class UsersHandlerTests {
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
         when(gigyaApi.search(anyString(), any(), any())).thenReturn(mockSearchResponse);
 
-        // execution
+        // when
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
-        // validation
+        // then
         Assert.assertEquals(userDetails.size(), 0);
     }
 

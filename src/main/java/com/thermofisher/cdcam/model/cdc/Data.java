@@ -18,6 +18,7 @@ public class Data {
     private String awsQuickSightRole;
     private boolean requirePasswordCheck;
     private boolean subscribe;
+    private String verifiedEmailDate;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonPOJOBuilder(withPrefix = "")

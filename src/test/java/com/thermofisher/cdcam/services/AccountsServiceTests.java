@@ -19,6 +19,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.json.JSONException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
@@ -33,25 +50,6 @@ import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.AccountUtils;
-
-import org.apache.commons.lang3.RandomStringUtils;
-import org.json.JSONException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -290,67 +288,6 @@ public class AccountsServiceTests {
 
         // when
         accountsService.createAccount(accountInfo);
-    }
-
-    @Test
-    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenRequestIsSuccessful_whenTriggered_ReturnResponse() throws IOException {
-        // setup
-        HttpStatus mockStatus = HttpStatus.OK;
-        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
-
-        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
-        when(gigyaService.sendVerificationEmail(any())).thenReturn(mockResponse);
-
-        // execution
-        CDCResponseData response = accountsService.sendVerificationEmailSync("test");
-
-        // validation
-        Assert.assertEquals(response.getStatusCode(), mockStatus.value());
-    }
-
-    @Test
-    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenRequestIsNotSuccessful_whenTriggered_ReturnResponse() throws IOException {
-        // setup
-        HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
-        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
-
-        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
-        when(gigyaService.sendVerificationEmail(any())).thenReturn(mockResponse);
-
-        // execution
-        CDCResponseData response = accountsService.sendVerificationEmailSync("test");
-
-        // validation
-        Assert.assertEquals(response.getStatusCode(), mockStatus.value());
-    }
-
-    @Test
-    public void sendVerificationEmailSync_triggerVerificationEmailProcess_givenExceptionOccurs_whenTriggered_ReturnInternalServerErrorResponse() throws IOException {
-        // setup
-        when(gigyaService.sendVerificationEmail(any())).thenThrow(IOException.class);
-
-        // execution
-        CDCResponseData response = accountsService.sendVerificationEmailSync("test");
-
-        // validation
-        Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-    }
-
-    @Test
-    public void sendVerificationEmail_triggerVerificationEmailProcess_whenTriggered_sendVerificationProcessShouldBeCalled() throws IOException {
-        // setup
-        String uid = "abc123";
-        HttpStatus mockStatus = HttpStatus.BAD_REQUEST;
-        CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
-
-        when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
-        when(gigyaService.sendVerificationEmail(uid)).thenReturn(mockResponse);
-
-        // execution
-        accountsService.sendVerificationEmail(uid);
-
-        // validation
-        verify(gigyaService, times(1)).sendVerificationEmail(uid);
     }
 
     @Test(expected = NullPointerException.class)

@@ -11,45 +11,6 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.validation.constraints.NotBlank;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.enums.InviteSource;
-import com.thermofisher.cdcam.enums.RegistrationType;
-import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
-import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
-import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.Ciphertext;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
-import com.thermofisher.cdcam.model.cdc.CDCResponse;
-import com.thermofisher.cdcam.model.cdc.CDCResponseData;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
-import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
-import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
-import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
-import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-import com.thermofisher.cdcam.services.AccountsService;
-import com.thermofisher.cdcam.services.CookieService;
-import com.thermofisher.cdcam.services.DataProtectionService;
-import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.JWTService;
-import com.thermofisher.cdcam.services.JWTValidator;
-import com.thermofisher.cdcam.services.NotificationService;
-import com.thermofisher.cdcam.services.ReCaptchaService;
-import com.thermofisher.cdcam.services.SecretsService;
-import com.thermofisher.cdcam.services.UpdateAccountService;
-import com.thermofisher.cdcam.services.hashing.HashingService;
-import com.thermofisher.cdcam.utils.PasswordUtils;
-import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,6 +36,47 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.enums.InviteSource;
+import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.ResponseCode;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
+import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
+import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.Ciphertext;
+import com.thermofisher.cdcam.model.UserDetails;
+import com.thermofisher.cdcam.model.UserTimezone;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
+import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
+import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
+import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
+import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
+import com.thermofisher.cdcam.services.AccountsService;
+import com.thermofisher.cdcam.services.CookieService;
+import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.EmailVerificationService;
+import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.JWTService;
+import com.thermofisher.cdcam.services.JWTValidator;
+import com.thermofisher.cdcam.services.NotificationService;
+import com.thermofisher.cdcam.services.ReCaptchaService;
+import com.thermofisher.cdcam.services.SecretsService;
+import com.thermofisher.cdcam.services.UpdateAccountService;
+import com.thermofisher.cdcam.services.hashing.HashingService;
+import com.thermofisher.cdcam.utils.PasswordUtils;
+import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -96,6 +98,9 @@ public class AccountsController {
 
     @Autowired
     AccountsService accountsService;
+
+    @Autowired
+    EmailVerificationService emailVerificationService;
 
     @Autowired
     GigyaService gigyaService;
@@ -183,8 +188,8 @@ public class AccountsController {
         @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uid", value = "A valid UID", required = true)
-    public ResponseEntity<ProfileInfoDTO> getUserProfileByUID(@PathVariable String uid){
-        try{
+    public ResponseEntity<ProfileInfoDTO> getUserProfileByUID(@PathVariable String uid) {
+        try {
             logger.info("User profile data by UID requested.");
             ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
             logger.info(String.format("Retrieved user with UID: %s", uid));
@@ -303,6 +308,7 @@ public class AccountsController {
             logger.info(String.format("Creating new account for %s", account.getUsername()));
             CDCResponseData accountCreationResponse = accountsService.createAccount(account);
             String newAccountUid = accountCreationResponse.getUID();
+            boolean isVerificationPending = EmailVerificationService.isVerificationPending(accountCreationResponse);
             account.setUid(newAccountUid);
             logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), newAccountUid));
             
@@ -335,13 +341,18 @@ public class AccountsController {
 
             if (accountCreationResponse.getErrorCode() == GigyaCodes.SUCCESS.getValue()) {
                 logger.info(String.format("Sending email verification notification for UID: %s", newAccountUid));
-                accountsService.sendVerificationEmail(newAccountUid);
+                emailVerificationService.sendVerificationByLinkEmail(newAccountUid);
                 logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
             }
 
-            if (accountCreationResponse.getErrorCode() == GigyaCodes.PENDING_CODE_VERIFICATION.getValue() && isInvitedAccount(decryptedCiphertext)) {
+            if (isVerificationPending && isInvitedAccount(decryptedCiphertext)) {
+                logger.info("Verifying email for invited user.");
                 CDCResponse verifyResponse = accountsService.verify(account);
                 accountCreationResponse.setErrorCode(verifyResponse.getErrorCode());
+                logger.info("Auto email verification successful.");
+            } else if (isVerificationPending) {
+                logger.info("Email verification pending. Returning response with error {}.", ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());
+                accountCreationResponse.setErrorCode(ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());
             }
 
             return new ResponseEntity<>(accountCreationResponse, HttpStatus.OK);
@@ -459,7 +470,7 @@ public class AccountsController {
     public ResponseEntity<CDCResponseData> sendVerificationEmail(@PathVariable String uid) {
         logger.info(String.format("CDC verification email process triggered for user with UID: %s", uid));
 
-        CDCResponseData responseData = accountsService.sendVerificationEmailSync(uid);
+        CDCResponseData responseData = emailVerificationService.sendVerificationByLinkEmailSync(uid);
         HttpStatus responseStatus = HttpStatus.valueOf(responseData.getStatusCode());
 
         return new ResponseEntity<>(responseData, responseStatus);

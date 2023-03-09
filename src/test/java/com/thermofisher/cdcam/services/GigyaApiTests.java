@@ -497,7 +497,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void sendVerificationEmail_givenParametersToMakeSendVerificationEmailRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() throws JSONException {
+    public void sendVerificationEmail_givenParametersToMakesendVerificationEmailRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() throws JSONException {
         // given
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);

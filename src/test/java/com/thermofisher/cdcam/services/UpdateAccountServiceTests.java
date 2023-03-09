@@ -55,67 +55,67 @@ public class UpdateAccountServiceTests {
 
     @Test
     public void updateTimezoneInCDC_GivenAValidUIDAndTimezone_ReturnOK() throws Exception {
-        // setup
+        // given
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
         when(gigyaService.update(any())).thenReturn(response);
 
-        // execution
+        // when
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
 
-        // validation
+        // then
         Assert.assertEquals(updateResponse, HttpStatus.OK);
     }
 
     @Test
     public void updateTimezoneInCDC_GivenAnInvalidUIDAndTimezone_ReturnInternalServerError() throws Exception {
-        // setup
+        // given
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("log", "");
         when(gigyaService.update(any())).thenReturn(response);
 
-        // execution
+        // when
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
 
-        // validation
+        // then
         Assert.assertEquals(updateResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void updateProfile_GivenAValidProfileInfoDTO_WhenCallupdateProfile_ThenShouldReturnOK() throws Exception {
-        // setup
+        // given
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.OK.value());
         response.put("log", "");
         when(gigyaService.update(any())).thenReturn(response);
 
-        // execution
+        // when
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
 
-        // validation
+        // then
         Assert.assertEquals(updateResponse, HttpStatus.OK);
     }
 
     @Test
     public void updateProfile_GivenAnInvalidProfileInfoDTO_WhenCallupdateProfile_ThenShouldReturnBadRequest() throws Exception {
-        // setup
+        // given
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         response.put("code", HttpStatus.BAD_REQUEST.value());
         response.put("log", "");
         when(gigyaService.update(any())).thenReturn(response);
 
-        // execution
+        // when
         HttpStatus updateResponse = updateAccountService.updateProfile(ProfileInfoDTO.builder().uid("").build());
 
-        // validation
+        // then
         Assert.assertEquals(updateResponse, HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void updateProfile_GivenAProfileWithEmail_WhenCallUpdateProfileAndLoginEmailIsRemoved_ThenShouldReturnAnOkHttpStatusCode() throws Exception {
-        // setup
+        // given
         ObjectNode response = JsonNodeFactory.instance.objectNode();
         profileInfoDTO.setEmail("email@email.com");
         profileInfoDTO.setActualEmail("email@email.com");
@@ -125,10 +125,10 @@ public class UpdateAccountServiceTests {
         response.put("log", "");
         when(gigyaService.update(any())).thenReturn(response);
 
-        // execution
+        // when
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
 
-        // validation
+        // then
         Assert.assertEquals(updateResponse, HttpStatus.OK);
     }
 

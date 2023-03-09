@@ -28,6 +28,7 @@ public class ProfileInfoDTO {
     private String username;
     @Size(max = 50)
     private String email;
+    private String country;
     @JsonIgnore
     private String actualUsername;
     @JsonIgnore
@@ -42,16 +43,16 @@ public class ProfileInfoDTO {
                 .country(accountInfo.getCountry())
                 .consent(accountInfo.isMarketingConsent())
                 .build();
-        ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
+
+        return ProfileInfoDTO.builder()
                 .uid(accountInfo.getUid())
                 .email(accountInfo.getEmailAddress())
                 .firstName(accountInfo.getFirstName())
                 .lastName(accountInfo.getLastName())
                 .username(accountInfo.getUsername())
                 .marketingConsentDTO(marketingConsentDTO)
+                .country(accountInfo.getCountry())
                 .build();
-
-        return profileInfoDTO;
     }
 
     @JsonIgnore

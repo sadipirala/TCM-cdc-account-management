@@ -5,6 +5,7 @@ import java.util.Objects;
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.LocaleNameService;
 
 import org.apache.commons.lang3.StringUtils;
@@ -25,12 +26,12 @@ public class CDCAccountsHandler {
             .registration(buildRegistrationObject(accountInfo))
             .subscribe(accountInfo.isMarketingConsent())
             .requirePasswordCheck(false)
+            .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
             .build();
 
         Work work = buildWorkObject(accountInfo);
 
         Profile profile = buildProfileObject(accountInfo, work, locale);
-
 
         return CDCNewAccount.build(
             accountInfo.getUsername(), 
@@ -52,6 +53,7 @@ public class CDCAccountsHandler {
             .thermofisher(thermofisher)
             .registration(buildRegistrationObjectV2(accountInfo))     
             .requirePasswordCheck(false)
+            .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
             .build();
 
         Work work = buildWorkObject(accountInfo);

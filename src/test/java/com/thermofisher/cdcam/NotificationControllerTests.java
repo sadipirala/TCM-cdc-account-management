@@ -45,15 +45,15 @@ public class NotificationControllerTests {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);
         when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendPublicEmailUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateEmailUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
 
         // then
-        verify(notificationService).sendPublicEmailUpdatedNotification(any());
-        verify(notificationService).sendPrivateEmailUpdatedNotification(any());
+        verify(notificationService).sendPublicAccountUpdatedNotification(any());
+        verify(notificationService).sendPrivateAccountUpdatedNotification(any());
         assertEquals(resp.getStatusCode(),HttpStatus.OK);
     }
 
@@ -62,8 +62,8 @@ public class NotificationControllerTests {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);
         when(gigyaService.getAccountInfo(any())).thenThrow(CustomGigyaErrorException.class);
-        doNothing().when(notificationService).sendPublicEmailUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateEmailUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
@@ -77,8 +77,8 @@ public class NotificationControllerTests {
         // given
         UpdateMarketingConsentDTO marketingConsent = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", UpdateMarketingConsentDTO.class);
         when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendPublicEmailUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateEmailUpdatedNotification(any());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.notifyMarketingConsentUpdated(marketingConsent);

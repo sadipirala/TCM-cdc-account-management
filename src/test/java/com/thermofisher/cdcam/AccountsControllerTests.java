@@ -48,6 +48,8 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
+import com.thermofisher.cdcam.enums.ResponseCode;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
 import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -67,6 +69,7 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import com.thermofisher.cdcam.services.AccountsService;
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
+import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.JWTValidator;
@@ -129,6 +132,9 @@ public class AccountsControllerTests {
     DataProtectionService dataProtectionService;
 
     @Mock
+    EmailVerificationService emailVerificationService;
+
+    @Mock
     GigyaService gigyaService;
 
     @Mock
@@ -168,8 +174,8 @@ public class AccountsControllerTests {
         CDCResponseData cdcResponseData = new CDCResponseData();
         cdcResponseData.setUID(uid);
         cdcResponseData.setStatusCode(206);
-        cdcResponseData.setErrorCode(206006);
-        cdcResponseData.setStatusReason("Partial Content");
+        cdcResponseData.setErrorCode(GigyaCodes.ACCOUNT_PENDING_REGISTRATION.getValue());
+        cdcResponseData.setErrorDetails("Missing required fields for registration: data.verifiedEmailDate");
         return cdcResponseData;
     }
 
@@ -565,12 +571,34 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
         when(accountsService.verify(any())).thenReturn(AccountUtils.getCdcResponse());
 
-        // when
-        ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
+        try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
+            emailVerificationServiceMock.when(() -> EmailVerificationService.isVerificationPending(any())).thenReturn(true);
 
-        // then
-        verify(accountsService).verify(any());
-        assertEquals(response.getBody().getErrorCode(), 0);
+            // when
+            ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
+
+            // then
+            verify(accountsService).verify(any());
+            assertEquals(response.getBody().getErrorCode(), 0);
+        }
+    }
+
+    @Test
+    public void newAccount_givenAnAccountIsCreated_AndEmailVerificationIsPending_ShouldReturnVerificationPendingCode() throws IOException, JSONException, ReCaptchaLowScoreException,
+            ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
+        AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
+        when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
+        when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
+
+        try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
+            emailVerificationServiceMock.when(() -> EmailVerificationService.isVerificationPending(any())).thenReturn(true);
+
+            // when
+            ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
+
+            // then
+            assertEquals(response.getBody().getErrorCode(), ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());
+        }
     }
 
     @Test
@@ -624,7 +652,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenRegistrationSuccessfulAndEmailVerificationIsEnabled_sendVerificationEmailShouldBeCalled() throws IOException,
+    public void newAccount_givenRegistrationSuccessfulAndEmailVerificationIsEnabled_sendVerificationByLinkEmailShouldBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
@@ -638,11 +666,11 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
-        verify(accountsService, times(1)).sendVerificationEmail(any());
+        verify(emailVerificationService, times(1)).sendVerificationByLinkEmail(any());
     }
     
     @Test
-    public void newAccount_givenRegistrationNotSuccessful_sendVerificationEmailShouldNotBeCalled() throws IOException,
+    public void newAccount_givenRegistrationNotSuccessful_sendVerificationByLinkEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
@@ -655,11 +683,11 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
-        verify(accountsService, times(0)).sendVerificationEmail(any());
+        verify(emailVerificationService, times(0)).sendVerificationByLinkEmail(any());
     }
 
     @Test
-    public void newAccount_givenRegistrationNotSuccessfulAndEmailVerificationIsDisabled_sendVerificationEmailShouldNotBeCalled() throws IOException,
+    public void newAccount_givenRegistrationNotSuccessfulAndEmailVerificationIsDisabled_sendVerificationByLinkEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         // given
         reCaptchaResponse.put("success", true);
@@ -676,7 +704,7 @@ public class AccountsControllerTests {
         accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
         // then
-        verify(accountsService, times(0)).sendVerificationEmail(any());
+        verify(emailVerificationService, times(0)).sendVerificationByLinkEmail(any());
     }
 
     @Test
@@ -944,14 +972,12 @@ public class AccountsControllerTests {
     }
     
     @Test
-    public void sendVerificationEmail_WhenResponseReceived_ReturnSameStatus() {
+    public void sendVerificationByLinkEmail_WhenResponseReceived_ReturnSameStatus() {
         // given
         HttpStatus mockStatus = HttpStatus.OK;
-
         CDCResponseData mockResponse = Mockito.mock(CDCResponseData.class);
         when(mockResponse.getStatusCode()).thenReturn(mockStatus.value());
-
-        when(accountsService.sendVerificationEmailSync(any())).thenReturn(mockResponse);
+        when(emailVerificationService.sendVerificationByLinkEmailSync(any())).thenReturn(mockResponse);
 
         // when
         ResponseEntity<CDCResponseData> response = accountsController.sendVerificationEmail("test");

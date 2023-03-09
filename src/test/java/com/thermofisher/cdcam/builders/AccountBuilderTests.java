@@ -107,7 +107,6 @@ public class AccountBuilderTests {
         // then
         assertEquals(res.getHiraganaName(), hiraganaName);
     }
-
     @Test
     public void getAccountInfo_ifGivenSiteUserWithJobRole_returnAccountInfoWithJobRole() throws Exception {
         // given

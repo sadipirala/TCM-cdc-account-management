@@ -53,6 +53,7 @@ public class Profile {
             .city(city)
             .work(work)
             .email(profileInfoDTO.getEmail())
+            .country(profileInfoDTO.getCountry())
             .build();
     }
 }

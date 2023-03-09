@@ -21,7 +21,7 @@ deployment:
 
 environments:
   qa4-cn:
-    branch: integration/.*
+    branch: (integration|development)/.*
     cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -38,7 +38,7 @@ environments:
       - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
 
   qa4:
-    branch: integration/.*
+    branch: (integration|development)/.*
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
@@ -55,7 +55,7 @@ environments:
       - cdcam-qa4.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
 
   qa1-cn:
-    branch: development/.*
+    branch: (release|qa1-test)/.*
     cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -70,9 +70,12 @@ environments:
       targetMemoryUtilizationPercentage: 70
     ingressDomains:
       - cdcam.tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
+    promotion:
+      to: prod-cn
+      mergeTo: master
 
   qa1:
-    branch: development/.*
+    branch: (release|qa1-test)/.*
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
@@ -124,7 +127,7 @@ environments:
       - cdcam.stage.cloudqa.thermofisher.net
 
   prod-cn:
-    branch: release/.*
+    branch: master
     cluster: tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
     env:
       - name: spring.profiles.active

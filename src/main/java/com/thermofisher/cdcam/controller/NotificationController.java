@@ -7,6 +7,7 @@ import com.thermofisher.cdcam.model.MarketingConsentUpdatedNotification;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.EmailVerificationDTO;
 import com.thermofisher.cdcam.model.dto.UpdateMarketingConsentDTO;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.NotificationService;
 
@@ -46,10 +47,10 @@ public class NotificationController {
             logger.info(String.format("Email verification process for %s started.", uid));
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building AccountUpdatedNotification object.");
-            EmailUpdatedNotification emailUpdatedNotification = EmailUpdatedNotification.build(accountInfo);
+            AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
             logger.info("Sending accountUpdated notification.");
-            notificationService.sendPublicEmailUpdatedNotification(emailUpdatedNotification);
-            notificationService.sendPrivateEmailUpdatedNotification(emailUpdatedNotification);
+            notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
+            notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
             logger.info("accountUpdated notification sent.");
             return new ResponseEntity<String>("The notification was sent successfully!",HttpStatus.OK);
         }

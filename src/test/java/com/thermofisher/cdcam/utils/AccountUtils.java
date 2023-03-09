@@ -8,6 +8,7 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.LocaleNameService;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +41,7 @@ public class AccountUtils {
     public static final String company = "company";
     public static final String location = "Digital Engineering";
     public static final String timezone = "America/Tijuana";
-    public static final String hiraganaName = "ひらがな";
+    public static final String hiraganaName = "hiranganaName";
     public static final String jobRole = "Development, HR";
     public static final String interest = "Health, Lab";
     public static final String phoneNumber = "6648675309";
@@ -141,7 +142,7 @@ public class AccountUtils {
                 .lastName(lastName)
                 .localeName(localeName)
                 .company(company)
-                .country(country)
+                .country(CountryCodes.CHINA.getValue())
                 .city(city)
                 .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
@@ -161,7 +162,7 @@ public class AccountUtils {
                 .lastName(lastName)
                 .localeName(localeName)
                 .company(company)
-                .country(country)
+                .country(CountryCodes.KOREA.getValue())
                 .city(city)
                 .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
@@ -189,7 +190,7 @@ public class AccountUtils {
                 .lastName(lastName)
                 .localeName(localeName)
                 .company(company)
-                .country(country)
+                .country(CountryCodes.JAPAN.getValue())
                 .city(city)
                 .marketingConsent(marketingConsent)
                 .loginProvider(loginProvider)
@@ -247,6 +248,7 @@ public class AccountUtils {
             .registration(buildRegistrationObject(accountInfo))
             .subscribe(accountInfo.isMarketingConsent())
             .requirePasswordCheck(false)
+            .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
             .build();
 
         Work work = buildWorkObject(accountInfo);
@@ -273,6 +275,7 @@ public class AccountUtils {
                 .thermofisher(thermofisher)
                 .registration(buildRegistrationObject(accountInfo))
                 .requirePasswordCheck(false)
+                .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
                 .build();
 
         Work work = buildWorkObject(accountInfo);
