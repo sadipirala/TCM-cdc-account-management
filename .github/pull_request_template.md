@@ -1,7 +1,7 @@
 ## Pull request summary
 
-### **Feature**: [Feature-00000](https://jira.amer.thermo.com/browse/FEATURE-0000)
-### **Task**: [ARM-5656](https://jira.amer.thermo.com/browse/ARM-5656)
+### **Feature**: [FDA1-0000](https://jira.amer.thermo.com/browse/FDA1-0000)
+### **Task**: [BLR-000](https://jira.amer.thermo.com/browse/BLR-5656)
 
 ## Changelog
 

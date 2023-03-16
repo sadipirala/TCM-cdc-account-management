@@ -82,11 +82,11 @@ public class AccountInfoDTO {
     }
 
     public void setCiphertextData(Ciphertext ciphertext) {
-        if (ciphertext.getFirstName() != null) {
+        if (this.firstName == null && ciphertext.getFirstName() != null) {
             this.setFirstName(ciphertext.getFirstName());
         }
 
-        if (ciphertext.getLastName() != null) {
+        if (this.lastName == null && ciphertext.getLastName() != null) {
             this.setLastName(ciphertext.getLastName());
         }
 
