@@ -71,6 +71,7 @@ import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
 import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.InvitationService;
 import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
@@ -136,6 +137,9 @@ public class AccountsControllerTests {
 
     @Mock
     GigyaService gigyaService;
+
+    @Mock
+    InvitationService invitationService;
 
     @Mock
     JWTService jwtService;
@@ -570,6 +574,7 @@ public class AccountsControllerTests {
         when(dataProtectionService.decrypCiphertext(CIPHERTEXT)).thenReturn(AccountUtils.getCiphertext());
         when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
         when(accountsService.verify(any())).thenReturn(AccountUtils.getCdcResponse());
+        when(invitationService.updateInvitationCountry(any())).thenReturn(200);
 
         try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
             emailVerificationServiceMock.when(() -> EmailVerificationService.isVerificationPending(any())).thenReturn(true);

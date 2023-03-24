@@ -66,6 +66,7 @@ import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
 import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.InvitationService;
 import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
@@ -110,6 +111,9 @@ public class AccountsController {
 
     @Autowired
     DataProtectionService dataProtectionService;
+
+    @Autowired
+    InvitationService invitationService;
 
     @Autowired
     JWTService jwtService;
@@ -343,6 +347,19 @@ public class AccountsController {
                 logger.info(String.format("Sending email verification notification for UID: %s", newAccountUid));
                 emailVerificationService.sendVerificationByLinkEmail(newAccountUid);
                 logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
+            }
+
+            if(isInvitedAccount(decryptedCiphertext)) {
+                logger.info("Updating invitation with country code.");
+                JSONObject updateInvitationDTO = new JSONObject() 
+                    .put("inviteeUsername", account.getUsername())
+                    .put("country", account.getCountry());
+                Integer response = invitationService.updateInvitationCountry(updateInvitationDTO);
+                if(response == HttpStatus.OK.value()) {
+                    logger.info("Invitation was updated successfully with country value.");
+                } else {
+                    logger.info("An error occurred. Invitation was not updated with country value.");
+                }
             }
 
             if (isVerificationPending && isInvitedAccount(decryptedCiphertext)) {

@@ -11,5 +11,6 @@ import org.json.JSONObject;
 @Setter
 public class HttpServiceResponse {
     private CloseableHttpResponse closeableHttpResponse;
+    private Integer status;
     private JSONObject responseBody;
 }
