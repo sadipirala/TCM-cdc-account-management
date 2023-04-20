@@ -18,11 +18,14 @@ import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -190,6 +193,29 @@ public class GigyaApi {
         }
     }
 
+    public GSResponse registerLiteAccount(LiteAccountDTO liteAccountDTO) throws CustomGigyaErrorException, GSKeyNotFoundException, JSONException {
+        final boolean isLite = true;
+        GSResponse initRegResponse = initRegistration(isLite);        
+        if (CDCUtils.isErrorResponse(initRegResponse)) {
+            logger.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
+            logger.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
+            throw new CustomGigyaErrorException("Error during lite registration. Error code: " + initRegResponse.getErrorCode());
+        }
+        
+        GSObject data = initRegResponse.getData();
+        String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
+        
+        GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+        request.setParam("regToken", getRegToken(data));
+        request.setParam("profile", generateProfileJson(liteAccountDTO));
+        request.setParam("data", generateDataJson(liteAccountDTO));
+
+        return request.send();
+    }
+
     public GSResponse registerLiteAccount(String email) throws GSKeyNotFoundException, CustomGigyaErrorException {
         final boolean isLite = true;
         GSResponse initRegResponse = initRegistration(isLite);        
@@ -336,6 +362,22 @@ public class GigyaApi {
             request =  GSRequestFactory.create(secondaryApiKey, secondaryDCSecretKey, apiDomain, apiMethod);
         }
         return request;
+    }
+
+    private String generateDataJson(LiteAccountDTO liteAccountDTO) throws JSONException {
+        JSONObject dataJson = new JSONObject();
+        if(!Utils.isNullOrEmpty(liteAccountDTO.getInviterEmail())) dataJson.put("inviterEmail", liteAccountDTO.getInviterEmail());
+        if(!Utils.isNullOrEmpty(liteAccountDTO.getClientId())) dataJson.put("clientId", liteAccountDTO.getClientId());
+        return dataJson.toString();
+    }
+
+    private String generateProfileJson(LiteAccountDTO liteAccountDTO) throws JSONException {
+        JSONObject profileJson = new JSONObject();
+        profileJson.put("email", liteAccountDTO.getEmail());
+        if(!Utils.isNullOrEmpty(liteAccountDTO.getFirstName())) profileJson.put("firstName", liteAccountDTO.getFirstName());
+        if(!Utils.isNullOrEmpty(liteAccountDTO.getLastName())) profileJson.put("lastName", liteAccountDTO.getLastName());
+        if(!Utils.isNullOrEmpty(liteAccountDTO.getLocation())) profileJson.put("country", liteAccountDTO.getLocation());
+        return profileJson.toString();
     }
 
     private boolean isMainApiDomain(String apiDomain) {

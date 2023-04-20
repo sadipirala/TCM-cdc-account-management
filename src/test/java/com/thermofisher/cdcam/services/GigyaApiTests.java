@@ -21,6 +21,7 @@ import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
@@ -363,6 +364,36 @@ public class GigyaApiTests {
         }
     }
 
+    @Test
+    public void registerLiteAccount_V3_ShouldMakeTwoRequests_AndTheyShouldHaveRegTokenAndProfileAndDataParams() throws GSKeyNotFoundException, CustomGigyaErrorException, JSONException {
+        // given
+        LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder()
+            .email("john.doe@mail.com")
+            .clientId("eZc3CGSFO2-phATVvTvL_4tf")
+            .build();
+        String regToken = RandomStringUtils.random(10);
+
+        GSObject data = mock(GSObject.class);
+        data.put("regToken", regToken);
+        GSResponse initResponse = mock(GSResponse.class);
+        when(initResponse.getData()).thenReturn(data);
+
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        doNothing().when(gsRequestMock).setParam((eq("regToken")), eq(regToken));
+        when(gsRequestMock.send()).thenReturn(initResponse, gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
+
+            // when
+            gigyaApi.registerLiteAccount(liteAccountDTO);
+
+            // then
+            verify(gsRequestMock, times(2)).send();
+        }
+    }
+
     @Test(expected = CustomGigyaErrorException.class)
     public void registerLiteAccount_ShouldThrowCustomGigyaErrorException_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
@@ -385,6 +416,36 @@ public class GigyaApiTests {
 
             // when
             gigyaApi.registerLiteAccount(email);
+
+            // then
+            verify(gsRequestMock, times(0)).send();
+        }
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void registerLiteAccount_V3_ShouldThrowCustomGigyaError_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException, JSONException {
+        // given
+        LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder()
+            .email("john.doe@mail.com")
+            .clientId("eZc3CGSFO2-phATVvTvL_4tf")
+            .build();
+        String regToken = RandomStringUtils.random(10);
+
+        GSObject data = mock(GSObject.class);
+        data.put("regToken", regToken);
+        GSResponse initRegResponse = mock(GSResponse.class);
+        when(initRegResponse.getData()).thenReturn(data);
+
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
+
+        try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtils.when(() -> CDCUtils.isErrorResponse(any())).thenReturn(true);
+
+            // when
+            gigyaApi.registerLiteAccount(liteAccountDTO);
 
             // then
             verify(gsRequestMock, times(0)).send();

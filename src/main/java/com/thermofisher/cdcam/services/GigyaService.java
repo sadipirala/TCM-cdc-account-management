@@ -35,12 +35,14 @@ import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -383,6 +385,25 @@ public class GigyaService {
         }
 
         return response;
+    }
+
+    public CDCResponseData registerLiteAccount(LiteAccountDTO liteAccountDTO) throws CustomGigyaErrorException, GSKeyNotFoundException, IOException, JSONException {
+        GSResponse gsResponse = gigyaApi.registerLiteAccount(liteAccountDTO);
+        CDCResponseData cdcResponseData = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCResponseData.class);
+
+        if (isErrorResponse(gsResponse)) {
+            logger.error(String.format("[CDC ERROR] - Error on registerLiteAccount. Code: %d", gsResponse.getErrorCode()));
+            logger.error(String.format("[CDC ERROR] - Email: %s", liteAccountDTO.getEmail()));
+            logger.error(String.format("[CDC ERROR] - Log: %s", gsResponse.getLog()));
+            logger.error(String.format("[CDC ERROR] - Error message: %s", gsResponse.getErrorMessage()));
+            logger.error(String.format("[CDC ERROR] - Error details: %s", gsResponse.getErrorDetails()));
+            logger.error(String.format("[CDC ERROR] - Response text: %s", gsResponse.getResponseText()));
+            String validationErrors = Utils.convertJavaToJsonString(cdcResponseData.getValidationErrors());
+            String errorMessage = String.format("Validation errors: %s", validationErrors);
+            throw new CustomGigyaErrorException(errorMessage, gsResponse.getErrorCode());
+        };
+
+        return cdcResponseData;
     }
 
     public CDCResponseData registerLiteAccount(String email) throws IOException, CustomGigyaErrorException, GSKeyNotFoundException {

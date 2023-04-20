@@ -9,18 +9,21 @@ import com.thermofisher.cdcam.enums.ResponseCode;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EECUserV1;
 import com.thermofisher.cdcam.model.EECUserV2;
+import com.thermofisher.cdcam.model.EECUserV3;
 import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.cdc.CDCAccount;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.Utils;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,14 +35,67 @@ public class LiteRegistrationService {
     private final int BAD_REQUEST_ERROR_CODE = 400;
     private final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
 
+    @Value("${identity.oidc.rp.id}")
+    private String defaultCommerceId;
+
     @Value("${is-email-validation-enabled}")
     private boolean isEmailValidationEnabled;
 
     @Value("${cdc.main.datacenter.name}")
     public String mainDataCenterName;
 
+    @Value("${identity.registration.oidc.rp.redirect_uri}")
+    private String registrationRedirectionUri;
+
+    @Value("${eec.v3.request.limit}")
+    public int requestLimitV3;
+
     @Autowired
     GigyaService gigyaService;
+
+    public List<EECUserV3> registerLiteAccounts(List<LiteAccountDTO> liteAccountList) throws IllegalArgumentException {
+        logger.info(String.format("Lite registration initiated. %d users requested", liteAccountList.size()));
+        String errorMessage = "";
+
+        if(Utils.isNullOrEmpty(liteAccountList)) {
+            errorMessage = "No users requested.";
+            logger.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        } else if (liteAccountList.size() > requestLimitV3) {
+            errorMessage = String.format("Requested users exceed request limit: %s.", requestLimitV3);
+            logger.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        }
+
+        List<EECUserV3> liteAccounts = new ArrayList<>();
+
+        for (LiteAccountDTO account : liteAccountList) {
+            try {
+                if(Utils.isNullOrEmpty(account.getEmail())) {
+                    throw new IllegalArgumentException("Email is null or empty.");
+                }
+                if(!Utils.isValidEmail(account.getEmail())) {
+                    throw new IllegalArgumentException("Email is invalid.");
+                }
+                EECUserV3 user = registerLiteAccount(account);
+                liteAccounts.add(user);
+            } catch (CustomGigyaErrorException e) {
+                logger.error(String.format("Error with email: %s. CDC Error code: %d. CDC Error message: %s", account.getEmail(), e.getErrorCode(), e.getMessage()));
+                EECUserV3 invalidEECUser = EECUserV3.buildInvalidUser(account.getEmail(), e.getErrorCode(), e.getMessage());
+                liteAccounts.add(invalidEECUser);
+            } catch (IllegalArgumentException e) {
+                logger.error(String.format("Error with email: %s. Cause: %s", account.getEmail(), e.getMessage()));
+                EECUserV3 invalidEECUser = EECUserV3.buildInvalidUser(account.getEmail(), BAD_REQUEST_ERROR_CODE, e.getMessage());
+                liteAccounts.add(invalidEECUser);
+            } catch (Throwable e) {
+                logger.error(String.format("Error with email: %s. Cause: %s", account.getEmail(), e.getMessage()));
+                EECUserV3 invalidEECUser = EECUserV3.buildInvalidUser(account.getEmail(), GENERIC_ERROR_CODE, ERROR_MSG);
+                liteAccounts.add(invalidEECUser);
+            }
+        }
+
+        return liteAccounts;
+    }
 
     public List<EECUserV2> registerEmailAccounts(EmailList emailList) throws IOException {
         logger.info(String.format("Lite registration initiated. %d users requested.", emailList.getEmails().size()));
@@ -96,6 +152,33 @@ public class LiteRegistrationService {
         }
 
         return user;
+    }
+
+    private EECUserV3 registerLiteAccount(LiteAccountDTO liteAccountDTO) throws CustomGigyaErrorException, IOException, GSKeyNotFoundException, JSONException {
+        SearchResponse searchResponse = gigyaService.searchInBothDC(liteAccountDTO.getEmail());
+        CDCSearchResponse cdcSearchResponse = searchResponse.getCdcSearchResponse();
+        List<CDCAccount> accounts = cdcSearchResponse.getResults();
+
+        EECUserV3 user;
+        if (accounts.size() == 0) {
+            if (Utils.isNullOrEmpty(liteAccountDTO.getClientId())) {
+                liteAccountDTO.setClientId(defaultCommerceId);
+            }
+            user = createLiteAccount(liteAccountDTO);
+        } else {
+            logger.info(String.format("%s already exists, getting full registered account, lite otherwise.", liteAccountDTO.getEmail()));
+            CDCAccount account = findFullRegisteredAccountOrFirstFrom(accounts);
+            user = EECUserV3.buildFromExistingAccount(account);
+        }
+
+        return user;
+    }
+
+    private EECUserV3 createLiteAccount(LiteAccountDTO liteAccountDTO) throws GSKeyNotFoundException, CustomGigyaErrorException, IOException, JSONException {
+        logger.info(String.format("Registering lite account: %s", liteAccountDTO.getEmail()));
+        CDCResponseData cdcResponseData = gigyaService.registerLiteAccount(liteAccountDTO);
+        String UID = cdcResponseData.getUID();
+        return EECUserV3.buildLiteRegisteredUser(UID, liteAccountDTO.getEmail(), liteAccountDTO.getClientId(), registrationRedirectionUri);
     }
 
     private EECUserV2 createLiteAccount(String email) throws GSKeyNotFoundException, IOException, CustomGigyaErrorException {
