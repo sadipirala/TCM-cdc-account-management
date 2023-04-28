@@ -6,11 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -393,13 +389,15 @@ public class AccountsServiceTests {
     }
 
     @Test
-    public void verify_ShouldVerifyAnAccount() throws CustomGigyaErrorException {
+    public void verify_ShouldVerifyAnAccount() throws CustomGigyaErrorException, JSONException {
         // given
+        String regToken = "regTokenTest";
         AccountInfo account = AccountUtils.getSiteAccount();
         when(gigyaService.setAccountInfo(anyMap())).thenReturn(AccountUtils.getCdcResponse());
+        when(gigyaService.finalizeRegistration(anyString())).thenReturn(AccountUtils.getCdcResponse());
 
         // when
-        accountsService.verify(account);
+        accountsService.verify(account, regToken);
 
         // then
         verify(gigyaService).setAccountInfo(mapCaptor.capture());

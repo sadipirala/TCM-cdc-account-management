@@ -15,7 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Utils {
-    private final static String VALID_EMAIL_REGEX = "^([a-zA-Z0-9])+([a-zA-Z0-9_.\\-])+@(([a-zA-Z0-9\\-])+\\.)+([a-zA-Z0-9]{2,6})$";
+    private final static String VALID_EMAIL_REGEX = "^(?!.*[.]{2})([a-zA-Z0-9])+([a-zA-Z0-9_.\\-])+@(([a-zA-Z0-9\\-])+\\.)+([a-zA-Z0-9]{2,6})$";
     private final static String CHINA_LOCALE = "zh-cn";
     private final static String TAIWAN_LOCALE = "zh-tw";
 
@@ -107,6 +107,6 @@ public class Utils {
     }
 
     public static  boolean isAValidEmail(String email) {
-        return email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+        return email.matches(VALID_EMAIL_REGEX);
     }
 }
