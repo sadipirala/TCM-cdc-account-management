@@ -11,7 +11,8 @@ public enum APIMethods {
     SEARCH("accounts.search"),
     SEND_VERIFICATION_EMAIL("accounts.resendVerificationCode"),
     SET_ACCOUNT_INFO("accounts.setAccountInfo"),
-    GET_RP("fidm.oidc.op.getRP");
+    GET_RP("fidm.oidc.op.getRP"),
+    FINALIZE_REGISTRATION("accounts.finalizeRegistration");
 
     private String value;
 

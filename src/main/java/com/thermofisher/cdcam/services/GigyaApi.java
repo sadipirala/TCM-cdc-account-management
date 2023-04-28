@@ -140,6 +140,13 @@ public class GigyaApi {
         return request.send();
     }
 
+    public GSResponse finalizeRegistration(String regToken) {
+        String apiMethod = APIMethods.FINALIZE_REGISTRATION.getValue();
+        GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
+        request.setParam("regToken", regToken);
+        return request.send();
+    }
+
     public GSResponse setAccountInfo(CDCAccount account) {
         String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
