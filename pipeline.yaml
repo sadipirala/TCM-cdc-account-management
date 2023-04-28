@@ -131,9 +131,9 @@ environments:
     cluster: tfcom-cluster-na-prodb.cloud.thermofisher.net
     env:
       - name: spring.profiles.active
-        value: prod-cn
+        value: prod
       - name: SPRING.PROFILES.ACTIVE
-        value: prod-cn
+        value: prod
     autoscaling:
       enabled: true
       minReplicas: 3
