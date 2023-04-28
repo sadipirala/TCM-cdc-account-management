@@ -573,7 +573,7 @@ public class AccountsControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         when(dataProtectionService.decrypCiphertext(CIPHERTEXT)).thenReturn(AccountUtils.getCiphertext());
         when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
-        when(accountsService.verify(any())).thenReturn(AccountUtils.getCdcResponse());
+        when(accountsService.verify(any(), any())).thenReturn(AccountUtils.getCdcResponse());
         when(invitationService.updateInvitationCountry(any())).thenReturn(200);
 
         try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
@@ -583,7 +583,7 @@ public class AccountsControllerTests {
             ResponseEntity<CDCResponseData> response = accountsController.newAccount(accountDTO, COOKIE_CIP_AUTHDATA_VALID, null);
 
             // then
-            verify(accountsService).verify(any());
+            verify(accountsService).verify(any(), any());
             assertEquals(response.getBody().getErrorCode(), 0);
         }
     }

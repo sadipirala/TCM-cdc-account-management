@@ -363,10 +363,12 @@ public class AccountsController {
             }
 
             if (isVerificationPending && isInvitedAccount(decryptedCiphertext)) {
-                logger.info("Verifying email for invited user.");
-                CDCResponse verifyResponse = accountsService.verify(account);
+                logger.info(String.format("Verifying email for invited user: %s", newAccountUid));
+                CDCResponse verifyResponse = accountsService.verify(account, accountCreationResponse.getRegToken());
                 accountCreationResponse.setErrorCode(verifyResponse.getErrorCode());
-                logger.info("Auto email verification successful.");
+                accountCreationResponse.setStatusCode(verifyResponse.getStatusCode());
+                accountCreationResponse.setStatusReason(verifyResponse.getStatusReason());
+                logger.info(String.format("Auto email verification successful for user: %s", newAccountUid));
             } else if (isVerificationPending) {
                 logger.info("Email verification pending. Returning response with error {}.", ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());
                 accountCreationResponse.setErrorCode(ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());

@@ -1160,4 +1160,30 @@ public class GigyaServiceTests {
         verify(gigyaApi).register(any(CDCNewAccountV2.class));
         assertEquals(cdcResponse.getStatusCode(), 200);
     }
+
+    @Test
+    public void finalizeRegistration_ShouldFinalizeRegistrationInCDC() throws CustomGigyaErrorException {
+        // given
+        String regToken = "regTokenTest";
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.finalizeRegistration(regToken);
+
+        // then
+        verify(gigyaApi).finalizeRegistration(regToken);
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void finalizeRegistration_GivenTheresAnErrorFromCDC_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
+        // given
+        String regToken = "regTokenTest";
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gsResponseMock.getErrorCode()).thenReturn(400001);
+        when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.finalizeRegistration(regToken);
+    }
 }

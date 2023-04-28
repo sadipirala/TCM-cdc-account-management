@@ -777,4 +777,24 @@ public class GigyaApiTests {
         // then
         verify(secretsService, times(1)).get(any());
     }
+
+    @Test
+    public void finalizeRegistration_ShouldFinalizeAccountRegistration() {
+        // given
+        String regToken = "regTokenTest";
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        GSRequest gsRequestMock = mock(GSRequest.class);
+        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+
+        try (MockedStatic<GSRequestFactory> gsRequestFactoryMock = Mockito.mockStatic(GSRequestFactory.class)) {
+            gsRequestFactoryMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenReturn(gsRequestMock);
+
+            // when
+            gigyaApi.finalizeRegistration(regToken);
+
+            // then
+            verify(gsRequestMock).send();
+        }
+    }
 }

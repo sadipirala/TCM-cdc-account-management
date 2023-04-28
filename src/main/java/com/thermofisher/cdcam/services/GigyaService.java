@@ -466,6 +466,16 @@ public class GigyaService {
         }
     }
 
+    public CDCResponse finalizeRegistration(String regToken) throws CustomGigyaErrorException {
+        GSResponse gsResponse = gigyaApi.finalizeRegistration(regToken);
+        if (isErrorResponse(gsResponse)) {
+            logger.error(String.format("FinalizeRegistration error: %s %s", gsResponse.getErrorCode(), gsResponse.getErrorMessage()));
+            throw new CustomGigyaErrorException(gsResponse.getErrorMessage());
+        }
+
+        return new Gson().fromJson(gsResponse.getResponseText(), CDCResponse.class);
+    }
+
     public CDCResponse setAccountInfo(Map<String, String> params) throws CustomGigyaErrorException {
         GSObject gsParams = new GSObject();
         for (Entry<String, String> entry : params.entrySet()) {
