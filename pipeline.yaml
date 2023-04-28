@@ -126,6 +126,23 @@ environments:
       - cdcam-stage.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
       - cdcam.stage.cloudqa.thermofisher.net
 
+  prod:
+    branch: master
+    cluster: tfcom-cluster-na-prodb.cloud.thermofisher.net
+    env:
+      - name: spring.profiles.active
+        value: prod-cn
+      - name: SPRING.PROFILES.ACTIVE
+        value: prod-cn
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 70 
+    ingressDomains:
+      - cdcam.tfcom-cluster-na-prodb.cloud.thermofisher.net
+
   prod-cn:
     branch: master
     cluster: tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
