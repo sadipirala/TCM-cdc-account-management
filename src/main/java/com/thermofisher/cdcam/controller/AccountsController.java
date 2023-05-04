@@ -66,6 +66,7 @@ import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.DataProtectionService;
 import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.GigyaService;
+import com.thermofisher.cdcam.services.InvitationService;
 import com.thermofisher.cdcam.services.JWTService;
 import com.thermofisher.cdcam.services.JWTValidator;
 import com.thermofisher.cdcam.services.NotificationService;
@@ -110,6 +111,9 @@ public class AccountsController {
 
     @Autowired
     DataProtectionService dataProtectionService;
+
+    @Autowired
+    InvitationService invitationService;
 
     @Autowired
     JWTService jwtService;
@@ -345,11 +349,26 @@ public class AccountsController {
                 logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
             }
 
+            if(isInvitedAccount(decryptedCiphertext)) {
+                logger.info("Updating invitation with country code.");
+                JSONObject updateInvitationDTO = new JSONObject() 
+                    .put("inviteeUsername", account.getUsername())
+                    .put("country", account.getCountry());
+                Integer response = invitationService.updateInvitationCountry(updateInvitationDTO);
+                if(response == HttpStatus.OK.value()) {
+                    logger.info("Invitation was updated successfully with country value.");
+                } else {
+                    logger.info("An error occurred. Invitation was not updated with country value.");
+                }
+            }
+
             if (isVerificationPending && isInvitedAccount(decryptedCiphertext)) {
-                logger.info("Verifying email for invited user.");
-                CDCResponse verifyResponse = accountsService.verify(account);
+                logger.info(String.format("Verifying email for invited user: %s", newAccountUid));
+                CDCResponse verifyResponse = accountsService.verify(account, accountCreationResponse.getRegToken());
                 accountCreationResponse.setErrorCode(verifyResponse.getErrorCode());
-                logger.info("Auto email verification successful.");
+                accountCreationResponse.setStatusCode(verifyResponse.getStatusCode());
+                accountCreationResponse.setStatusReason(verifyResponse.getStatusReason());
+                logger.info(String.format("Auto email verification successful for user: %s", newAccountUid));
             } else if (isVerificationPending) {
                 logger.info("Email verification pending. Returning response with error {}.", ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());
                 accountCreationResponse.setErrorCode(ResponseCode.ACCOUNT_PENDING_VERIFICATION.getValue());

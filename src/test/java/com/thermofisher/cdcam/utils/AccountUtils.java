@@ -514,4 +514,14 @@ public class AccountUtils {
         String path = "src/test/resources/CDCResponses/invalid-account.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
+
+    public static String getLiteRegistrationResponseJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/lite-registration.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
+
+    public static String getLiteRegistrationErrorJsonString() throws IOException, ParseException {
+        String path = "src/test/resources/CDCResponses/lite-registration-error.json";
+        return TestUtils.getJSONFromFile(path).toString();
+    }
 }

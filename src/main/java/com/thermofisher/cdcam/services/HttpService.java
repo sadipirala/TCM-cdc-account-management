@@ -5,6 +5,7 @@ import com.thermofisher.cdcam.utils.Utils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -52,6 +53,29 @@ public class HttpService {
         return response;
     }
 
+    public HttpServiceResponse put(String url, JSONObject body) {
+        String requestBody = body.toString();
+        StringEntity requestEntity = new StringEntity(requestBody, ContentType.APPLICATION_JSON);
+
+        HttpPut httpPut = new HttpPut(url);
+        httpPut.addHeader("Content-Type", ContentType.APPLICATION_JSON.toString());
+        httpPut.setEntity(requestEntity);
+
+        HttpServiceResponse response = null;
+
+        try {
+            response = execute(httpPut);
+        } catch (IOException e) {
+            String exception = Utils.stackTraceToString(e);
+            logger.error(String.format("An error occurred while executing a PUT Request. Url: %s. Error: %s", url, exception));
+        } catch (JSONException e) {
+            String exception = Utils.stackTraceToString(e);
+            logger.error(String.format("An error occurred while parsing response from PUT Request. Url: %s. Error: %s", url, exception));
+        }
+
+        return response;
+    }
+
     public HttpServiceResponse get(String url) {
         HttpGet httpGet = new HttpGet(url);
         HttpServiceResponse response = null;
@@ -74,11 +98,12 @@ public class HttpService {
 
         CloseableHttpResponse closeableResponse = httpClient.execute(request);
         String responseBody = EntityUtils.toString(closeableResponse.getEntity());
-
+        Integer statusCode = closeableResponse.getStatusLine().getStatusCode();
         httpClient.close();
 
         return HttpServiceResponse.builder()
                 .responseBody(new JSONObject(responseBody))
+                .status(statusCode)
                 .closeableHttpResponse(closeableResponse)
                 .build();
     }

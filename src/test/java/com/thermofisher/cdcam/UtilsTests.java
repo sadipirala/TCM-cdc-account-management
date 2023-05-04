@@ -270,4 +270,16 @@ public class UtilsTests {
         // then
         assertFalse(result);
     }
+
+    @Test
+    public void isAValidEmail_GivenMethodIsCalledWithConsecutivePeriods_ThenItShouldReturnFalse() {
+        // given
+        String email = "test..data@mail.com";
+
+        // when
+        boolean result = Utils.isAValidEmail(email);
+
+        // then
+        assertFalse(result);
+    }
 }

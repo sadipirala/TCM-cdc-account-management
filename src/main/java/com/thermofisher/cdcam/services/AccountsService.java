@@ -1,6 +1,7 @@
 package com.thermofisher.cdcam.services;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -192,10 +194,16 @@ public class AccountsService {
         }
     }
 
-    public CDCResponse verify(AccountInfo account) throws CustomGigyaErrorException {
+    public CDCResponse verify(AccountInfo account, String regToken) throws CustomGigyaErrorException, JSONException {
         Map<String, String> params = new HashMap<>();
         params.put("UID", account.getUid());
         params.put("isVerified", "true");
-        return gigyaService.setAccountInfo(params);
+        JSONObject dataJson = new JSONObject();
+        dataJson.put("verifiedEmailDate", LocalDate.now());
+        params.put("data", dataJson.toString());
+        params.put("finalizeRegistration", "true");
+        gigyaService.setAccountInfo(params);
+        logger.info(String.format("Finalizing registration for UID: %s", account.getUid()));
+        return gigyaService.finalizeRegistration(regToken);
     }
 }

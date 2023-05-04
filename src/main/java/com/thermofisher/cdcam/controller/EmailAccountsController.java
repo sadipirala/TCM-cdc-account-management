@@ -6,7 +6,9 @@ import javax.validation.Valid;
 
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EECUserV2;
+import com.thermofisher.cdcam.model.EECUserV3;
 import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 
@@ -37,6 +39,34 @@ public class EmailAccountsController {
     @Autowired
     LiteRegistrationService liteRegistrationService;
     
+    @PostMapping("/v3/accounts/lite")
+    @ApiOperation(value = "Request enhanced lite-account registration from a list of users. V3")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "OK"),
+        @ApiResponse(code = 400, message = "Invalid request. No elements were sent or limit was exceeded.", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        }),
+        @ApiResponse(code = 500, message = "Internal server error", responseHeaders = {
+            @ResponseHeader(name = requestExceptionHeader, description = "Response description", response = String.class)
+        })
+    })
+    public ResponseEntity<List<EECUserV3>> addLiteAccount(@Valid @RequestBody List<LiteAccountDTO> accountList) {
+        logger.info("Lite account registration initiated. V3");
+
+        try {
+            List<EECUserV3> response = liteRegistrationService.registerLiteAccounts(accountList);
+            return ResponseEntity.ok().body(response);
+        } catch (IllegalArgumentException e) {
+            String errorMessage = String.format("An error occurred during request validation. Error message: %s", e.getMessage());
+            logger.error(errorMessage);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(requestExceptionHeader, errorMessage).body(null);
+        } catch (Exception e) {
+            String errorMessage = String.format("An error occurred during email only registration process... %s", e.getMessage());
+            logger.error(errorMessage);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(requestExceptionHeader, errorMessage).body(null);
+        }
+    }
+
     @PostMapping("/v2/accounts/lite")
     @ApiOperation(value = "Request email-only registration from a list of email addresses. V2")
     @ApiResponses({

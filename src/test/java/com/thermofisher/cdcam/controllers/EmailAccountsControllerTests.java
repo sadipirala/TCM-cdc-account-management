@@ -7,14 +7,9 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.controller.EmailAccountsController;
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EECUserV2;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,10 +23,21 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.controller.EmailAccountsController;
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EECUserV2;
+import com.thermofisher.cdcam.model.EECUserV3;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
+import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
+
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class EmailAccountsControllerTests {
+
+    private static final String TEST_EMAIL = "TEST-EMAIL";
 
     @InjectMocks
     EmailAccountsController emailAccountsController;
@@ -279,5 +285,33 @@ public class EmailAccountsControllerTests {
         // then
         assertEquals(res.getStatusCode(), HttpStatus.BAD_REQUEST);
     }
-    
+
+    @Test
+    public void addLiteAccount_WhenValidRequest_ThenReturnOK() throws IllegalArgumentException {
+        // given
+        setProperties();
+        List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(TEST_EMAIL).build());
+        when(liteRegistrationService.registerLiteAccounts(request)).thenReturn(Collections.singletonList(EECUserV3.builder().email(TEST_EMAIL).build()));
+        
+        // when 
+        ResponseEntity<List<EECUserV3>> response = emailAccountsController.addLiteAccount(request);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(response.getBody().get(0).getEmail(), TEST_EMAIL);
+    }
+
+    @Test
+    public void addLiteAccount_WhenExceptionOccurred_ThenReturnInternalServerError() throws IllegalArgumentException {
+        // given
+        setProperties();
+        List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(TEST_EMAIL).build());
+        when(liteRegistrationService.registerLiteAccounts(request)).thenThrow(RuntimeException.class);
+        
+        // when 
+        ResponseEntity<List<EECUserV3>> response = emailAccountsController.addLiteAccount(request);
+
+        // then
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

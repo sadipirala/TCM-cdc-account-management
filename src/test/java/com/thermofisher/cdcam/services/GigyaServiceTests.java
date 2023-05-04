@@ -43,7 +43,9 @@ import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
 import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
+import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
@@ -51,6 +53,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.simple.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -638,6 +641,36 @@ public class GigyaServiceTests {
         assertEquals(uid, cdcResponse.getUID());
     }
 
+    @Test
+    public void liteRegisterUser_V3_GivenTheresAValidResponse_ItShouldReturnTheSameNumberOfResultsAsCDCAccounts() throws GSKeyNotFoundException, CustomGigyaErrorException, IOException, JSONException, ParseException {
+        // given
+        String uid = "9f6f2133e57144d787574d49c0b9908e";
+        LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder().build();
+        GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
+        when(cdcMockResponse.getResponseText()).thenReturn(AccountUtils.getLiteRegistrationResponseJsonString());
+        when(gigyaApi.registerLiteAccount(any(LiteAccountDTO.class))).thenReturn(cdcMockResponse);
+
+        // when
+        CDCResponseData cdcResponse = gigyaService.registerLiteAccount(liteAccountDTO);
+
+        // then
+        assertEquals(uid, cdcResponse.getUID());
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void liteRegisterUser_V3_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, GSKeyNotFoundException, IOException, ParseException, JSONException {
+        // given
+        int errorCode = 400;
+        LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder().build();
+        GSResponse cdcMockResponse = Mockito.mock(GSResponse.class);
+        when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
+        when(cdcMockResponse.getResponseText()).thenReturn(AccountUtils.getLiteRegistrationErrorJsonString());
+        when(gigyaApi.registerLiteAccount(any(LiteAccountDTO.class))).thenReturn(cdcMockResponse);
+
+        // when
+        gigyaService.registerLiteAccount(liteAccountDTO);
+    }
+
     @Test(expected = CustomGigyaErrorException.class)
     public void liteRegisterUser_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, IOException, GSKeyNotFoundException {
         // given
@@ -1126,5 +1159,31 @@ public class GigyaServiceTests {
         // then
         verify(gigyaApi).register(any(CDCNewAccountV2.class));
         assertEquals(cdcResponse.getStatusCode(), 200);
+    }
+
+    @Test
+    public void finalizeRegistration_ShouldFinalizeRegistrationInCDC() throws CustomGigyaErrorException {
+        // given
+        String regToken = "regTokenTest";
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.finalizeRegistration(regToken);
+
+        // then
+        verify(gigyaApi).finalizeRegistration(regToken);
+    }
+
+    @Test(expected = CustomGigyaErrorException.class)
+    public void finalizeRegistration_GivenTheresAnErrorFromCDC_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
+        // given
+        String regToken = "regTokenTest";
+        GSResponse gsResponseMock = mock(GSResponse.class);
+        when(gsResponseMock.getErrorCode()).thenReturn(400001);
+        when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
+
+        // when
+        gigyaService.finalizeRegistration(regToken);
     }
 }
