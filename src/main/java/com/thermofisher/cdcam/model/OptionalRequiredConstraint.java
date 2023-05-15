@@ -9,18 +9,19 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {OptionalRequiredWhenTrueConstraintValidator.class})
-public @interface OptionalRequiredWhenTrueConstraint {
+@Constraint(validatedBy = {OptionalRequiredConstraintValidator.class})
+public @interface OptionalRequiredConstraint {
     String message() default "Parameter required when required field is true.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
     String optionalField();
-    String requiredBooleanField();
+    String requiredField();
+    boolean requiredBooleanValue();
 
     @Target({ ElementType.TYPE })
     @Retention(RetentionPolicy.RUNTIME)
     @interface List {
-        OptionalRequiredWhenTrueConstraint[] value();
+        OptionalRequiredConstraint[] value();
     }
 }

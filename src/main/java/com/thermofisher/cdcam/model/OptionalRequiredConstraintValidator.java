@@ -6,26 +6,26 @@ import org.springframework.beans.BeanWrapperImpl;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-public class OptionalRequiredWhenTrueConstraintValidator
-    implements ConstraintValidator<OptionalRequiredWhenTrueConstraint, Object> {
+public class OptionalRequiredConstraintValidator
+    implements ConstraintValidator<OptionalRequiredConstraint, Object> {
 
     private String optionalField;
-    private String requiredBooleanField;
+    private String requiredField;
+    private boolean requiredBooleanValue;
 
     @Override
-    public void initialize(OptionalRequiredWhenTrueConstraint constraint) {
+    public void initialize(OptionalRequiredConstraint constraint) {
         this.optionalField = constraint.optionalField();
-        this.requiredBooleanField = constraint.requiredBooleanField();
+        this.requiredField = constraint.requiredField();
+        this.requiredBooleanValue = constraint.requiredBooleanValue();
     }
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
         Object fieldValue = new BeanWrapperImpl(value).getPropertyValue(optionalField);
-        Object requiredBooleanFieldValue = new BeanWrapperImpl(value).getPropertyValue(requiredBooleanField);
+        Object requiredFieldValue = new BeanWrapperImpl(value).getPropertyValue(requiredField);
 
-        assert requiredBooleanFieldValue != null;
-
-        if (requiredBooleanFieldValue.equals(false)) {
+        if (requiredFieldValue == null || requiredFieldValue.equals(requiredBooleanValue)) {
             return true;
         }
 

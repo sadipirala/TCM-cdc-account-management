@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.model.dto;
 
-import com.thermofisher.cdcam.model.OptionalRequiredWhenTrueConstraint;
+import com.thermofisher.cdcam.model.OptionalRequiredConstraint;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,15 +11,17 @@ import javax.validation.constraints.NotNull;
 @Builder
 @Getter
 @Setter
-@OptionalRequiredWhenTrueConstraint.List({
-        @OptionalRequiredWhenTrueConstraint(
+@OptionalRequiredConstraint.List({
+        @OptionalRequiredConstraint(
                 optionalField = "city",
-                requiredBooleanField = "marketingConsent",
+                requiredField = "marketingConsent",
+                requiredBooleanValue = true,
                 message = "Parameter city is required when marketingConsent is true."
         ),
-        @OptionalRequiredWhenTrueConstraint(
+        @OptionalRequiredConstraint(
                 optionalField = "company",
-                requiredBooleanField = "marketingConsent",
+                requiredField = "marketingConsent",
+                requiredBooleanValue = true,
                 message = "Parameter company is required when marketingConsent is true."
         )
 })
