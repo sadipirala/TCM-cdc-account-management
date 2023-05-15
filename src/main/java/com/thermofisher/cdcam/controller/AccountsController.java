@@ -589,6 +589,8 @@ public class AccountsController {
     })
     public ResponseEntity<String> updatedMarketingConsent(@RequestBody @Valid SelfServeConsentDTO selfServeConsentDTO) {
         try {
+            accountsService.updateMarketingConsent(selfServeConsentDTO);
+            accountsService.notifyUpdatedMarketingConsent(selfServeConsentDTO.getUid());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             logger.error(String.format("An unexpected exception occurred: %s", e.getMessage()));

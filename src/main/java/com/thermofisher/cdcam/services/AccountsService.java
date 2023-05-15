@@ -23,6 +23,7 @@ import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.Registration;
+import com.thermofisher.cdcam.model.dto.SelfServeConsentDTO;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
@@ -205,5 +206,46 @@ public class AccountsService {
         gigyaService.setAccountInfo(params);
         logger.info(String.format("Finalizing registration for UID: %s", account.getUid()));
         return gigyaService.finalizeRegistration(regToken);
+    }
+
+    public void updateMarketingConsent(SelfServeConsentDTO selfServeConsentDTO) throws CustomGigyaErrorException, JSONException {
+        logger.info("Initiated marketing consent update for user with UID: {}", selfServeConsentDTO.getUid());
+
+        Map<String, String> params = new HashMap<>();
+        params.put("UID", selfServeConsentDTO.getUid());
+
+        JSONObject consent = new JSONObject();
+        consent.put("isConsentGranted", selfServeConsentDTO.getMarketingConsent());
+
+        JSONObject marketing = new JSONObject();
+        marketing.put("consent", consent);
+
+        JSONObject preferences = new JSONObject();
+        preferences.put("marketing", marketing);
+
+        params.put("preferences", preferences.toString());
+
+        if (selfServeConsentDTO.getMarketingConsent()) {
+            logger.info("Updating additional city and company fields.");
+            JSONObject profile = new JSONObject();
+            profile.put("city", selfServeConsentDTO.getCity());
+
+            JSONObject work = new JSONObject();
+            work.put("company", selfServeConsentDTO.getCompany());
+
+            params.put("profile", profile.toString());
+            params.put("work", work.toString());
+        }
+
+        gigyaService.setAccountInfo(params);
+        logger.info("Marketing consent update completed.");
+    }
+
+    public void notifyUpdatedMarketingConsent(String uid) throws CustomGigyaErrorException {
+        logger.info("Initiated updated marketing consent notification for user with UID: {}", uid);
+        AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
+        AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
+        notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
+        logger.info("Marketing consent notification update completed.");
     }
 }
