@@ -227,12 +227,12 @@ public class AccountsService {
 
         if (selfServeConsentDTO.getMarketingConsent()) {
             logger.info("Updating additional city and company fields.");
-            JSONObject profile = new JSONObject();
-            profile.put("city", selfServeConsentDTO.getCity());
-
             JSONObject work = new JSONObject();
             work.put("company", selfServeConsentDTO.getCompany());
-            profile.put("work", work.toString());
+
+            JSONObject profile = new JSONObject();
+            profile.put("city", selfServeConsentDTO.getCity());
+            profile.put("work", work);
 
             params.put("profile", profile.toString());
         }
