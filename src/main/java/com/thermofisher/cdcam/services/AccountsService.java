@@ -232,9 +232,9 @@ public class AccountsService {
 
             JSONObject work = new JSONObject();
             work.put("company", selfServeConsentDTO.getCompany());
+            profile.put("work", work.toString());
 
             params.put("profile", profile.toString());
-            params.put("work", work.toString());
         }
 
         gigyaService.setAccountInfo(params);
