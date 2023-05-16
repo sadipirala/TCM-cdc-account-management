@@ -25,7 +25,7 @@ import javax.validation.constraints.NotNull;
                 message = "Parameter company is required when marketingConsent is true."
         )
 })
-public class SelfServeConsentDTO {
+public class ConsentDTO {
 
     @NotNull(message = "Parameter marketingConsent is required.")
     private Boolean marketingConsent;

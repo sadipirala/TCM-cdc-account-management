@@ -23,7 +23,7 @@ import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.Registration;
-import com.thermofisher.cdcam.model.dto.SelfServeConsentDTO;
+import com.thermofisher.cdcam.model.dto.ConsentDTO;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
@@ -208,14 +208,14 @@ public class AccountsService {
         return gigyaService.finalizeRegistration(regToken);
     }
 
-    public void updateMarketingConsent(SelfServeConsentDTO selfServeConsentDTO) throws CustomGigyaErrorException, JSONException {
-        logger.info("Initiated marketing consent update for user with UID: {}", selfServeConsentDTO.getUid());
+    public void updateConsent(ConsentDTO consentDTO) throws CustomGigyaErrorException, JSONException {
+        logger.info("Initiated marketing consent update for user with UID: {}", consentDTO.getUid());
 
         Map<String, String> params = new HashMap<>();
-        params.put("UID", selfServeConsentDTO.getUid());
+        params.put("UID", consentDTO.getUid());
 
         JSONObject consent = new JSONObject();
-        consent.put("isConsentGranted", selfServeConsentDTO.getMarketingConsent());
+        consent.put("isConsentGranted", consentDTO.getMarketingConsent());
 
         JSONObject marketing = new JSONObject();
         marketing.put("consent", consent);
@@ -225,13 +225,13 @@ public class AccountsService {
 
         params.put("preferences", preferences.toString());
 
-        if (selfServeConsentDTO.getMarketingConsent()) {
+        if (consentDTO.getMarketingConsent()) {
             logger.info("Updating additional city and company fields.");
             JSONObject work = new JSONObject();
-            work.put("company", selfServeConsentDTO.getCompany());
+            work.put("company", consentDTO.getCompany());
 
             JSONObject profile = new JSONObject();
-            profile.put("city", selfServeConsentDTO.getCity());
+            profile.put("city", consentDTO.getCity());
             profile.put("work", work);
 
             params.put("profile", profile.toString());

@@ -581,16 +581,16 @@ public class AccountsController {
     }
 
     @PutMapping("/user/consent")
-    @ApiOperation(value = "Update user marketing consent preferences")
+    @ApiOperation(value = "Update user consent preferences")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK."),
             @ApiResponse(code = 400, message = "Bad Request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updatedMarketingConsent(@RequestBody @Valid SelfServeConsentDTO selfServeConsentDTO) {
+    public ResponseEntity<String> updateConsent(@RequestBody @Valid ConsentDTO consentDTO) {
         try {
-            accountsService.updateMarketingConsent(selfServeConsentDTO);
-            accountsService.notifyUpdatedMarketingConsent(selfServeConsentDTO.getUid());
+            accountsService.updateConsent(consentDTO);
+            accountsService.notifyUpdatedMarketingConsent(consentDTO.getUid());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             logger.error("An unexpected exception occurred.", e);
