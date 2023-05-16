@@ -587,11 +587,14 @@ public class AccountsController {
             @ApiResponse(code = 400, message = "Bad Request."),
             @ApiResponse(code = 500, message = "Internal server error.")
     })
-    public ResponseEntity<String> updateConsent(@RequestBody @Valid ConsentDTO consentDTO) {
+    public ResponseEntity<?> updateConsent(@RequestBody @Valid ConsentDTO consentDTO) {
         try {
             accountsService.updateConsent(consentDTO);
             accountsService.notifyUpdatedConsent(consentDTO.getUid());
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (CustomGigyaErrorException e) {
+            logger.error("An unexpected error occurred when consuming CDC services", e);
+            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
         } catch (Exception e) {
             logger.error("An unexpected exception occurred.", e);
         }

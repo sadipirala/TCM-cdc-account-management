@@ -22,13 +22,18 @@ public class OptionalRequiredConstraintValidator
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
-        Object fieldValue = new BeanWrapperImpl(value).getPropertyValue(optionalField);
+        Object optionalFieldValue = new BeanWrapperImpl(value).getPropertyValue(optionalField);
         Object requiredFieldValue = new BeanWrapperImpl(value).getPropertyValue(requiredField);
 
-        if (requiredFieldValue == null || requiredFieldValue.equals(requiredBooleanValue)) {
+        // Value that makes conditional fields required is not present.
+        if (requiredFieldValue == null) {
             return true;
         }
 
-        return !StringUtils.isBlank((CharSequence) fieldValue);
+        if (requiredBooleanValue != (boolean) requiredFieldValue) {
+            return true;
+        }
+
+        return StringUtils.isNotBlank((String) optionalFieldValue);
     }
 }
