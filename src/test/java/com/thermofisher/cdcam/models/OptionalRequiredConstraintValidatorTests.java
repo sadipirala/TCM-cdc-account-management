@@ -1,7 +1,9 @@
 package com.thermofisher.cdcam.models;
 
+import com.thermofisher.cdcam.model.OptionalRequiredConstraint;
 import com.thermofisher.cdcam.model.OptionalRequiredConstraintValidator;
-import com.thermofisher.cdcam.model.dto.ConsentDTO;
+import lombok.Builder;
+import lombok.Getter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,122 +39,77 @@ public class OptionalRequiredConstraintValidatorTests {
         validator.afterPropertiesSet();
     }
 
-    @Test
-    public void ConsentDTO_isValid_givenNullMarketingConsent_shouldBeInvalid() {
-        // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid("abc123")
-                .city("Carlsbad")
-                .company("Thermo Fisher Scientific")
-                .marketingConsent(null)
-                .build();
-
-        // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
-
-        // Then.
-        Assert.assertEquals(1, violations.size());
+    @Builder
+    @Getter
+    @OptionalRequiredConstraint.List({
+            @OptionalRequiredConstraint(
+                    optionalField = "optionalField",
+                    requiredField = "isMandatory",
+                    requiredBooleanValue = true
+            )
+    })
+    public static class TestClass {
+        private Boolean isMandatory;
+        private String optionalField;
     }
 
     @Test
-    public void ConsentDTO_isValid_givenNullUid_shouldBeInvalid() {
+    public void validate_givenRequiredFieldNotMatchingRequiredBooleanValue_andOptionalFieldNull_shouldBeValid() {
         // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid(null)
-                .city("Carlsbad")
-                .company("Thermo Fisher Scientific")
-                .marketingConsent(false)
+        TestClass testClass = TestClass.builder()
+                .isMandatory(false)
+                .optionalField(null)
                 .build();
 
         // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
-
-        // Then.
-        Assert.assertEquals(1, violations.size());
-    }
-
-    @Test
-    public void ConsentDTO_isValid_givenEmptyUid_shouldBeInvalid() {
-        // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid(" ")
-                .city("Carlsbad")
-                .company("Thermo Fisher Scientific")
-                .marketingConsent(false)
-                .build();
-
-        // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
-
-        // Then.
-        Assert.assertEquals(1, violations.size());
-    }
-
-    @Test
-    public void ConsentDTO_isValid_givenNullCityAndCompany_whenMarketingConsentTrue_shouldBeInvalid() {
-        // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid("abc123")
-                .city(null)
-                .company(null)
-                .marketingConsent(true)
-                .build();
-
-        // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
-
-        // Then.
-        Assert.assertEquals(2, violations.size());
-    }
-
-    @Test
-    public void ConsentDTO_isValid_givenEmptyCityAndCompany_whenMarketingConsentTrue_shouldBeInvalid() {
-        // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid("abc123")
-                .city(" ")
-                .company(" ")
-                .marketingConsent(true)
-                .build();
-
-        // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
-
-        // Then.
-        Assert.assertEquals(2, violations.size());
-    }
-
-    @Test
-    public void ConsentDTO_isValid_givenNullCityAndCompany_whenMarketingConsentFalse_shouldBeValid() {
-        // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid("abc123")
-                .city(null)
-                .company(null)
-                .marketingConsent(false)
-                .build();
-
-        // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
+        Set<ConstraintViolation<TestClass>> violations = validator.validate(testClass);
 
         // Then.
         Assert.assertEquals(0, violations.size());
     }
 
     @Test
-    public void ConsentDTO_isValid_givenEmptyCityAndCompany_whenMarketingConsentFalse_shouldBeValid() {
+    public void validate_givenRequiredFieldNotMatchingRequiredBooleanValue_andOptionalFieldEmpty_shouldBeValid() {
         // Given.
-        ConsentDTO consentDTO = ConsentDTO.builder()
-                .uid("abc123")
-                .city(" ")
-                .company(" ")
-                .marketingConsent(false)
+        TestClass testClass = TestClass.builder()
+                .isMandatory(false)
+                .optionalField(" ")
                 .build();
 
         // When.
-        Set<ConstraintViolation<ConsentDTO>> violations = validator.validate(consentDTO);
+        Set<ConstraintViolation<TestClass>> violations = validator.validate(testClass);
 
         // Then.
         Assert.assertEquals(0, violations.size());
+    }
+
+    @Test
+    public void validate_givenRequiredFieldMatchingRequiredBooleanValue_andOptionalFieldNull_shouldBeInvalid() {
+        // Given.
+        TestClass testClass = TestClass.builder()
+                .isMandatory(true)
+                .optionalField(null)
+                .build();
+
+        // When.
+        Set<ConstraintViolation<TestClass>> violations = validator.validate(testClass);
+
+        // Then.
+        Assert.assertEquals(1, violations.size());
+    }
+
+    @Test
+    public void validate_givenRequiredFieldMatchingRequiredBooleanValue_andOptionalFieldEmpty_shouldBeInvalid() {
+        // Given.
+        TestClass testClass = TestClass.builder()
+                .isMandatory(true)
+                .optionalField(" ")
+                .build();
+
+        // When.
+        Set<ConstraintViolation<TestClass>> violations = validator.validate(testClass);
+
+        // Then.
+        Assert.assertEquals(1, violations.size());
     }
 }
