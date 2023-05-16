@@ -23,6 +23,7 @@ import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.cdc.Registration;
+import com.thermofisher.cdcam.model.dto.ConsentDTO;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
@@ -205,5 +206,46 @@ public class AccountsService {
         gigyaService.setAccountInfo(params);
         logger.info(String.format("Finalizing registration for UID: %s", account.getUid()));
         return gigyaService.finalizeRegistration(regToken);
+    }
+
+    public void updateConsent(ConsentDTO consentDTO) throws CustomGigyaErrorException, JSONException {
+        logger.info("Initiated consent update for user with UID: {}", consentDTO.getUid());
+
+        Map<String, String> params = new HashMap<>();
+        params.put("UID", consentDTO.getUid());
+
+        JSONObject consent = new JSONObject();
+        consent.put("isConsentGranted", consentDTO.getMarketingConsent());
+
+        JSONObject marketing = new JSONObject();
+        marketing.put("consent", consent);
+
+        JSONObject preferences = new JSONObject();
+        preferences.put("marketing", marketing);
+
+        params.put("preferences", preferences.toString());
+
+        if (consentDTO.getMarketingConsent()) {
+            logger.info("Updating additional city and company fields.");
+            JSONObject work = new JSONObject();
+            work.put("company", consentDTO.getCompany());
+
+            JSONObject profile = new JSONObject();
+            profile.put("city", consentDTO.getCity());
+            profile.put("work", work);
+
+            params.put("profile", profile.toString());
+        }
+
+        gigyaService.setAccountInfo(params);
+        logger.info("Marketing consent update completed.");
+    }
+
+    public void notifyUpdatedConsent(String uid) throws CustomGigyaErrorException {
+        logger.info("Initiated updated consent notification for user with UID: {}", uid);
+        AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
+        AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
+        notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
+        logger.info("Completed updated consent notification.");
     }
 }

@@ -3,6 +3,7 @@ package com.thermofisher.cdcam.controller;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
@@ -11,6 +12,8 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.validation.constraints.NotBlank;
 
+import com.thermofisher.cdcam.model.*;
+import com.thermofisher.cdcam.model.dto.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,9 +23,11 @@ import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,20 +48,10 @@ import com.thermofisher.cdcam.enums.RegistrationType;
 import com.thermofisher.cdcam.enums.ResponseCode;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.enums.cdc.WebhookEvent;
-import com.thermofisher.cdcam.model.AccountAvailabilityResponse;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.Ciphertext;
-import com.thermofisher.cdcam.model.UserDetails;
-import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponse;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
-import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
@@ -585,6 +580,25 @@ public class AccountsController {
         }
     }
 
+    @PutMapping("/user/consent")
+    @ApiOperation(value = "Update user consent preferences")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK."),
+            @ApiResponse(code = 400, message = "Bad Request."),
+            @ApiResponse(code = 500, message = "Internal server error.")
+    })
+    public ResponseEntity<String> updateConsent(@RequestBody @Valid ConsentDTO consentDTO) {
+        try {
+            accountsService.updateConsent(consentDTO);
+            accountsService.notifyUpdatedConsent(consentDTO.getUid());
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("An unexpected exception occurred.", e);
+        }
+
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = HttpMessageNotReadableException.class)
     public String handleHttpMessageNotReadableExceptions(
@@ -608,9 +622,12 @@ public class AccountsController {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    public String handleValidationExceptions(
+    public InvalidArgumentExceptionCustomResponse handleValidationExceptions(
             MethodArgumentNotValidException ex) {
-        return "Invalid input format.";
+        List<ObjectError> err = ex.getBindingResult().getAllErrors();
+        List<String> errorMessages = err.stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList());
+
+        return InvalidArgumentExceptionCustomResponse.builder().errors(errorMessages).build();
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
