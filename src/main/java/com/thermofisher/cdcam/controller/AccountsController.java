@@ -590,7 +590,7 @@ public class AccountsController {
     public ResponseEntity<String> updateConsent(@RequestBody @Valid ConsentDTO consentDTO) {
         try {
             accountsService.updateConsent(consentDTO);
-            accountsService.notifyUpdatedMarketingConsent(consentDTO.getUid());
+            accountsService.notifyUpdatedConsent(consentDTO.getUid());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             logger.error("An unexpected exception occurred.", e);

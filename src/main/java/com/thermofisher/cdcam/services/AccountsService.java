@@ -209,7 +209,7 @@ public class AccountsService {
     }
 
     public void updateConsent(ConsentDTO consentDTO) throws CustomGigyaErrorException, JSONException {
-        logger.info("Initiated marketing consent update for user with UID: {}", consentDTO.getUid());
+        logger.info("Initiated consent update for user with UID: {}", consentDTO.getUid());
 
         Map<String, String> params = new HashMap<>();
         params.put("UID", consentDTO.getUid());
@@ -241,11 +241,11 @@ public class AccountsService {
         logger.info("Marketing consent update completed.");
     }
 
-    public void notifyUpdatedMarketingConsent(String uid) throws CustomGigyaErrorException {
-        logger.info("Initiated updated marketing consent notification for user with UID: {}", uid);
+    public void notifyUpdatedConsent(String uid) throws CustomGigyaErrorException {
+        logger.info("Initiated updated consent notification for user with UID: {}", uid);
         AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
         AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
         notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
-        logger.info("Marketing consent notification update completed.");
+        logger.info("Completed updated consent notification.");
     }
 }
