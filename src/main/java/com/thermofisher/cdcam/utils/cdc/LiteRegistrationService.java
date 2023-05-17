@@ -35,9 +35,6 @@ public class LiteRegistrationService {
     private final int BAD_REQUEST_ERROR_CODE = 400;
     private final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
 
-    @Value("${identity.oidc.rp.id}")
-    private String defaultCommerceId;
-
     @Value("${is-email-validation-enabled}")
     private boolean isEmailValidationEnabled;
 
@@ -161,9 +158,6 @@ public class LiteRegistrationService {
 
         EECUserV3 user;
         if (accounts.size() == 0) {
-            if (Utils.isNullOrEmpty(liteAccountDTO.getClientId())) {
-                liteAccountDTO.setClientId(defaultCommerceId);
-            }
             user = createLiteAccount(liteAccountDTO);
         } else {
             logger.info(String.format("%s already exists, getting full registered account, lite otherwise.", liteAccountDTO.getEmail()));
@@ -178,7 +172,7 @@ public class LiteRegistrationService {
         logger.info(String.format("Registering lite account: %s", liteAccountDTO.getEmail()));
         CDCResponseData cdcResponseData = gigyaService.registerLiteAccount(liteAccountDTO);
         String UID = cdcResponseData.getUID();
-        return EECUserV3.buildLiteRegisteredUser(UID, liteAccountDTO.getEmail(), liteAccountDTO.getClientId(), registrationRedirectionUri);
+        return EECUserV3.buildLiteRegisteredUser(UID, liteAccountDTO.getEmail(), registrationRedirectionUri);
     }
 
     private EECUserV2 createLiteAccount(String email) throws GSKeyNotFoundException, IOException, CustomGigyaErrorException {
