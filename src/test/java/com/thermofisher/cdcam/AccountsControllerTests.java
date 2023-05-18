@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.thermofisher.cdcam.model.dto.*;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,12 +59,6 @@ import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.UserTimezone;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import com.thermofisher.cdcam.model.dto.ChangePasswordDTO;
-import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
-import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-import com.thermofisher.cdcam.model.dto.UsernameRecoveryDTO;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import com.thermofisher.cdcam.services.AccountsService;
@@ -1466,5 +1461,56 @@ public class AccountsControllerTests {
             // then
             Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Test
+    public void updateConsent_shouldTriggerConsentUpdateAndNotification_andReturn200() throws CustomGigyaErrorException, JSONException {
+        // Given.
+        ConsentDTO mockRequest = ConsentDTO.builder()
+                .uid("abc123")
+                .build();
+
+        doNothing().when(accountsService).updateConsent(mockRequest);
+        doNothing().when(accountsService).notifyUpdatedConsent(mockRequest.getUid());
+
+        // When.
+        ResponseEntity<?> response = accountsController.updateConsent(mockRequest);
+
+        // Then.
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.OK);
+        verify(accountsService).updateConsent(mockRequest);
+        verify(accountsService).notifyUpdatedConsent(mockRequest.getUid());
+    }
+
+    @Test
+    public void updateConsent_givenException_shouldReturn500() throws CustomGigyaErrorException, JSONException {
+        // Given.
+        ConsentDTO mockRequest = ConsentDTO.builder()
+                .uid("abc123")
+                .build();
+
+        doThrow(NullPointerException.class).when(accountsService).updateConsent(mockRequest);
+
+        // When.
+        ResponseEntity<?> response = accountsController.updateConsent(mockRequest);
+
+        // Then.
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    public void updateConsent_givenCustomGigyaErrorException_shouldReturn424() throws CustomGigyaErrorException, JSONException {
+        // Given.
+        ConsentDTO mockRequest = ConsentDTO.builder()
+                .uid("abc123")
+                .build();
+
+        doThrow(CustomGigyaErrorException.class).when(accountsService).updateConsent(mockRequest);
+
+        // When.
+        ResponseEntity<?> response = accountsController.updateConsent(mockRequest);
+
+        // Then.
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.FAILED_DEPENDENCY);
     }
 }
