@@ -15,8 +15,8 @@ import lombok.experimental.SuperBuilder;
 public class EECUserV3 extends EECUser {
     private String passwordSetupLink;
 
-    public static EECUserV3 buildLiteRegisteredUser(String uid, String email, String clientId, String redirectUri) {
-        String generatedPasswordSetupLink = MessageFormat.format(redirectUri, clientId, uid);
+    public static EECUserV3 buildLiteRegisteredUser(String uid, String email, String redirectUri) {
+        String generatedPasswordSetupLink = MessageFormat.format(redirectUri, uid);
         
         return EECUserV3.builder()
             .email(email)

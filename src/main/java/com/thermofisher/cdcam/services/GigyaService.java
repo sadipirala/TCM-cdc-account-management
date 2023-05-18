@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -197,10 +198,9 @@ public class GigyaService {
     }
 
     public String getEmailByUsername(String userName) throws IOException {
-        String query = String.format("SELECT emails,loginIDs FROM accounts WHERE profile.username CONTAINS '%1$s'", userName);
-        GSResponse gsResponse = gigyaApi.search(query, AccountType.FULL, mainApiDomain);
-        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
 
+        GSResponse gsResponse = getSearchResultByUsername(userName);
+        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
         for (CDCAccount result : cdcSearchResponse.getResults()) {
             if (result.getEmails().getVerified().size() > 0)
                 return result.getEmails().getVerified().get(0);
@@ -211,6 +211,15 @@ public class GigyaService {
         }
         logger.warn(String.format("Could not match an account with that username on CDC. username: %s. Error: %s", userName, gsResponse.getErrorMessage()));
         return NO_RESULTS_FOUND;
+    }
+
+    private GSResponse getSearchResultByUsername(String userName) throws JsonProcessingException {
+        String query = String.format("SELECT emails,loginIDs FROM accounts WHERE " +
+                "profile.username CONTAINS '%1$s' OR " +
+                "loginIDs.username CONTAINS '%1$s' OR " +
+                "loginIDs.emails CONTAINS '%1$s' OR " +
+                "loginIDs.unverifiedEmails CONTAINS '%1$s'", userName);
+        return gigyaApi.search(query, AccountType.FULL, mainApiDomain);
     }
 
     public String getUsernameByEmail(String email) {
@@ -247,23 +256,41 @@ public class GigyaService {
         return NO_RESULTS_FOUND;
     }
 
-    public String resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
+    public String resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         logger.info(String.format("Reset password request triggered for username: %s.", username));
-        GSObject requestParams = new GSObject();
-        requestParams.put("loginID", username);
-        requestParams.put("sendEmail", SEND_EMAIL);
-        GSResponse gsResponse = gigyaApi.resetPassword(requestParams);
 
-        if (gsResponse.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
-            String message = String.format("LoginID: %s does not exist.", username);
-            throw new LoginIdDoesNotExistException(message);
-        } else if (gsResponse.getErrorCode() != GigyaCodes.SUCCESS.getValue()) {
-            String errorMessage = String.format("Failed to send a reset password request for %s. CDC error code: %s", username, gsResponse.getErrorCode());
-            throw new CustomGigyaErrorException(errorMessage);
+        GSResponse searchResponse = getSearchResultByUsername(username);
+        String jSonSearch = searchResponse.getResponseText();
+        CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(jSonSearch, CDCSearchResponse.class);
+
+        for (CDCAccount result: cdcSearchResponse.getResults()) {
+            String loginID = "";
+            if(result.getLoginIDs().getEmails() != null && result.getLoginIDs().getEmails().length > 0)
+                loginID = result.getLoginIDs().getEmails()[0];
+            else if(result.getLoginIDs().getUnverifiedEmails() != null && result.getLoginIDs().getUnverifiedEmails().length > 0)
+                loginID = result.getLoginIDs().getUnverifiedEmails()[0];
+            else if(!result.getLoginIDs().getUsername().isEmpty())
+                loginID = result.getLoginIDs().getUsername();
+
+            GSObject requestParams = new GSObject();
+            requestParams.put("loginID", loginID);
+            requestParams.put("sendEmail", SEND_EMAIL);
+            GSResponse gsResponse = gigyaApi.resetPassword(requestParams);
+
+            if (gsResponse.getErrorCode() == GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue()) {
+                String message = String.format("LoginID: %s does not exist.", username);
+                throw new LoginIdDoesNotExistException(message);
+            } else if (gsResponse.getErrorCode() != GigyaCodes.SUCCESS.getValue()) {
+                String errorMessage = String.format("Failed to send a reset password request for %s. CDC error code: %s", username, gsResponse.getErrorCode());
+                throw new CustomGigyaErrorException(errorMessage);
+            }
+
+            GSObject data = gsResponse.getData();
+            return data.getString("passwordResetToken");
         }
 
-        GSObject data = gsResponse.getData();
-        return data.getString("passwordResetToken");
+        String message = String.format("LoginID: %s does not exist.", username);
+        throw new LoginIdDoesNotExistException(message);
     }
 
     public ResetPasswordResponse resetPasswordSubmit(ResetPasswordSubmit resetPassword) {
