@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.utils.Utils;
@@ -25,7 +24,7 @@ public class EmailVerificationService {
 
     public static String getDefaultVerifiedDate(String countryCode) {
         String DEFAULT_VERIFIED_DATE = "0001-01-01";
-        List<String> EMAIL_VERIFICATION_COUNTRIES = Arrays.asList(CountryCodes.CANADA.getValue());
+        List<String> EMAIL_VERIFICATION_COUNTRIES = Arrays.asList("ca", "ar", "bo", "br", "cl", "co", "cr", "ec", "sv", "gt", "hn", "mx", "ni", "pa", "py", "pe", "do", "uy");
         return EMAIL_VERIFICATION_COUNTRIES.contains(countryCode) ? null : DEFAULT_VERIFIED_DATE;
     }
     

@@ -23,7 +23,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -54,13 +53,8 @@ public class LiteRegistrationServiceTests {
 
     private static final String ERROR_MSG = "Something went wrong, please contact the system administrator.";
     private static final String MOCKED_UID = "59b44e6023214be5846c9cbd4cedfe93";
-    
-    private static final String MOCKED_CLIENT_ID = "MOCKED-CLIENT-ID";
-    private static final String MOCKED_DEFAULT_CLIENT_ID = "MOCKED-CLIENT-ID";
     private static final String MOCKED_EMAIL_1 = "account-test1@test.com";
-    private static final String MOCKED_REG_REDIRECT_URI_PROP = "https://test.com/registration?client_id={0}&uid={1}";
-    private static final String MOCKED_REG_REDIRECT_URI = "https://test.com/registration?client_id="+MOCKED_CLIENT_ID+"&uid="+MOCKED_UID;
-    private static final String MOCKED_REG_REDIRECT_URI_DEFAULT_CLIENTID = "https://test.com/registration?client_id="+MOCKED_DEFAULT_CLIENT_ID+"&uid="+MOCKED_UID;
+    private static final String MOCKED_REG_REDIRECT_URI = "https://test.com/registration?uid={1}";
     private static final String RESPONSE_MESSAGE_OK = "OK";
     private static final int RESPONSE_CODE_SUCCESS = 200;
     private static final int RESPONSE_CODE_ACCOUNT_AREADY_EXISTS = 4001;
@@ -82,8 +76,7 @@ public class LiteRegistrationServiceTests {
 
     private void setProperties() {
         ReflectionTestUtils.setField(liteRegistrationService, "mainDataCenterName", "us");
-        ReflectionTestUtils.setField(liteRegistrationService, "defaultCommerceId", MOCKED_DEFAULT_CLIENT_ID);
-        ReflectionTestUtils.setField(liteRegistrationService, "registrationRedirectionUri", MOCKED_REG_REDIRECT_URI_PROP);
+        ReflectionTestUtils.setField(liteRegistrationService, "registrationRedirectionUri", MOCKED_REG_REDIRECT_URI);
         ReflectionTestUtils.setField(liteRegistrationService, "requestLimitV3", 3);
     }
 
@@ -514,7 +507,6 @@ public class LiteRegistrationServiceTests {
 
         LiteAccountDTO account = LiteAccountDTO.builder()
                 .email(MOCKED_EMAIL_1)
-                .clientId(MOCKED_CLIENT_ID)
                 .build();
 
         List<LiteAccountDTO> request = Collections.singletonList(account);
@@ -569,7 +561,7 @@ public class LiteRegistrationServiceTests {
         assertEquals(1, result.size());
         assertEquals(MOCKED_EMAIL_1, result.get(0).getEmail());
         assertEquals(MOCKED_UID, result.get(0).getUid());
-        assertEquals(MOCKED_REG_REDIRECT_URI_DEFAULT_CLIENTID, result.get(0).getPasswordSetupLink());
+        assertEquals(MOCKED_REG_REDIRECT_URI, result.get(0).getPasswordSetupLink());
         assertEquals(RESPONSE_CODE_SUCCESS, result.get(0).getResponseCode());
         assertEquals(RESPONSE_MESSAGE_OK, result.get(0).getResponseMessage());
 

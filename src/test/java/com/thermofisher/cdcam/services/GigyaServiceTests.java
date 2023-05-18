@@ -7,10 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gigya.socialize.GSKeyNotFoundException;
@@ -33,16 +31,7 @@ import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.ResetPasswordResponse;
 import com.thermofisher.cdcam.model.ResetPasswordSubmit;
-import com.thermofisher.cdcam.model.cdc.CDCAccount;
-import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
-import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
-import com.thermofisher.cdcam.model.cdc.CDCResponseData;
-import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
-import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
-import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
-import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
-import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.model.cdc.*;
 import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.utils.AccountUtils;
@@ -335,12 +324,27 @@ public class GigyaServiceTests {
 
     @Test
     public void resetPasswordRequest_shouldRequestPasswordReset()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
         GSObject gsObject = new GSObject();
         gsObject.put("passwordResetToken","");
         gsObject.put("requirePasswordCheck", false);
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        LoginIDs loginIDs = LoginIDs.builder().username("armvalidtest@mail.com").build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
@@ -354,9 +358,24 @@ public class GigyaServiceTests {
 
     @Test(expected = LoginIdDoesNotExistException.class)
     public void resetPasswordRequest_whenAnInValidUsername_throwLoginIdDoesNotExistException()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue());
 
@@ -366,14 +385,175 @@ public class GigyaServiceTests {
 
     @Test(expected = CustomGigyaErrorException.class)
     public void resetPasswordRequest_whenAnUnhandledErrorOccurs_throwCustomGigyaErrorException()
-            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException {
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
         GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
         // when
         gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+    }
+
+    @Test(expected = LoginIdDoesNotExistException.class)
+    public void resetPasswordRequest_whenNoResultsFromSearch_throwLoginIdDoesNotExistException() throws GSKeyNotFoundException, CustomGigyaErrorException, JsonProcessingException, LoginIdDoesNotExistException {
+        // given
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(1);
+
+        // when
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+    }
+
+    @Test
+    public void resetPasswordRequest_whenAUserNameLoginIDisReturned_searchWithUsername()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
+        // given
+        GSObject gsObject = new GSObject();
+        gsObject.put("passwordResetToken","");
+        gsObject.put("requirePasswordCheck", false);
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(0);
+        when(mockCdcResponse.getData()).thenReturn(gsObject);
+
+        GSObject requestParams = new GSObject();
+        requestParams.put("loginID", "arminvalidtest@mail.com");
+        requestParams.put("sendEmail", false);
+
+        // when
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+
+        // then
+        verify(gigyaApi).resetPassword(refEq(requestParams));
+
+
+    }
+
+
+    @Test
+    public void resetPasswordRequest_whenAVerifiedEmailisReturned_searchWithUsername()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
+        // given
+        GSObject gsObject = new GSObject();
+        gsObject.put("passwordResetToken","");
+        gsObject.put("requirePasswordCheck", false);
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        String[] emails = {"blrVerEmail@mail.com"};
+        LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").emails(emails).build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(0);
+        when(mockCdcResponse.getData()).thenReturn(gsObject);
+
+        GSObject requestParams = new GSObject();
+        requestParams.put("loginID", "blrVerEmail@mail.com");
+        requestParams.put("sendEmail", false);
+
+        // when
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+
+        // then
+        verify(gigyaApi).resetPassword(refEq(requestParams));
+
+
+    }
+
+    @Test
+    public void resetPasswordRequest_whenAUnverifiedEmailisReturned_searchWithUsername()
+            throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
+        // given
+        GSObject gsObject = new GSObject();
+        gsObject.put("passwordResetToken","");
+        gsObject.put("requirePasswordCheck", false);
+        ArrayList<CDCAccount> mockAccount = new ArrayList<>();
+        String[] emails = {"blrUnVerEmail@mail.com"};
+        LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").unverifiedEmails(emails).build();
+        CDCAccount cdcAccount = CDCAccount.builder().loginIDs(loginIDs).build();
+        mockAccount.add(cdcAccount);
+        GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
+        GSResponse mockCdcResponse = Mockito.mock(GSResponse.class);
+        CDCSearchResponse mockCdcSearchResponse = CDCSearchResponse.builder()
+                .errorCode(0)
+                .statusCode(0)
+                .totalCount(0)
+                .statusReason("mock")
+                .results(mockAccount)
+                .build();
+
+        when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
+        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
+        when(mockCdcResponse.getErrorCode()).thenReturn(0);
+        when(mockCdcResponse.getData()).thenReturn(gsObject);
+
+        GSObject requestParams = new GSObject();
+        requestParams.put("loginID", "blrUnVerEmail@mail.com");
+        requestParams.put("sendEmail", false);
+
+        // when
+        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+
+        // then
+        verify(gigyaApi).resetPassword(refEq(requestParams));
+
+
     }
 
     @Test
