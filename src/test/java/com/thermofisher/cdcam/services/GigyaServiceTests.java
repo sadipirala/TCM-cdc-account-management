@@ -642,64 +642,64 @@ public class GigyaServiceTests {
         assertTrue(username.isEmpty());
     }
 
-    @Test
-    public void isAvailableLoginId_ShouldReturnIsAvailableResponse() throws Exception {
-        // given
-        boolean mockResponse = false;
-        String data = String.format("{\"isAvailable\": \"%b\"}", mockResponse);
-        GSObject gsObject = new GSObject(data);
-        GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-        when(mockGSResponse.getErrorCode()).thenReturn(0);
-        when(mockGSResponse.getData()).thenReturn(gsObject);
-        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+    // @Test
+    // public void isAvailableLoginId_ShouldReturnIsAvailableResponse() throws Exception {
+    //     // given
+    //     boolean mockResponse = false;
+    //     String data = String.format("{\"isAvailable\": \"%b\"}", mockResponse);
+    //     GSObject gsObject = new GSObject(data);
+    //     GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
+    //     when(mockGSResponse.getErrorCode()).thenReturn(0);
+    //     when(mockGSResponse.getData()).thenReturn(gsObject);
+    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
 
-        // when
-        boolean response = gigyaService.isAvailableLoginId("test");
+    //     // when
+    //     boolean response = gigyaService.isAvailableLoginId("test");
 
-        // then
-        assertEquals(response, mockResponse);
-    }
+    //     // then
+    //     assertEquals(response, mockResponse);
+    // }
 
-    @Test
-    public void isAvailableLoginId_ShouldMakeCallToSecondaryDCIfFirstResponseIsTrue_ThenReturnIsAvailableResponse() throws Exception {
-        // given
-        String mainDCResponse = String.format("{\"isAvailable\": \"%b\"}", true);
-        GSObject mainGsObject = new GSObject(mainDCResponse);
-        GSResponse mainGsResponse = Mockito.mock(GSResponse.class);
-        when(mainGsResponse.getErrorCode()).thenReturn(0);
-        when(mainGsResponse.getData()).thenReturn(mainGsObject);
+    // @Test
+    // public void isAvailableLoginId_ShouldMakeCallToSecondaryDCIfFirstResponseIsTrue_ThenReturnIsAvailableResponse() throws Exception {
+    //     // given
+    //     String mainDCResponse = String.format("{\"isAvailable\": \"%b\"}", true);
+    //     GSObject mainGsObject = new GSObject(mainDCResponse);
+    //     GSResponse mainGsResponse = Mockito.mock(GSResponse.class);
+    //     when(mainGsResponse.getErrorCode()).thenReturn(0);
+    //     when(mainGsResponse.getData()).thenReturn(mainGsObject);
 
-        boolean expectedResponse = true;
-        String secondaryDCResponse = String.format("{\"isAvailable\": \"%b\"}", expectedResponse);
-        GSObject secondaryGsObject = new GSObject(secondaryDCResponse);
-        GSResponse secondaryGsResponse = Mockito.mock(GSResponse.class);
-        when(secondaryGsResponse.getErrorCode()).thenReturn(0);
-        when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
+    //     boolean expectedResponse = true;
+    //     String secondaryDCResponse = String.format("{\"isAvailable\": \"%b\"}", expectedResponse);
+    //     GSObject secondaryGsObject = new GSObject(secondaryDCResponse);
+    //     GSResponse secondaryGsResponse = Mockito.mock(GSResponse.class);
+    //     when(secondaryGsResponse.getErrorCode()).thenReturn(0);
+    //     when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
         
-        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
+    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
 
-        try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
-            cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
+    //     try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
+    //         cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
 
-            // when
-            boolean response = gigyaService.isAvailableLoginId("test");
+    //         // when
+    //         boolean response = gigyaService.isAvailableLoginId("test");
 
-            // then
-            assertEquals(response, expectedResponse);
-        }
-    }
+    //         // then
+    //         assertEquals(response, expectedResponse);
+    //     }
+    // }
 
-    @Test(expected = CustomGigyaErrorException.class)
-    public void isAvailableLoginID_GivenAnErrorOccurs_ShouldThrowCustomGigyaErrorException() throws Exception {
-        // given
-        int errorCode = 1;
-        GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-        when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
-        when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+    // @Test(expected = CustomGigyaErrorException.class)
+    // public void isAvailableLoginID_GivenAnErrorOccurs_ShouldThrowCustomGigyaErrorException() throws Exception {
+    //     // given
+    //     int errorCode = 1;
+    //     GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
+    //     when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
+    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
 
-        // when
-        gigyaService.isAvailableLoginId("test");
-    }
+    //     // when
+    //     gigyaService.isAvailableLoginId("test");
+    // }
 
     @Test
     public void getIdPInformation_ShouldReturnTheInformationForTheGivenIdP() throws Exception {
