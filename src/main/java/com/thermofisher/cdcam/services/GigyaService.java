@@ -338,6 +338,7 @@ public class GigyaService {
         }
 
         GSObject gsObject = gsResponse.getData();
+        logger.info(gsObject.toJsonString());
         return gsObject.getBool(IS_AVAILABLE_PARAM);
     }
 
