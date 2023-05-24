@@ -77,6 +77,8 @@ public class GigyaServiceTests {
     private final String secondaryApiDomain = "cn1.sapcdm.com";
     private String obj = "{\"socialProviders\":\"site,oidc-fedspikegidp\",\"lastLogin\":\"2019-08-21T23:13:38.284Z\",\"userInfo\":{\"country\":\"United States\",\"isTempUser\":false,\"oldestDataAge\":-2147483648,\"capabilities\":\"None\",\"isSiteUID\":true,\"loginProviderUID\":\"ef632aa3f52140aa836673469378d0ac\",\"city\":\"" + city + "\",\"isConnected\":true,\"errorCode\":0,\"isSiteUser\":true,\"loginProvider\":\"oidc-fedspikegidp\",\"oldestDataUpdatedTimestamp\":0,\"UID\":\"ffb10070d8174a518f2e8b403c1efe5d\",\"identities\":[{\"country\":\"United States\",\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"lastUpdatedTimestamp\":1566429217356,\"isExpiredSession\":false,\"allowsLogin\":false,\"city\":\"" + city + "\",\"provider\":\"site\",\"isLoginIdentity\":false,\"oldestDataUpdated\":\"0001-01-01T00:00:00Z\",\"oldestDataUpdatedTimestamp\":0,\"providerUID\":\"ffb10070d8174a518f2e8b403c1efe5d\"},{\"lastUpdated\":\"2019-08-21T23:13:38.284Z\",\"lastUpdatedTimestamp\":1566429218284,\"isExpiredSession\":false,\"allowsLogin\":true,\"provider\":\"oidc-fedspikegidp\",\"isLoginIdentity\":true,\"nickname\":\"federatedUser\",\"oldestDataUpdated\":\"2019-08-21T23:01:23.988Z\",\"oidcData\":{},\"oldestDataUpdatedTimestamp\":1566428483988,\"email\":\"test@gmail.com\",\"providerUID\":\"ef632aa3f52140aa836673469378d0ac\"}],\"statusReason\":\"OK\",\"nickname\":\"federatedUser\",\"isLoggedIn\":true,\"time\":\"2019-08-23T23:50:35.918Z\",\"email\":\"test@gmail.com\",\"providers\":\"site,oidc-fedspikegidp\",\"statusCode\":200},\"data\":{\"terms\":true},\"isVerified\":true,\"errorCode\":0,\"registered\":\"2019-08-19T21:11:52.372Z\",\"isActive\":true,\"oldestDataUpdatedTimestamp\":1566248846440,\"emails\":{\"verified\":[\"test@gmail.com\"],\"unverified\":[]},\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"apiVersion\":2,\"statusReason\":\"OK\",\"verifiedTimestamp\":1566248848104,\"oldestDataUpdated\":\"2019-08-19T21:07:26.440Z\",\"callId\":\"52317e98c0a849438f432669c5d198f0\",\"lastUpdatedTimestamp\":1566429217356,\"created\":\"2019-08-19T21:07:26.440Z\",\"createdTimestamp\":1566248846000,\"profile\":{\"firstName\":\"" + firstName + "\",\"lastName\":\"" + lastName + "\",\"work\":{\"company\":\"" + company + "\"},\"country\":\"" + country + "\",\"city\":\"" + city + "\",\"nickname\":\"federatedUser\",\"email\":\"" + emailAddress + "\"},\"regSource\":\"http://dev2.apps.thermofisher.com/apps/fedspike/enterpriselogin\",\"verified\":\"2019-08-19T21:07:28.104Z\",\"registeredTimestamp\":1566249112000,\"loginProvider\":\"oidc-fedspikegidp\",\"lastLoginTimestamp\":1566429218000,\"UID\":\"" + uid + "\",\"isRegistered\":true,\"time\":\"2019-08-23T23:50:35.919Z\",\"statusCode\":200}";
     private String objV2 = "{\"socialProviders\":\"site,oidc-fedspikegidp\",\"lastLogin\":\"2019-08-21T23:13:38.284Z\",\"userInfo\":{\"country\":\"United States\",\"isTempUser\":false,\"oldestDataAge\":-2147483648,\"capabilities\":\"None\",\"isSiteUID\":true,\"loginProviderUID\":\"ef632aa3f52140aa836673469378d0ac\",\"city\":\"city\",\"isConnected\":true,\"errorCode\":0,\"isSiteUser\":true,\"loginProvider\":\"oidc-fedspikegidp\",\"oldestDataUpdatedTimestamp\":0,\"UID\":\"ffb10070d8174a518f2e8b403c1efe5d\",\"identities\":[{\"country\":\"United States\",\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"lastUpdatedTimestamp\":1566429217356,\"isExpiredSession\":false,\"allowsLogin\":false,\"city\":\"city\",\"provider\":\"site\",\"isLoginIdentity\":false,\"oldestDataUpdated\":\"0001-01-01T00:00:00Z\",\"oldestDataUpdatedTimestamp\":0,\"providerUID\":\"ffb10070d8174a518f2e8b403c1efe5d\"},{\"lastUpdated\":\"2019-08-21T23:13:38.284Z\",\"lastUpdatedTimestamp\":1566429218284,\"isExpiredSession\":false,\"allowsLogin\":true,\"provider\":\"oidc-fedspikegidp\",\"isLoginIdentity\":true,\"nickname\":\"federatedUser\",\"oldestDataUpdated\":\"2019-08-21T23:01:23.988Z\",\"oidcData\":{},\"oldestDataUpdatedTimestamp\":1566428483988,\"email\":\"test@gmail.com\",\"providerUID\":\"ef632aa3f52140aa836673469378d0ac\"}],\"statusReason\":\"OK\",\"nickname\":\"federatedUser\",\"isLoggedIn\":true,\"time\":\"2019-08-23T23:50:35.918Z\",\"email\":\"test@gmail.com\",\"providers\":\"site,oidc-fedspikegidp\",\"statusCode\":200},\"data\":{\"terms\":true},\"isVerified\":true,\"errorCode\":0,\"registered\":\"2019-08-19T21:11:52.372Z\",\"isActive\":true,\"oldestDataUpdatedTimestamp\":1566248846440,\"emails\":{\"verified\":[\"test@gmail.com\"],\"unverified\":[]},\"preferences\":{\"marketing\":{\"consent\":{\"isConsentGranted\":true}},\"korea\":{\"receiveMarketingInformation\":{\"isConsentGranted\":false},\"thirdPartyTransferPersonalInfoMandatory\":{\"isConsentGranted\":false},\"thirdPartyTransferPersonalInfoOptional\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoMandatory\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoOptional\":{\"isConsentGranted\":false},\"collectionAndUsePersonalInfoMarketing\":{\"isConsentGranted\":false},\"overseasTransferPersonalInfoMandatory\":{\"isConsentGranted\":false},\"overseasTransferPersonalInfoOptional\":{\"isConsentGranted\":false}}},\"lastUpdated\":\"2019-08-21T23:13:37.356Z\",\"apiVersion\":2,\"statusReason\":\"OK\",\"verifiedTimestamp\":1566248848104,\"oldestDataUpdated\":\"2019-08-19T21:07:26.440Z\",\"callId\":\"52317e98c0a849438f432669c5d198f0\",\"lastUpdatedTimestamp\":1566429217356,\"created\":\"2019-08-19T21:07:26.440Z\",\"createdTimestamp\":1566248846000,\"profile\":{\"firstName\":\"firstName\",\"lastName\":\"lastName\",\"work\":{\"company\":\"company\"},\"country\":\"country\",\"city\":\"city\",\"nickname\":\"federatedUser\",\"email\":\"arm@test.com\"},\"regSource\":\"http://dev2.apps.thermofisher.com/apps/fedspike/enterpriselogin\",\"verified\":\"2019-08-19T21:07:28.104Z\",\"registeredTimestamp\":1566249112000,\"loginProvider\":\"oidc-fedspikegidp\",\"lastLoginTimestamp\":1566429218000,\"UID\":\"10293847\",\"isRegistered\":true,\"time\":\"2019-08-23T23:50:35.919Z\",\"statusCode\":200}";
+    private String loginIdAvailable = "{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [{\"profile\": {\"username\":\"" + testEmail + "\"}}], \"objectsCount\": 0,\"totalCount\": 0}";
+    private String loginIdNotAvailable = "{\"callId\":\"6e2987af77c34c779d3a563bf9c4218c\",\"apiVersion\":2,\"statusReason\":\"OK\",\"context\":\"search/060072eb-6ea6-4270-85f5-249906db0809\",\"errorCode\":0,\"time\":\"2023-05-24T19:02:44.604Z\",\"totalCount\":1,\"results\":[{\"emails\":{\"verified\":[],\"unverified\":[\"balrogs-test@yoypmail.com\"]},\"loginIDs\":{\"emails\":[\"balrogs-test@yoypmail.com\"],\"unverifiedEmails\":[]}}],\"objectsCount\":1,\"statusCode\":200}";
 
     @InjectMocks
     GigyaService gigyaService;
@@ -642,64 +644,64 @@ public class GigyaServiceTests {
         assertTrue(username.isEmpty());
     }
 
-    // @Test
-    // public void isAvailableLoginId_ShouldReturnIsAvailableResponse() throws Exception {
-    //     // given
-    //     boolean mockResponse = false;
-    //     String data = String.format("{\"isAvailable\": \"%b\"}", mockResponse);
-    //     GSObject gsObject = new GSObject(data);
-    //     GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-    //     when(mockGSResponse.getErrorCode()).thenReturn(0);
-    //     when(mockGSResponse.getData()).thenReturn(gsObject);
-    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+    @Test
+    public void isAvailableLoginId_ShouldReturnIsAvailableResponse() throws Exception {
+        // given
+        boolean mockResponse = false;
+        String data = loginIdNotAvailable;
+        GSObject gsObject = new GSObject(data);
+        GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
+        when(mockGSResponse.getErrorCode()).thenReturn(0);
+        when(mockGSResponse.getData()).thenReturn(gsObject);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockGSResponse);
 
-    //     // when
-    //     boolean response = gigyaService.isAvailableLoginId("test");
+        // when
+        boolean response = gigyaService.isAvailableLoginId("test");
 
-    //     // then
-    //     assertEquals(response, mockResponse);
-    // }
+        // then
+        assertEquals(response, mockResponse);
+    }
 
-    // @Test
-    // public void isAvailableLoginId_ShouldMakeCallToSecondaryDCIfFirstResponseIsTrue_ThenReturnIsAvailableResponse() throws Exception {
-    //     // given
-    //     String mainDCResponse = String.format("{\"isAvailable\": \"%b\"}", true);
-    //     GSObject mainGsObject = new GSObject(mainDCResponse);
-    //     GSResponse mainGsResponse = Mockito.mock(GSResponse.class);
-    //     when(mainGsResponse.getErrorCode()).thenReturn(0);
-    //     when(mainGsResponse.getData()).thenReturn(mainGsObject);
+    @Test
+    public void isAvailableLoginId_ShouldMakeCallToSecondaryDCIfFirstResponseIsTrue_ThenReturnIsAvailableResponse() throws Exception {
+        // given
+        String mainDCResponse = loginIdAvailable;
+        GSObject mainGsObject = new GSObject(mainDCResponse);
+        GSResponse mainGsResponse = Mockito.mock(GSResponse.class);
+        when(mainGsResponse.getErrorCode()).thenReturn(0);
+        when(mainGsResponse.getData()).thenReturn(mainGsObject);
 
-    //     boolean expectedResponse = true;
-    //     String secondaryDCResponse = String.format("{\"isAvailable\": \"%b\"}", expectedResponse);
-    //     GSObject secondaryGsObject = new GSObject(secondaryDCResponse);
-    //     GSResponse secondaryGsResponse = Mockito.mock(GSResponse.class);
-    //     when(secondaryGsResponse.getErrorCode()).thenReturn(0);
-    //     when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
+        boolean expectedResponse = true;
+        String secondaryDCResponse = loginIdAvailable;
+        GSObject secondaryGsObject = new GSObject(secondaryDCResponse);
+        GSResponse secondaryGsResponse = Mockito.mock(GSResponse.class);
+        when(secondaryGsResponse.getErrorCode()).thenReturn(0);
+        when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
         
-    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
 
-    //     try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
-    //         cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
+        try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
+            cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
 
-    //         // when
-    //         boolean response = gigyaService.isAvailableLoginId("test");
+            // when
+            boolean response = gigyaService.isAvailableLoginId("test");
 
-    //         // then
-    //         assertEquals(response, expectedResponse);
-    //     }
-    // }
+            // then
+            assertEquals(response, expectedResponse);
+        }
+    }
 
-    // @Test(expected = CustomGigyaErrorException.class)
-    // public void isAvailableLoginID_GivenAnErrorOccurs_ShouldThrowCustomGigyaErrorException() throws Exception {
-    //     // given
-    //     int errorCode = 1;
-    //     GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
-    //     when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
-    //     when(gigyaApi.isAvailableLoginId(any(), any())).thenReturn(mockGSResponse);
+    @Test(expected = CustomGigyaErrorException.class)
+    public void isAvailableLoginID_GivenAnErrorOccurs_ShouldThrowCustomGigyaErrorException() throws Exception {
+        // given
+        int errorCode = 1;
+        GSResponse mockGSResponse = Mockito.mock(GSResponse.class);
+        when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockGSResponse);
 
-    //     // when
-    //     gigyaService.isAvailableLoginId("test");
-    // }
+        // when
+        gigyaService.isAvailableLoginId("test");
+    }
 
     @Test
     public void getIdPInformation_ShouldReturnTheInformationForTheGivenIdP() throws Exception {
