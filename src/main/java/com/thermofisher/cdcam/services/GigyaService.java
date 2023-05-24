@@ -339,7 +339,7 @@ public class GigyaService {
 
         GSObject gsObject = gsResponse.getData();
         Integer results = gsObject.getInt(TOTAL_ACOUNT_PARAM);
-        return results > 0;
+        return results.equals(0);
     }
 
     public IdentityProviderResponse getIdPInformation(String idpName) {
