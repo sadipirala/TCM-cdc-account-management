@@ -308,7 +308,7 @@ public class GigyaService {
             .build();
     }
 
-    public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
+    public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         boolean isAvailableLoginId = false;
 
         isAvailableLoginId = isAvailableLoginId(loginId, mainApiDomain);
@@ -323,9 +323,9 @@ public class GigyaService {
         return isAvailableLoginId;
     }
 
-    private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException {
+    private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         final String IS_AVAILABLE_PARAM = "isAvailable";
-        GSResponse gsResponse = gigyaApi.isAvailableLoginId(loginId, apiDomain);
+        GSResponse gsResponse = getSearchResultByUsername(loginId);
 
         if (isErrorResponse(gsResponse)) {
             String errorMessage = String.format("[CDC ERROR] - Error on accounts.isAvailableLoginId. Domain: %s. Code: %d", apiDomain, gsResponse.getErrorCode());
