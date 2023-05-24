@@ -324,7 +324,7 @@ public class GigyaService {
     }
 
     private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
-        final String IS_AVAILABLE_PARAM = "isAvailable";
+        final String TOTAL_ACOUNT_PARAM = "totalCount";
         GSResponse gsResponse = getSearchResultByUsername(loginId);
 
         if (isErrorResponse(gsResponse)) {
@@ -338,8 +338,8 @@ public class GigyaService {
         }
 
         GSObject gsObject = gsResponse.getData();
-        logger.info(gsObject.toJsonString());
-        return gsObject.getBool(IS_AVAILABLE_PARAM);
+        Integer results = gsObject.getInt(TOTAL_ACOUNT_PARAM);
+        return results > 0;
     }
 
     public IdentityProviderResponse getIdPInformation(String idpName) {
