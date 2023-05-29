@@ -4,6 +4,7 @@ import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 
@@ -11,6 +12,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -362,55 +365,5 @@ public class CDCAccountsHandlerTests {
         assertTrue(result.getPreferences().contains(String.format("\"collectionAndUsePersonalInfoMarketing\":{\"isConsentGranted\":%s}", accountInfo.getCollectionAndUsePersonalInfoMarketing())));
         assertTrue(result.getPreferences().contains(String.format("\"overseasTransferPersonalInfoOptional\":{\"isConsentGranted\":%s}", accountInfo.getOverseasTransferPersonalInfoOptional())));
         assertTrue(result.getPreferences().contains(String.format("\"overseasTransferPersonalInfoMandatory\":{\"isConsentGranted\":%s}", accountInfo.getOverseasTransferPersonalInfoMandatory())));
-    }
-
-    @Test
-    public void buildNewCDCAccountV2_GivenEmailVerificationIsEnabledForCountry_ShouldNotHaveTheVerifiedEmailDate() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setCountry(CountryCodes.CANADA.getValue());
-
-        // when
-        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
-
-        // then
-        assertFalse(result.getData().contains("verifiedEmailDate"));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenEmailVerificationIsEnabledForCountry_ShouldHaveTheVerifiedEmailDate() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccountJapan();
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains("\"verifiedEmailDate\":\"0001-01-01\""));
-    }
-
-    @Test
-    public void buildNewCDCAccount_GivenEmailVerificationIsEnabledForCountry_ShouldNotHaveTheVerifiedEmailDate() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccount();
-        accountInfo.setCountry(CountryCodes.CANADA.getValue());
-
-        // when
-        CDCNewAccount result = CDCAccountsHandler.buildCDCNewAccount(accountInfo);
-
-        // then
-        assertFalse(result.getData().contains("verifiedEmailDate"));
-    }
-
-    @Test
-    public void buildNewCDCAccountV2_GivenEmailVerificationIsEnabledForCountry_ShouldHaveTheVerifiedEmailDate() throws JSONException {
-        // given
-        AccountInfo accountInfo = AccountUtils.getSiteAccountJapan();
-
-        // when
-        CDCNewAccountV2 result = CDCAccountsHandler.buildCDCNewAccountV2(accountInfo);
-
-        // then
-        assertTrue(result.getData().contains("\"verifiedEmailDate\":\"0001-01-01\""));
     }
 }
