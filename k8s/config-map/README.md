@@ -142,6 +142,7 @@ rules:
     resources:
       - configmaps
       - secrets
+      - pods  
 ```
 
 - RoleBinding
