@@ -1,6 +1,8 @@
 spring:
   cloud:
     kubernetes:
+      reload:
+        enabled: true
       config:
         enabled: true
         namespace: cdcam
