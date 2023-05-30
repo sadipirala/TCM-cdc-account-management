@@ -3,11 +3,8 @@ package com.thermofisher.cdcam.properties;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 @Component
@@ -30,7 +27,7 @@ public class EmailVerificationProperties {
      * Email Verification flow.
      */
     @Getter
-    private static LocalDate defaultVerificationDate;
+    private static String defaultVerificationDate;
 
     /**
      * List of country codes that should prompt accounts to go through the Email Verification flow.
@@ -48,7 +45,7 @@ public class EmailVerificationProperties {
     public EmailVerificationProperties(
             @Value("${email-verification.enabled}") boolean enabled,
             @Value("${email-verification.global}") boolean global,
-            @DateTimeFormat(pattern = "yyyy-MM-dd") @Value("${email-verification.defaultVerificationDate}") LocalDate defaultVerificationDate,
+            @Value("${email-verification.defaultVerificationDate}") String defaultVerificationDate,
             @Value("${email-verification.includedCountries}") List<String> includedCountries,
             @Value("${email-verification.excludedCountries}") List<String> excludedCountries
     ) {
