@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -20,14 +19,14 @@ public class EmailVerificationProperties {
             @Value("${email-verification.enabled}") boolean isEnabled,
             @Value("${email-verification.global}") boolean isGlobal,
             @Value("${email-verification.defaultVerificationDate}") String defaultVerificationDate,
-            @Value("${email-verification.includedCountries}") String[] includedCountries,
-            @Value("${email-verification.excludedCountries}") String[] excludedCountries
+            @Value("${email-verification.includedCountries}") List<String> includedCountries,
+            @Value("${email-verification.excludedCountries}") List<String> excludedCountries
     ) {
         IS_ENABLED = isEnabled;
         IS_GLOBAL = isGlobal;
         DEFAULT_VERIFICATION_DATE = defaultVerificationDate;
-        INCLUDED_COUNTRIES = Arrays.asList(includedCountries);
-        EXCLUDED_COUNTRIES = Arrays.asList(excludedCountries);
+        INCLUDED_COUNTRIES = includedCountries;
+        EXCLUDED_COUNTRIES = excludedCountries;
     }
 
     public static boolean isEnabled() {
