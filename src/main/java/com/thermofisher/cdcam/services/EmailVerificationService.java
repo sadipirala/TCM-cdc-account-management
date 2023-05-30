@@ -12,6 +12,10 @@ import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.utils.Utils;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class EmailVerificationService {
     private final static Logger logger = LoggerFactory.getLogger(EmailVerificationService.class);
@@ -30,7 +34,8 @@ public class EmailVerificationService {
      *                      {@link #ENFORCE_EMAIL_VERIFICATION_DATE}
      */
     public static String getDefaultVerifiedDate(String countryCode) {
-        String DEFAULT_VERIFIED_DATE = EmailVerificationProperties.getDefaultVerificationDate();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String DEFAULT_VERIFIED_DATE = EmailVerificationProperties.getDefaultVerificationDate().format(formatter);
 
         // Return default value when email verification flag is disabled globally
         if (!EmailVerificationProperties.isEnabled()) {
