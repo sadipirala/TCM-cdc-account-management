@@ -28,6 +28,7 @@ target/
 build/
 
 *local.properties
+*local.yml
 *.log
 
 ### vscode ###

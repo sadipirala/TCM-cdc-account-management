@@ -26,6 +26,8 @@ should be loaded into the project.
 spring:
   cloud:
     kubernetes:
+      reload:
+        enabled: true
       config:
         enabled: true
         namespace: cdcam
@@ -166,8 +168,14 @@ are loaded the same way as they would do from a `application.properties` or
 properties file the same values and have your project interpret them the same way
 they would do as if it was being read from the ConfigMap.
 
-Additionally, it is required to set the following property as false in order to disable
+Additionally, it is required to create a `bootstrap-local.yml` file and set the following properties in order to disable
 SpringCloud locally:
-```properties
-spring.cloud.kubernetes.config.enabled=false
+```yaml
+spring:
+  cloud:
+    kubernetes:
+      reload:
+        enabled: false
+      config:
+        enabled: false
 ```
