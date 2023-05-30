@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.properties;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -8,44 +8,40 @@ import java.util.List;
 
 @Component
 public class EmailVerificationProperties {
-    private static boolean IS_ENABLED;
-    private static boolean IS_GLOBAL;
-    private static String DEFAULT_VERIFICATION_DATE;
-    private static List<String> INCLUDED_COUNTRIES;
-    private static List<String> EXCLUDED_COUNTRIES;
 
-    @Autowired
-    public EmailVerificationProperties(
-            @Value("${email-verification.enabled}") boolean isEnabled,
-            @Value("${email-verification.global}") boolean isGlobal,
-            @Value("${email-verification.defaultVerificationDate}") String defaultVerificationDate,
-            @Value("${email-verification.includedCountries}") List<String> includedCountries,
-            @Value("${email-verification.excludedCountries}") List<String> excludedCountries
-    ) {
-        IS_ENABLED = isEnabled;
-        IS_GLOBAL = isGlobal;
-        DEFAULT_VERIFICATION_DATE = defaultVerificationDate;
-        INCLUDED_COUNTRIES = includedCountries;
-        EXCLUDED_COUNTRIES = excludedCountries;
-    }
+    /**
+    * A boolean that indicates whether the Email Verification feature should be disabled globally.
+     */
+    @Getter
+    @Value("${email-verification.enabled}")
+    private static boolean isEnabled;
 
-    public static boolean isEnabled() {
-        return IS_ENABLED;
-    }
+    /**
+     * A boolean that indicates whether the Email Verification feature should be enabled globally.
+     */
+    @Getter
+    @Value("${email-verification.global}")
+    private static boolean isGlobal;
 
-    public static boolean isGlobal() {
-        return IS_GLOBAL;
-    }
+    /**
+     * Property used in data.verifiedEmailDate for accounts that should not need to go through the
+     * Email Verification flow.
+     */
+    @Getter
+    @Value("${email-verification.defaultVerificationDate}")
+    private static String defaultVerificationDate;
 
-    public static String getDefaultVerificationDate() {
-        return DEFAULT_VERIFICATION_DATE;
-    }
+    /**
+     * List of country codes that should prompt accounts to go through the Email Verification flow.
+     */
+    @Getter
+    @Value("${email-verification.includedCountries}")
+    private static List<String> includedCountries;
 
-    public static List<String> getIncludedCountries() {
-        return INCLUDED_COUNTRIES;
-    }
-
-    public static List<String> getExcludedCountries() {
-        return EXCLUDED_COUNTRIES;
-    }
+    /**
+     * List of country codes that should be excluded from the Email Verification flow.
+     */
+    @Getter
+    @Value("${email-verification.excludedCountries}")
+    private static List<String> excludedCountries;
 }

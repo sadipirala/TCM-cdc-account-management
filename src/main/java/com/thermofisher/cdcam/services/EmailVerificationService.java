@@ -21,6 +21,14 @@ public class EmailVerificationService {
     @Autowired
     GigyaService gigyaService;
 
+    /**
+     * Retrieve value for {@link #VERIFICATION_PENDING_FIELD} based on the configured properties
+     * in {@link EmailVerificationProperties}.
+     * @param countryCode   The country code the new account selected during account creation.
+     * @return              The value used for {@link #VERIFICATION_PENDING_FIELD}. Can be either
+     *                      {@link EmailVerificationProperties#getDefaultVerificationDate()} or
+     *                      {@link #ENFORCE_EMAIL_VERIFICATION_DATE}
+     */
     public static String getDefaultVerifiedDate(String countryCode) {
         String DEFAULT_VERIFIED_DATE = EmailVerificationProperties.getDefaultVerificationDate();
 
