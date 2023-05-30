@@ -1,0 +1,13 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cdcam-view
+  namespace: cdcam
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: cdcam
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cdcam-role-view
