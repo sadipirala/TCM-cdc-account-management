@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    kubernetes:
+      reload:
+        enabled: true
+      config:
+        enabled: true
+        namespace: cdcam
+        sources:
+          - name: cdcam-config

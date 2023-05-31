@@ -1,8 +1,6 @@
 package com.thermofisher.cdcam.services;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.thermofisher.cdcam.properties.EmailVerificationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,18 +12,51 @@ import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.utils.Utils;
 
+import static com.thermofisher.cdcam.properties.EmailVerificationProperties.*;
+
 @Service
 public class EmailVerificationService {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static String VERIFICATION_PENDING_FIELD = "data.verifiedEmailDate";
+    private final static Logger logger = LoggerFactory.getLogger(EmailVerificationService.class);
 
     @Autowired
     GigyaService gigyaService;
 
+    /**
+     * Retrieve value for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD} based on the configured properties
+     * in {@link EmailVerificationProperties}.
+     * @param countryCode   The country code the new account selected during account creation.
+     * @return              The value used for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD}. Can be either
+     *                      {@link EmailVerificationProperties#DEFAULT_VERIFIED_DATE} or
+     *                      {@link EmailVerificationProperties#ENFORCE_EMAIL_VERIFICATION_DATE}
+     */
     public static String getDefaultVerifiedDate(String countryCode) {
-        String DEFAULT_VERIFIED_DATE = "0001-01-01";
-        List<String> EMAIL_VERIFICATION_COUNTRIES = Arrays.asList("ca", "ar", "bo", "br", "cl", "co", "cr", "ec", "sv", "gt", "hn", "mx", "ni", "pa", "py", "pe", "do", "uy");
-        return EMAIL_VERIFICATION_COUNTRIES.contains(countryCode) ? null : DEFAULT_VERIFIED_DATE;
+        // Return default value when email verification flag is disabled globally
+        if (!EmailVerificationProperties.isEnabled()) {
+            logger.info("Email verification feature is disabled globally. Setting default value: {}", DEFAULT_VERIFIED_DATE);
+            return DEFAULT_VERIFIED_DATE;
+        }
+
+        // Return ENFORCE_EMAIL_VERIFICATION_DATE regardless of country since feature is set to global
+        if (EmailVerificationProperties.isGlobal()) {
+            logger.info("Email verification feature is enabled globally. Setting value to enforce feature.");
+            return ENFORCE_EMAIL_VERIFICATION_DATE;
+        }
+
+        // Return default value when country exists in exclusion list
+        if (EmailVerificationProperties.getExcludedCountries().contains(countryCode)) {
+            logger.info("Email verification is excluded for provided country code '{}'. Setting default value: {}", countryCode, DEFAULT_VERIFIED_DATE);
+            return DEFAULT_VERIFIED_DATE;
+        }
+
+        // Return ENFORCE_EMAIL_VERIFICATION_DATE when country listed as required verification flow
+        if (EmailVerificationProperties.getIncludedCountries().contains(countryCode)) {
+            logger.info("Email verification is enforced for provided country code '{}'. Setting value to enforce feature.", countryCode);
+            return ENFORCE_EMAIL_VERIFICATION_DATE;
+        }
+
+        // Return default value given country is not listed on any list, yet feature is not global.
+        logger.info("Email verification is not enforced for provided country code '{}' but feature is not global. Setting default value: {}", countryCode, DEFAULT_VERIFIED_DATE);
+        return DEFAULT_VERIFIED_DATE;
     }
     
     public static boolean isVerificationPending(CDCResponseData cdcResponseData) {

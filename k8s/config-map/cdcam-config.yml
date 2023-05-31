@@ -1,0 +1,12 @@
+# This is a template file, expected names or properties may differ from target environment/project
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cdcam-config
+data:
+  app-config.yml: |-
+    email-verification:
+      enabled: true
+      global: false
+      includedCountries: ca,ar,bo,br,cl,co,cr,ec,sv,gt,hn,mx,ni,pa,py,pe,do,uy
+      excludedCountries:
