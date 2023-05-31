@@ -12,26 +12,24 @@ import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.utils.Utils;
 
+import static com.thermofisher.cdcam.properties.EmailVerificationProperties.*;
+
 @Service
 public class EmailVerificationService {
     private final static Logger logger = LoggerFactory.getLogger(EmailVerificationService.class);
-    private final static String VERIFICATION_PENDING_FIELD = "data.verifiedEmailDate";
-    private final static String ENFORCE_EMAIL_VERIFICATION_DATE = null;
 
     @Autowired
     GigyaService gigyaService;
 
     /**
-     * Retrieve value for {@link #VERIFICATION_PENDING_FIELD} based on the configured properties
+     * Retrieve value for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD} based on the configured properties
      * in {@link EmailVerificationProperties}.
      * @param countryCode   The country code the new account selected during account creation.
-     * @return              The value used for {@link #VERIFICATION_PENDING_FIELD}. Can be either
-     *                      {@link EmailVerificationProperties#getDefaultVerificationDate()} or
-     *                      {@link #ENFORCE_EMAIL_VERIFICATION_DATE}
+     * @return              The value used for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD}. Can be either
+     *                      {@link EmailVerificationProperties#DEFAULT_VERIFIED_DATE} or
+     *                      {@link EmailVerificationProperties#ENFORCE_EMAIL_VERIFICATION_DATE}
      */
     public static String getDefaultVerifiedDate(String countryCode) {
-        String DEFAULT_VERIFIED_DATE = EmailVerificationProperties.getDefaultVerificationDate();
-
         // Return default value when email verification flag is disabled globally
         if (!EmailVerificationProperties.isEnabled()) {
             logger.info("Email verification feature is disabled globally. Setting default value: {}", DEFAULT_VERIFIED_DATE);

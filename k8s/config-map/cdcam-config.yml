@@ -8,6 +8,5 @@ data:
     email-verification:
       enabled: true
       global: false
-      defaultVerificationDate: 0001-01-01
       includedCountries: ca,ar,bo,br,cl,co,cr,ec,sv,gt,hn,mx,ni,pa,py,pe,do,uy
       excludedCountries:

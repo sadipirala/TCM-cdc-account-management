@@ -9,6 +9,9 @@ import java.util.List;
 
 @Component
 public class EmailVerificationProperties {
+    public final static String VERIFICATION_PENDING_FIELD = "data.verifiedEmailDate";
+    public final static String ENFORCE_EMAIL_VERIFICATION_DATE = null;
+    public final static String DEFAULT_VERIFIED_DATE = "0001-01-01";
 
     /**
     * A boolean that indicates whether the Email Verification feature should be disabled globally.
@@ -21,13 +24,6 @@ public class EmailVerificationProperties {
      */
     @Getter
     private static boolean global;
-
-    /**
-     * Property used in data.verifiedEmailDate for accounts that should not need to go through the
-     * Email Verification flow.
-     */
-    @Getter
-    private static String defaultVerificationDate;
 
     /**
      * List of country codes that should prompt accounts to go through the Email Verification flow.
@@ -45,13 +41,11 @@ public class EmailVerificationProperties {
     public EmailVerificationProperties(
             @Value("${email-verification.enabled}") boolean enabled,
             @Value("${email-verification.global}") boolean global,
-            @Value("${email-verification.defaultVerificationDate}") String defaultVerificationDate,
             @Value("${email-verification.includedCountries}") List<String> includedCountries,
             @Value("${email-verification.excludedCountries}") List<String> excludedCountries
     ) {
         EmailVerificationProperties.enabled = enabled;
         EmailVerificationProperties.global = global;
-        EmailVerificationProperties.defaultVerificationDate = defaultVerificationDate;
         EmailVerificationProperties.includedCountries = includedCountries;
         EmailVerificationProperties.excludedCountries = excludedCountries;
     }

@@ -44,17 +44,15 @@ public class EmailVerificationServiceTests {
     public void getDefaultVerifiedDate_GivenFeatureDisabled_ShouldReturnDefaultVerifiedDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
             // Given.
-            String mockDefaultVerifiedDate = "0002-02-02";
             boolean mockIsEnabled = false;
 
             emailVerificationProperties.when(EmailVerificationProperties::isEnabled).thenReturn(mockIsEnabled);
-            emailVerificationProperties.when(EmailVerificationProperties::getDefaultVerificationDate).thenReturn(mockDefaultVerifiedDate);
 
             // When.
             String response = EmailVerificationService.getDefaultVerifiedDate("test");
 
             // Then.
-            assertEquals(mockDefaultVerifiedDate, response);
+            assertEquals(EmailVerificationProperties.DEFAULT_VERIFIED_DATE, response);
         }
     }
 
@@ -62,14 +60,12 @@ public class EmailVerificationServiceTests {
     public void getDefaultVerifiedDate_GivenFeatureIsGlobal_ShouldReturnEnforceVerificationDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
             // Given.
-            String mockDefaultVerifiedDate = "0002-02-02";
             String enforceVerificationDate = null;
             boolean mockIsEnabled = true;
             boolean mockIsGlobal = true;
 
             emailVerificationProperties.when(EmailVerificationProperties::isEnabled).thenReturn(mockIsEnabled);
             emailVerificationProperties.when(EmailVerificationProperties::isGlobal).thenReturn(mockIsGlobal);
-            emailVerificationProperties.when(EmailVerificationProperties::getDefaultVerificationDate).thenReturn(mockDefaultVerifiedDate);
 
             // When.
             String response = EmailVerificationService.getDefaultVerifiedDate("test");
@@ -83,7 +79,6 @@ public class EmailVerificationServiceTests {
     public void getDefaultVerifiedDate_GivenCountryIsMarkedAsExcluded_ShouldReturnDefaultVerifiedDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
             // Given.
-            String mockDefaultVerifiedDate = "0002-02-02";
             String mockExcludedCountry = "Doeland";
             boolean mockIsEnabled = true;
             boolean mockIsGlobal = false;
@@ -93,14 +88,13 @@ public class EmailVerificationServiceTests {
 
             emailVerificationProperties.when(EmailVerificationProperties::isEnabled).thenReturn(mockIsEnabled);
             emailVerificationProperties.when(EmailVerificationProperties::isGlobal).thenReturn(mockIsGlobal);
-            emailVerificationProperties.when(EmailVerificationProperties::getDefaultVerificationDate).thenReturn(mockDefaultVerifiedDate);
             emailVerificationProperties.when(EmailVerificationProperties::getExcludedCountries).thenReturn(mockExcludedCountries);
 
             // When.
             String response = EmailVerificationService.getDefaultVerifiedDate(mockExcludedCountry);
 
             // Then.
-            assertEquals(mockDefaultVerifiedDate, response);
+            assertEquals(EmailVerificationProperties.DEFAULT_VERIFIED_DATE, response);
         }
     }
 
@@ -108,7 +102,6 @@ public class EmailVerificationServiceTests {
     public void getDefaultVerifiedDate_GivenCountryIsMarkedAsIncluded_ShouldReturnEnforceVerificationDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
             // Given.
-            String mockDefaultVerifiedDate = "0002-02-02";
             String enforceVerificationDate = null;
             String mockIncludedCountry = "Doeland";
             boolean mockIsEnabled = true;
@@ -123,7 +116,6 @@ public class EmailVerificationServiceTests {
 
             emailVerificationProperties.when(EmailVerificationProperties::isEnabled).thenReturn(mockIsEnabled);
             emailVerificationProperties.when(EmailVerificationProperties::isGlobal).thenReturn(mockIsGlobal);
-            emailVerificationProperties.when(EmailVerificationProperties::getDefaultVerificationDate).thenReturn(mockDefaultVerifiedDate);
             emailVerificationProperties.when(EmailVerificationProperties::getExcludedCountries).thenReturn(mockExcludedCountries);
             emailVerificationProperties.when(EmailVerificationProperties::getIncludedCountries).thenReturn(mockIncludedCountries);
 
@@ -139,7 +131,6 @@ public class EmailVerificationServiceTests {
     public void getDefaultVerifiedDate_GivenFeatureIsNotGlobal_AndCountryIsNeitherMarkedAsIncludedOrExcluded_ShouldReturnDefaultVerifiedDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
             // Given.
-            String mockDefaultVerifiedDate = "0002-02-02";
             String mockCountry = "Doeland";
             boolean mockIsEnabled = true;
             boolean mockIsGlobal = false;
@@ -154,7 +145,6 @@ public class EmailVerificationServiceTests {
 
             emailVerificationProperties.when(EmailVerificationProperties::isEnabled).thenReturn(mockIsEnabled);
             emailVerificationProperties.when(EmailVerificationProperties::isGlobal).thenReturn(mockIsGlobal);
-            emailVerificationProperties.when(EmailVerificationProperties::getDefaultVerificationDate).thenReturn(mockDefaultVerifiedDate);
             emailVerificationProperties.when(EmailVerificationProperties::getExcludedCountries).thenReturn(mockExcludedCountries);
             emailVerificationProperties.when(EmailVerificationProperties::getIncludedCountries).thenReturn(mockIncludedCountries);
 
@@ -162,7 +152,7 @@ public class EmailVerificationServiceTests {
             String response = EmailVerificationService.getDefaultVerifiedDate(mockCountry);
 
             // Then.
-            assertEquals(mockDefaultVerifiedDate, response);
+            assertEquals(EmailVerificationProperties.DEFAULT_VERIFIED_DATE, response);
         }
     }
 
