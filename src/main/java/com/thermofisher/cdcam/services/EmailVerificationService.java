@@ -24,7 +24,7 @@ public class EmailVerificationService {
 
     public static String getDefaultVerifiedDate(String countryCode) {
         String DEFAULT_VERIFIED_DATE = "0001-01-01";
-        List<String> EMAIL_VERIFICATION_COUNTRIES = Arrays.asList("ca", "ar", "bo", "br", "cl", "co", "cr", "ec", "sv", "gt", "hn", "mx", "ni", "pa", "py", "pe", "do", "uy", "at", "be", "cz", "dk", "fi", "fr", "de", "hu", "it", "lu", "nl", "no", "pl", "sk", "es", "se", "ch", "uk", "ru");
+        List<String> EMAIL_VERIFICATION_COUNTRIES = Arrays.asList();
         return EMAIL_VERIFICATION_COUNTRIES.contains(countryCode) ? null : DEFAULT_VERIFIED_DATE;
     }
     
