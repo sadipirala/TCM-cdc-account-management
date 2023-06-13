@@ -90,6 +90,9 @@ environments:
       targetMemoryUtilizationPercentage: 70
     ingressDomains:
       - cdcam-qa1.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
+    promotion:
+        to: prod
+        mergeTo: master
 
   stage-cn:
     branch: stage/.*
