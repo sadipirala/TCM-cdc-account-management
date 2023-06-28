@@ -17,11 +17,15 @@ deployment:
   healthCheckPort: 8080 #management port
   ingressPath: /cdcam
   iamRole: cdcam-execution-role
+  volumeMounts:
+    - name: cdcam-config
+      mountPath: /etc/config
+      connectionString: "configMap|name: cdcam-config"
   #startupSeconds: 180
 
 environments:
   qa4:
-    branch: (integration|development)/.*
+    branch: (integration|development|feature/BLR-2117)/.*
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
