@@ -44,6 +44,7 @@ public class EmailVerificationProperties {
             @Value("${email-verification.includedCountries}") List<String> includedCountries,
             @Value("${email-verification.excludedCountries}") List<String> excludedCountries
     ) {
+        System.out.println(includedCountries.toString());
         EmailVerificationProperties.enabled = enabled;
         EmailVerificationProperties.global = global;
         EmailVerificationProperties.includedCountries = includedCountries;

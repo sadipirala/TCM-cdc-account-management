@@ -32,6 +32,8 @@ environments:
         value: qa4
       - name: SPRING.PROFILES.ACTIVE
         value: qa4
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-qa4.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -49,6 +51,8 @@ environments:
         value: qa4-cn
       - name: SPRING.PROFILES.ACTIVE
         value: qa4-cn
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -66,6 +70,8 @@ environments:
         value: qa1-cn
       - name: SPRING.PROFILES.ACTIVE
         value: qa1-cn
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-qa1.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -86,6 +92,8 @@ environments:
         value: qa1
       - name: SPRING.PROFILES.ACTIVE
         value: qa1
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-qa1.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -106,6 +114,8 @@ environments:
         value: stage-cn
       - name: SPRING.PROFILES.ACTIVE
         value: stage-cn
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-stage.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -123,6 +133,8 @@ environments:
         value: stage
       - name: SPRING.PROFILES.ACTIVE
         value: stage
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-stage.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -141,6 +153,8 @@ environments:
         value: prod
       - name: SPRING.PROFILES.ACTIVE
         value: prod
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config.yml
     autoscaling:
       enabled: true
       minReplicas: 3
@@ -158,6 +172,8 @@ environments:
         value: prod-cn
       - name: SPRING.PROFILES.ACTIVE
         value: prod-cn
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config.yml
     autoscaling:
       enabled: true
       minReplicas: 3
