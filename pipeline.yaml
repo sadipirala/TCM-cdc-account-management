@@ -25,7 +25,7 @@ deployment:
 
 environments:
   qa4:
-    branch: (integration|development|feature/BLR-2117)/.*
+    branch: feature/BLR-2117
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
