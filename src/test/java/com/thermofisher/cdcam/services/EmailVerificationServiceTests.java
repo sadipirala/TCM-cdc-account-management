@@ -37,7 +37,7 @@ public class EmailVerificationServiceTests {
     @Mock
     GigyaService gigyaService;
 
-    /* @Test
+    @Test
     public void getDefaultVerifiedDate_GivenCountryIsCanada_ShouldReturnNull() {
         // given
         String country = CountryCodes.CANADA.getValue();
@@ -47,7 +47,7 @@ public class EmailVerificationServiceTests {
 
         // expect
         assertNull(result);
-    } */
+    }
 
     @Test
     public void getDefaultVerifiedDate_GivenCountryIsNotSupportedForEmailVerification_ShouldReturnDefaultVerifiedDate() {
