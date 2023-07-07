@@ -11,6 +11,9 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.validation.constraints.NotBlank;
 
+import com.gigya.socialize.GSKeyNotFoundException;
+import com.gigya.socialize.GSObject;
+import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +80,8 @@ import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
+import com.thermofisher.cdcam.model.cdc.Thermofisher;
+import com.thermofisher.cdcam.builders.AccountBuilder;
 
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -132,6 +137,9 @@ public class AccountsController {
 
     @Autowired
     UsersHandler usersHandler;
+
+    @Autowired
+    AccountBuilder accountBuilder;
 
     @PutMapping("/{uid}/password")
     @ApiOperation(value = "Updates user's password.")
@@ -563,11 +571,20 @@ public class AccountsController {
             AccountInfo accountInfoDTO = gigyaService.getAccountInfo(uid);
             profileInfoDTO.setActualEmail(accountInfoDTO.getEmailAddress());
             profileInfoDTO.setActualUsername(accountInfoDTO.getUsername());
+            String previousEmail=accountInfoDTO.getEmailAddress();
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
 
                 AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
+                updatedAccountInfo.setPreviousEmail(previousEmail);
+
+              //  Thermofisher thermofisher=accountBuilder.getThermofisher (data);
+
+
+                updatedAccountInfo.setLegacyUserName(accountInfoDTO.getLegacyUserName());
+
+
                 logger.info("Building AccountUpdatedNotification object.");
                 AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");
