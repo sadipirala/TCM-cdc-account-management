@@ -142,9 +142,9 @@ public class AccountsController {
     @PutMapping("/{uid}/password")
     @ApiOperation(value = "Updates user's password.")
     @ApiResponses({
-        @ApiResponse(code = 204, message = "Password updated successfully."),
-        @ApiResponse(code = 400, message = "Either the new password does not comply with the password requirements or the old password is incorrect."),
-        @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(code = 204, message = "Password updated successfully."),
+            @ApiResponse(code = 400, message = "Either the new password does not comply with the password requirements or the old password is incorrect."),
+            @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uid", value = "To be updated user's UID.", required = true)
     public ResponseEntity<?> changePassword(@Valid @PathVariable String uid, @Valid @RequestBody ChangePasswordDTO body) {
@@ -181,7 +181,7 @@ public class AccountsController {
         try {
             logger.info("User data by UID requested.");
             List<UserDetails> userDetails = usersHandler.getUsers(uids);
-            
+
             logger.info(String.format("Retrieved %d user(s)", userDetails.size()));
             return (userDetails.size() > 0) ? new ResponseEntity<>(userDetails, HttpStatus.OK) : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (IOException e) {
@@ -193,9 +193,9 @@ public class AccountsController {
     @GetMapping("/user/{uid}")
     @ApiOperation(value = "Get user profile by UID")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "OK"),
-        @ApiResponse(code = 404, message = "Account Not found"),
-        @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 404, message = "Account Not found"),
+            @ApiResponse(code = 500, message = "Internal server error.")
     })
     @ApiImplicitParam(name = "uid", value = "A valid UID", required = true)
     public ResponseEntity<ProfileInfoDTO> getUserProfileByUID(@PathVariable String uid) {
@@ -219,7 +219,7 @@ public class AccountsController {
     })
     public ResponseEntity<String> onAccountRegistered(@RequestHeader("x-gigya-sig-jwt") String jwt, @RequestBody String body) {
         logger.info(String.format("/accounts/user called with body: %s", body));
-        
+
         try {
             logger.info("JWT validation started.");
             logger.info("Getting JWT public key.");
@@ -261,9 +261,9 @@ public class AccountsController {
             @ApiResponse(code = 500, message = "Internal server error.")
     })
     public ResponseEntity<CDCResponseData> newAccount(
-        @RequestBody @Valid AccountInfoDTO accountInfoDTO, 
-        @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString,
-        @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
+            @RequestBody @Valid AccountInfoDTO accountInfoDTO,
+            @CookieValue(name = "cip_authdata", required = false) String cipAuthDataCookieString,
+            @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
     ) throws IOException, JSONException {
         logger.info(String.format("Account registration initiated. Username: %s", accountInfoDTO.getUsername()));
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
@@ -279,7 +279,7 @@ public class AccountsController {
             logger.error(String.format("Email is invalid. %s", accountInfoDTO.getEmailAddress()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        
+
         try {
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), captchaValidationToken);
             logger.info(String.format("reCaptcha response for %s: %s", accountInfoDTO.getUsername(), reCaptchaResponse.toString()));
@@ -321,11 +321,11 @@ public class AccountsController {
             boolean isVerificationPending = EmailVerificationService.isVerificationPending(accountCreationResponse);
             account.setUid(newAccountUid);
             logger.info(String.format("Account registration successful. Username: %s. UID: %s", account.getUsername(), newAccountUid));
-            
+
             // TODO: Move into a service. Or simply create a model for this notification?
             String hashedPassword = HashingService.toMD5(account.getPassword());
             account.setPassword(hashedPassword);
-            
+
             if (isRegistrationNotificationEnabled) {
                 logger.info(String.format("Sending account registered notification for UID: %s", newAccountUid));
                 notificationService.sendAccountRegisteredNotification(account, cipdc);
@@ -355,13 +355,13 @@ public class AccountsController {
                 logger.info(String.format("Email verification notification for UID: %s", newAccountUid));
             }
 
-            if(isInvitedAccount(decryptedCiphertext)) {
+            if (isInvitedAccount(decryptedCiphertext)) {
                 logger.info("Updating invitation with country code.");
-                JSONObject updateInvitationDTO = new JSONObject() 
-                    .put("inviteeUsername", account.getUsername())
-                    .put("country", account.getCountry());
+                JSONObject updateInvitationDTO = new JSONObject()
+                        .put("inviteeUsername", account.getUsername())
+                        .put("country", account.getCountry());
                 Integer response = invitationService.updateInvitationCountry(updateInvitationDTO);
-                if(response == HttpStatus.OK.value()) {
+                if (response == HttpStatus.OK.value()) {
                     logger.info("Invitation was updated successfully with country value.");
                 } else {
                     logger.info("An error occurred. Invitation was not updated with country value.");
@@ -394,10 +394,10 @@ public class AccountsController {
         return ciphertext != null && InviteSource.contains(ciphertext.getSource());
     }
 
-    private boolean isAspireRegistrationValid (AccountInfo accountInfoDTO) {
+    private boolean isAspireRegistrationValid(AccountInfo accountInfoDTO) {
         return accountInfoDTO.getAcceptsAspireEnrollmentConsent() != null && accountInfoDTO.getAcceptsAspireEnrollmentConsent()
-            && accountInfoDTO.getIsHealthcareProfessional() != null && !accountInfoDTO.getIsHealthcareProfessional()
-            && accountInfoDTO.getAcceptsAspireTermsAndConditions() != null && accountInfoDTO.getAcceptsAspireTermsAndConditions();
+                && accountInfoDTO.getIsHealthcareProfessional() != null && !accountInfoDTO.getIsHealthcareProfessional()
+                && accountInfoDTO.getAcceptsAspireTermsAndConditions() != null && accountInfoDTO.getAcceptsAspireTermsAndConditions();
     }
 
     @PostMapping("/merged")
@@ -415,19 +415,19 @@ public class AccountsController {
             JWTPublicKey jwtPublicKey = gigyaService.getJWTPublicKey();
             logger.info("Validating JWT signature.");
             boolean isJWTValid = JWTValidator.isValidSignature(jwt, jwtPublicKey);
-    
+
             if (!isJWTValid) {
                 logger.info("Invalid JWT signature. Bad request.");
                 return new ResponseEntity<>(HttpStatus.OK);
             }
             logger.info("JWT signature valid.");
-            
+
             JSONObject jsonBody = new JSONObject(body);
             JSONArray events = (JSONArray) jsonBody.get("events");
 
             for (int i = 0; i < events.length(); i++) {
                 JSONObject event = events.getJSONObject(i);
-     
+
                 if (isMergeEvent(event)) {
                     logger.info("accountMerged webhook event fired.");
                     JSONObject data = (JSONObject) event.get("data");
@@ -563,21 +563,25 @@ public class AccountsController {
                 logger.error("ProfileInfoDTO is null or UID is null/empty");
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            
+
             logger.info(String.format("Starting user profile update process with UID: %s", profileInfoDTO.getUid()));
             String uid = profileInfoDTO.getUid();
             AccountInfo accountInfoDTO = gigyaService.getAccountInfo(uid);
             profileInfoDTO.setActualEmail(accountInfoDTO.getEmailAddress());
             profileInfoDTO.setActualUsername(accountInfoDTO.getUsername());
-            String previousEmail=accountInfoDTO.getEmailAddress();
+            String previousEmail = accountInfoDTO.getEmailAddress();
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
                 AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
-                updatedAccountInfo.setPreviousEmail(previousEmail);
-                logger.info("PreviousEmail :"+ updatedAccountInfo.getPreviousEmail());
+                if (null != profileInfoDTO.getEmail() && !profileInfoDTO.getEmail().isEmpty()) {
+                    updatedAccountInfo.setPreviousEmail(previousEmail);
+                } else {
+                    updatedAccountInfo.setPreviousEmail("");
+                }
+                logger.info("PreviousEmail :" + updatedAccountInfo.getPreviousEmail());
                 updatedAccountInfo.setLegacyUserName(accountInfoDTO.getLegacyUserName());
-                logger.info("LegacyUserName :"+ updatedAccountInfo.getLegacyUserName());
+                logger.info("LegacyUserName :" + updatedAccountInfo.getLegacyUserName());
                 logger.info("Building AccountUpdatedNotification object.");
                 AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");
