@@ -138,8 +138,6 @@ public class AccountsController {
     @Autowired
     UsersHandler usersHandler;
 
-    @Autowired
-    AccountBuilder accountBuilder;
 
     @PutMapping("/{uid}/password")
     @ApiOperation(value = "Updates user's password.")
