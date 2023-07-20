@@ -574,12 +574,7 @@ public class AccountsController {
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
                 AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
-
-                if (profileInfoDTO.getEmail().equalsIgnoreCase(accountInfoDTO.getEmailAddress())) {
-                    previousEmail = "";
-                }
                 updatedAccountInfo.setPreviousEmail(previousEmail);
-
                 logger.info("PreviousEmail :" + updatedAccountInfo.getPreviousEmail());
                 updatedAccountInfo.setLegacyUserName(accountInfoDTO.getLegacyUserName());
                 logger.info("LegacyUserName :" + updatedAccountInfo.getLegacyUserName());
