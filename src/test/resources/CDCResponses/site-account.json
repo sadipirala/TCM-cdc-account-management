@@ -64,6 +64,9 @@
 			"china": null,
 			"japan": null,
 			"korea": null
+		},
+		"thermofisher": {
+			"legacyUsername": "siteUsername@mail.com"
 		}
 	},
 	"isVerified": true,

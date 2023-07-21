@@ -22,18 +22,23 @@ public class AccountUpdatedNotification {
     private String lastName;
     private String emailAddress;
     private String username;
+    //added for 580
+    private String legacyUserName;
+    private String previousEmail;
 
     public static AccountUpdatedNotification build(AccountInfo accountInfo) {
         return AccountUpdatedNotification.builder()
-            .uid(accountInfo.getUid())
-            .company(accountInfo.getCompany())
-            .city(accountInfo.getCity())
-            .country(accountInfo.getCountry())
-            .marketingConsent(accountInfo.isMarketingConsent())
-            .firstName(accountInfo.getFirstName())
-            .lastName(accountInfo.getLastName())
-            .emailAddress(accountInfo.getEmailAddress())
-            .username(accountInfo.getUsername())
-            .build();
+                .uid(accountInfo.getUid())
+                .company(accountInfo.getCompany())
+                .city(accountInfo.getCity())
+                .country(accountInfo.getCountry())
+                .marketingConsent(accountInfo.isMarketingConsent())
+                .firstName(accountInfo.getFirstName())
+                .lastName(accountInfo.getLastName())
+                .emailAddress(accountInfo.getEmailAddress())
+                .username(accountInfo.getUsername())
+                .legacyUserName(accountInfo.getLegacyUserName())
+                .previousEmail(accountInfo.getPreviousEmail())
+                .build();
     }
 }
