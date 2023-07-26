@@ -56,6 +56,25 @@ public class NotificationControllerTests {
         verify(notificationService).sendPrivateAccountUpdatedNotification(any());
         assertEquals(resp.getStatusCode(),HttpStatus.OK);
     }
+    @Test
+    public void sendEmailVerificationSNS_GivenAValidUid_PreviousEmail_exists_WhenCallSNS_ThenShouldReturnOK() throws Exception {
+        // given
+        EmailVerificationDTO emailVerification = new EmailVerificationDTO();
+        emailVerification.setUid(AccountUtils.getSiteAccount().getUid());
+        emailVerification.setPreviousEmail(AccountUtils.getSiteAccount().getEmailAddress());
+
+        when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+
+        // when
+        ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
+
+        // then
+        verify(notificationService).sendPublicAccountUpdatedNotification(any());
+        verify(notificationService).sendPrivateAccountUpdatedNotification(any());
+        assertEquals(resp.getStatusCode(),HttpStatus.OK);
+    }
 
     @Test
     public void sendEmailVerificationSNS_GivenAInvalidUid_WhenCallSNS_ThenShouldReturnABadRequest() throws CustomGigyaErrorException {

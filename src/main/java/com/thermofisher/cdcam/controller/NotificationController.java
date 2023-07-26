@@ -45,20 +45,18 @@ public class NotificationController {
         try {
             String uid = emailVerificationDTO.getUid();
             String previousEmail = emailVerificationDTO.getPreviousEmail();
+            logger.info("previousEmail: "+previousEmail);
             logger.info(String.format("Email verification process for %s started.", uid));
-            logger.info("sendEmailVerificationSNS method executing. Email verification process  started and the previousEmail is :", previousEmail);
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
             if( null != previousEmail) {
                 accountUpdatedNotification.setPreviousEmail(emailVerificationDTO.getPreviousEmail());
             }
-            logger.info("Sending accountUpdated notification with previous email: "+emailVerificationDTO.getPreviousEmail());
             logger.info("Sending accountUpdated notification.");
             notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
             notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
             logger.info("accountUpdated notification sent.");
-            logger.info("accountUpdated notification sent with previous email: "+emailVerificationDTO.getPreviousEmail());
             return new ResponseEntity<String>("The notification was sent successfully!",HttpStatus.OK);
         }
         catch (CustomGigyaErrorException ex) {
