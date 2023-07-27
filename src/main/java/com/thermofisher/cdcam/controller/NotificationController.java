@@ -50,7 +50,7 @@ public class NotificationController {
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
-            if (null != previousEmail && !previousEmail.equalsIgnoreCase(accountInfo.getPreviousEmail())) {
+            if (null != previousEmail && !previousEmail.equalsIgnoreCase(accountInfo.getEmailAddress())) {
                 accountUpdatedNotification.setPreviousEmail(emailVerificationDTO.getPreviousEmail());
             }
             logger.info("Sending accountUpdated notification.");
