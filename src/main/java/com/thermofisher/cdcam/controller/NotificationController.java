@@ -45,21 +45,20 @@ public class NotificationController {
         try {
             String uid = emailVerificationDTO.getUid();
             String previousEmail = emailVerificationDTO.getPreviousEmail();
-            logger.info("previousEmail: "+previousEmail);
+            logger.info("previousEmail: " + previousEmail);
             logger.info(String.format("Email verification process for %s started.", uid));
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             logger.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
-            if( null != previousEmail) {
+            if (null != previousEmail && !previousEmail.equalsIgnoreCase(accountInfo.getPreviousEmail())) {
                 accountUpdatedNotification.setPreviousEmail(emailVerificationDTO.getPreviousEmail());
             }
             logger.info("Sending accountUpdated notification.");
             notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
             notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
             logger.info("accountUpdated notification sent.");
-            return new ResponseEntity<String>("The notification was sent successfully!",HttpStatus.OK);
-        }
-        catch (CustomGigyaErrorException ex) {
+            return new ResponseEntity<String>("The notification was sent successfully!", HttpStatus.OK);
+        } catch (CustomGigyaErrorException ex) {
             logger.error(String.format("Bad Request : %s", ex.getMessage()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -83,8 +82,7 @@ public class NotificationController {
             notificationService.sendPrivateMarketingConsentUpdatedNotification(marketingConsentUpdatedNotification);
             logger.info("marketingConsentUpdated notification sent.");
             return new ResponseEntity<String>("The notification was sent successfully!", HttpStatus.OK);
-        }
-        catch (CustomGigyaErrorException ex) {
+        } catch (CustomGigyaErrorException ex) {
             if (ex.getErrorCode() == GigyaCodes.UID_NOT_FOUND.getValue()) {
                 logger.error(String.format("UID not found : %s", ex.getMessage()));
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
