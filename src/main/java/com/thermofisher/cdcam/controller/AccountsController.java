@@ -569,15 +569,10 @@ public class AccountsController {
             AccountInfo accountInfoDTO = gigyaService.getAccountInfo(uid);
             profileInfoDTO.setActualEmail(accountInfoDTO.getEmailAddress());
             profileInfoDTO.setActualUsername(accountInfoDTO.getUsername());
-            String previousEmail = accountInfoDTO.getEmailAddress();
             HttpStatus updateUserProfileStatus = updateAccountService.updateProfile(profileInfoDTO);
             if (updateUserProfileStatus == HttpStatus.OK) {
                 logger.info(String.format("User %s updated.", uid));
                 AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
-                updatedAccountInfo.setPreviousEmail(previousEmail);
-                logger.info("PreviousEmail :" + updatedAccountInfo.getPreviousEmail());
-                updatedAccountInfo.setLegacyUserName(accountInfoDTO.getLegacyUserName());
-                logger.info("LegacyUserName :" + updatedAccountInfo.getLegacyUserName());
                 logger.info("Building AccountUpdatedNotification object.");
                 AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
                 logger.info("Sending accountUpdated notification.");
