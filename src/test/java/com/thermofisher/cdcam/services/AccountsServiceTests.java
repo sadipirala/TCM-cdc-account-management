@@ -1,8 +1,6 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -15,8 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.amazonaws.services.dynamodbv2.xspec.S;
+import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.dto.ConsentDTO;
+import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,14 +39,6 @@ import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.cdc.CDCAccount;
-import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
-import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
-import com.thermofisher.cdcam.model.cdc.CDCResponseData;
-import com.thermofisher.cdcam.model.cdc.CDCValidationError;
-import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
-import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
-import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
@@ -404,5 +399,84 @@ public class AccountsServiceTests {
         Map<String, String> params = mapCaptor.getValue();
         assertEquals(params.get("UID"), account.getUid());
         assertTrue(new Boolean(params.get("isVerified")).booleanValue());
+    }
+
+    @Test
+    public void updateConsent_givenMarketingConsentTrue_shouldCallSetAccountInfoWithAdditionalFields() throws CustomGigyaErrorException, JSONException {
+        // Given.
+        ConsentDTO request = ConsentDTO.builder()
+                .uid("abc123")
+                .marketingConsent(true)
+                .city("Carlsbad")
+                .company("Thermo Fisher Scientific")
+                .build();
+
+        when(gigyaService.setAccountInfo(any(Map.class))).thenReturn(Mockito.mock(CDCResponse.class));
+
+        ArgumentCaptor<Map<String, String>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
+
+        // When.
+        accountsService.updateConsent(request);
+
+        // Then.
+        verify(gigyaService).setAccountInfo(paramsCaptor.capture());
+
+        Map<String, String> params = paramsCaptor.getValue();
+        assertEquals(params.get("UID"), request.getUid());
+
+        JSONObject preferences = new JSONObject(params.get("preferences"));
+        assertEquals(preferences.getJSONObject("marketing").getJSONObject("consent").getBoolean("isConsentGranted"), request.getMarketingConsent());
+
+        JSONObject profile = new JSONObject(params.get("profile"));
+        assertEquals(profile.getJSONObject("work").getString("company"), request.getCompany());
+        assertEquals(profile.getString("city"), request.getCity());
+    }
+
+    @Test
+    public void updateConsent_givenMarketingConsentFalse_shouldCallSetAccountInfoWithoutAdditionalFields() throws CustomGigyaErrorException, JSONException {
+        // Given.
+        ConsentDTO request = ConsentDTO.builder()
+                .uid("abc123")
+                .marketingConsent(false)
+                .city("Carlsbad")
+                .company("Thermo Fisher Scientific")
+                .build();
+
+        when(gigyaService.setAccountInfo(any(Map.class))).thenReturn(Mockito.mock(CDCResponse.class));
+
+        ArgumentCaptor<Map<String, String>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
+
+        // When.
+        accountsService.updateConsent(request);
+
+        // Then.
+        verify(gigyaService).setAccountInfo(paramsCaptor.capture());
+
+        Map<String, String> params = paramsCaptor.getValue();
+        assertEquals(params.get("UID"), request.getUid());
+
+        JSONObject preferences = new JSONObject(params.get("preferences"));
+        assertEquals(preferences.getJSONObject("marketing").getJSONObject("consent").getBoolean("isConsentGranted"), request.getMarketingConsent());
+
+        assertFalse(params.containsKey("profile"));
+    }
+
+    @Test
+    public void notifyUpdatedConsent_shouldFetchAccountInfo_andSendPublicUpdateNotification() throws CustomGigyaErrorException {
+        // Given.
+        String uid = "abc123";
+
+        AccountInfo mockAccountInfo = AccountInfo.builder().build();
+
+        when(gigyaService.getAccountInfo(uid)).thenReturn(mockAccountInfo);
+
+        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+
+        // When.
+        accountsService.notifyUpdatedConsent(uid);
+
+        // Then.
+        verify(gigyaService).getAccountInfo(uid);
+        verify(notificationService).sendPublicAccountUpdatedNotification(any());
     }
 }
