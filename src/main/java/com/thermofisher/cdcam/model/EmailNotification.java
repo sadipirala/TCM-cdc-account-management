@@ -15,7 +15,6 @@ public class EmailNotification {
     private String type;
     private String locale;
     private EmailUserInfo userInfo;
-    private String clientId;
 
     public static EmailNotification buildConfirmationEmail(AccountInfo account) {
         EmailUserInfo emailUserInfo = EmailUserInfo.builder()
@@ -28,7 +27,6 @@ public class EmailNotification {
                 .locale(EmailLocaleUtils.processLocaleForNotification(account.getLocaleName(), account.getCountry()))
                 .userInfo(emailUserInfo)
                 .type(EmailNotificationType.CONFIRMATION_EMAIL.getValue())
-                .clientId(account.getOpenIdProviderId())
                 .build();
 
         return emailNotification;
