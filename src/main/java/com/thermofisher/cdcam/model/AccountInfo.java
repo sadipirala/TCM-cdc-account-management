@@ -58,6 +58,10 @@ public class AccountInfo {
     // openId provider
     private String openIdProviderId;
 
+    //added for 580
+    private String legacyUserName;
+    private String previousEmail;
+
     @JsonIgnore
     public boolean isFederatedAccount() {
         return this.socialProviders.toLowerCase().contains("saml-");
