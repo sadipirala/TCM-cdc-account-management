@@ -25,7 +25,7 @@ deployment:
 
 environments:
   qa4:
-    branch: (integration|development)/.*
+    branch: integration/.*
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
@@ -44,7 +44,7 @@ environments:
       - cdcam-qa4.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
   
   qa4-cn:
-    branch: (integration|development)/.*
+    branch: integration/.*
     cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -63,7 +63,7 @@ environments:
       - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
 
   qa1-cn:
-    branch: (release|qa1-test)/.*
+    branch: release/.*
     cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -85,7 +85,7 @@ environments:
       mergeTo: master
 
   qa1:
-    branch: (release|qa1-test)/.*
+    branch: release/.*
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
