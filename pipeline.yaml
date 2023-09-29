@@ -1,5 +1,5 @@
 build:
-  image: maven:3-alpine
+  image: amazoncorretto:17
   steps:
     - mvn clean package -U
 
