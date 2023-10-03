@@ -27,12 +27,14 @@ import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -40,8 +42,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class GigyaApiTests {
 
     @Value("${cdc.main.datacenter}")
@@ -53,6 +55,10 @@ public class GigyaApiTests {
     @Mock
     SecretsService secretsService;
 
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void setAccountInfo_ShouldSetAccountInfoSendRequest() throws JSONException {
         // given

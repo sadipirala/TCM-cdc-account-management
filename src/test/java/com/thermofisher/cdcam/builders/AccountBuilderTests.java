@@ -19,14 +19,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AccountBuilder.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = AccountBuilder.class)
 public class AccountBuilderTests {
     private Logger logger = LogManager.getLogger(AccountBuilder.class);
 
@@ -50,6 +51,7 @@ public class AccountBuilderTests {
 
     @Before
     public void setup() throws ParseException, IOException {
+        MockitoAnnotations.openMocks(this);
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
         siteCdcResponseV2 = AccountUtils.getSiteAccountJsonStringV2();
         siteCdcMarketingConsentFalseResponse = AccountUtils.getSiteAccountWithMarketingConsentAsFalse();

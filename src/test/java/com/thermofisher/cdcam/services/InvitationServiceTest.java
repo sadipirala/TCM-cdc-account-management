@@ -7,18 +7,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import org.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class InvitationServiceTest {
 
     @InjectMocks
@@ -26,7 +28,10 @@ public class InvitationServiceTest {
 
     @Mock
     HttpService httpService;
-
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void updateInvitationCountry_givenCountryIsUpdatedCorrectly_returnStatus200() {
         // given

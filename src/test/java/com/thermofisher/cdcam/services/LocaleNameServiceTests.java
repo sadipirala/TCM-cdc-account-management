@@ -3,9 +3,11 @@ package com.thermofisher.cdcam.services;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -13,13 +15,16 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.thermofisher.CdcamApplication;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class LocaleNameServiceTests {
 
 	@InjectMocks
 	LocaleNameService localeNameService;
-	
+	@Before
+	public void setup() {
+		MockitoAnnotations.openMocks(this);
+	}
 	@Test
 	public void getLocale_givenAValidLocale_shouldReturnSameLocaleName() {
 		// given

@@ -53,6 +53,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
@@ -60,8 +61,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class GigyaServiceTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
@@ -101,6 +102,7 @@ public class GigyaServiceTests {
 
     @Before
     public void setup() throws JSONException {
+        MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(accountBuilder, "logger", LogManager.getLogger(AccountBuilder.class));
         loginIdAvailable.put("totalCount", 0);
         loginIdNotAvailable.put("totalCount", 1);

@@ -18,8 +18,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.junit.Assert.*;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CDCAccountsHandler.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CDCAccountsHandler.class)
 public class CDCAccountsHandlerTests {
 
     @Test

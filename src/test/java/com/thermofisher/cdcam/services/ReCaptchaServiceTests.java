@@ -16,14 +16,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class ReCaptchaServiceTests {
     private final String reCaptchaToken = "";
     private final String captchaValidationJWT = "";
@@ -40,8 +41,10 @@ public class ReCaptchaServiceTests {
     @Mock
     SecretsService secretsService;
 
+
     @Before
     public void init() {
+        MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(reCaptchaService, "RECAPTCHA_MIN_THRESHOLD", 0.5);
     }
 

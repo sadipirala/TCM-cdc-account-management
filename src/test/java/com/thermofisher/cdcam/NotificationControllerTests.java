@@ -2,9 +2,7 @@ package com.thermofisher.cdcam;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.google.gson.Gson;
 import com.thermofisher.CdcamApplication;
@@ -16,19 +14,29 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@ExtendWith(SpringExtension.class)
+@SpringBootTest//(classes = CdcamApplication.class)
+//@RunWith(MockitoJUnitRunner.class)
 public class NotificationControllerTests {
 
     @InjectMocks
@@ -39,8 +47,11 @@ public class NotificationControllerTests {
 
     @Mock
     NotificationService notificationService;
-
-    @Test
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+        @Test
     public void sendEmailVerificationSNS_GivenAValidUid_WhenCallSNS_ThenShouldReturnOK() throws Exception {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);

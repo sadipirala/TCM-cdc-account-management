@@ -47,8 +47,8 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class LiteRegistrationServiceTests {
 
     private static final String ERROR_MSG = "Something went wrong, please contact the system administrator.";

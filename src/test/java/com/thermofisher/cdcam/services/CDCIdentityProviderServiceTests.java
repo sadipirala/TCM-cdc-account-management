@@ -9,23 +9,21 @@ import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.aws.SecretsManager;
 
 import org.json.JSONException;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = { 
-    CDCIdentityProviderService.class,
-    SecretsService.class,
-    SecretsManager.class 
-})
+//@RunWith(SpringRunner.class)
+@SpringBootTest
 public class CDCIdentityProviderServiceTests {
 
     @InjectMocks
@@ -33,7 +31,10 @@ public class CDCIdentityProviderServiceTests {
 
     @Mock
     SecretsService secretsService;
-
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void getIdPInformation_ShouldNotBeReturnedIfTheIdPDoesNotExist() {
         // given

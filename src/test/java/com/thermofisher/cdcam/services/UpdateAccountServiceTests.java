@@ -23,8 +23,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class UpdateAccountServiceTests {
     private final String uid = "1234567890";
     private final String timezone = "America/Tijuana";

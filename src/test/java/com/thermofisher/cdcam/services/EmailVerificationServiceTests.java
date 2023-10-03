@@ -14,12 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.thermofisher.cdcam.properties.EmailVerificationProperties;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,8 +31,8 @@ import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 
-@SpringBootTest(classes = { CdcamApplication.class })
-@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = { CdcamApplication.class })
+//@RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 public class EmailVerificationServiceTests {
 
@@ -39,7 +41,10 @@ public class EmailVerificationServiceTests {
 
     @Mock
     GigyaService gigyaService;
-
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void getDefaultVerifiedDate_GivenFeatureDisabled_ShouldReturnDefaultVerifiedDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {

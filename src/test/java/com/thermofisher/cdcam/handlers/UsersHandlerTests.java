@@ -34,8 +34,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class UsersHandlerTests {
 
     @Value("${cdc.main.datacenter}")

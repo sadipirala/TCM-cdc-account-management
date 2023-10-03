@@ -10,10 +10,12 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +24,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CdcamApplication.class)
 public class IdentityProviderControllerTests {
 
@@ -31,6 +33,10 @@ public class IdentityProviderControllerTests {
 
     @Mock
     GigyaService gigyaService;
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void getIdentityProviderInformation_ShouldReturn_OK_IfTheIdPGetsFound() {

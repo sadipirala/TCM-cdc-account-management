@@ -17,13 +17,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @ActiveProfiles("test")
-@SpringBootTest(classes = CdcamApplication.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
 public class DataProtectionServiceTests {
     private final String CIPHERTEXT = "VTJGc2RHVmtYMThPaXlrKzMrVHh4V2E3c1loNGhNZUJXNHowT2R6T3k1QzFmZVQxQkxMcmlNUmgxbTcxWGJYWEVPUUQ5K0doNWhUbjdqVmZ2NGZXbFJnR3BWUWJFWTd0WjNCejcxZVhBQURVS21XUm03b0t5TWZDSDkxdnBJSjE=";
     JSONObject ciphertextBody = new JSONObject();
@@ -36,6 +37,7 @@ public class DataProtectionServiceTests {
 
     @Before
     public void beforeEach() throws JSONException {
+        MockitoAnnotations.openMocks(this);
         ciphertextBody.put("firstName", "John");
         ciphertextBody.put("lastName", "Doe");
         ciphertextBody.put("email", "john.doe@thermofisher.com");

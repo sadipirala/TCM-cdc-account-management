@@ -13,14 +13,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = { SecretsService.class, SecretsManager.class })
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = { SecretsService.class, SecretsManager.class })
 public class SecretsServiceTests {
 
     @InjectMocks
@@ -31,12 +32,13 @@ public class SecretsServiceTests {
 
     @Before
     public void setup() throws JSONException {
+        MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(secretsService, "env", "prod");
         ReflectionTestUtils.setField(secretsService, "cdcamSecretsName", "secret");
         when(secretsManager.getSecret(any())).thenReturn("{\"x\":\"x\"}");
         when(secretsManager.getProperty(any(), anyString())).thenReturn("");
     }
-    
+
     @Test
     public void get_shouldGetExistingSecret() throws JSONException {
         // given

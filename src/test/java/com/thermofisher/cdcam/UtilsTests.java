@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = Utils.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = Utils.class)
 public class UtilsTests {
 
     @Test

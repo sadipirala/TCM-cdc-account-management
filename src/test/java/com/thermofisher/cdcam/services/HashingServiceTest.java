@@ -15,8 +15,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = HashingService.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = HashingService.class)
 public class HashingServiceTest {
     String HASHED_VALUE = "9D300D6CECD375DF73AFB16008977EAE";
     String PLAIN_TEXT_VALUE = "hashTest";
@@ -26,6 +26,7 @@ public class HashingServiceTest {
         String ALGORITHM = "MD5";
         ReflectionTestUtils.setField(HashingService.class, "PASSWORD_ALGORITHM", ALGORITHM);
     }
+
 
     @Test
     public void toMD5() throws NoSuchAlgorithmException {

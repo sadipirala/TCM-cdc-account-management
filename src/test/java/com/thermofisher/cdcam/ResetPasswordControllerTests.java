@@ -52,8 +52,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class ResetPasswordControllerTests {
     String username = "armadillo@mail.com";
     String email = "armadillo@mail.com";

@@ -21,8 +21,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class CookieServiceTests {
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private String CUSTOM_RP_CIP_AUTHDATA_COOKIE = "eyJjbGllbnRfaWQiOiI3bnp2N0ptSlQtM1IxWjBGWkVxX1Y1RTgiLCJyZWdSZWRpcmVjdFVyaSI6Imh0dHBzOi8vd3d3LnFhNC50aGVybW9maXNoZXIuY29tL2F1dGgvbG9naW4vY3JlYXRlIiwic2lnbkluUmVkaXJlY3RVcmkiOiJodHRwczovL3d3dy5xYTQudGhlcm1vZmlzaGVyLmNvbS9hdXRoL2xvZ2luIiwicmV0dXJuVXJsIjoiaHR0cHM6Ly93d3cucWE0LnRoZXJtb2Zpc2hlci5jb20ifQ==";

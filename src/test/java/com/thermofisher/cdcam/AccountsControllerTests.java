@@ -83,8 +83,8 @@ import com.thermofisher.cdcam.utils.cdc.CDCTestsUtils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = CdcamApplication.class)
 public class AccountsControllerTests {
     private final List<String> uids = new ArrayList<>();
     private final String username = "federatedUser@OIDC.com";

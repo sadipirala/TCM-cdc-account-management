@@ -10,8 +10,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = PasswordUtils.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = PasswordUtils.class)
 public class PasswordUtilsTests {
 
     @Test

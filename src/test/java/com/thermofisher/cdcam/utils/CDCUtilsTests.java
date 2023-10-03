@@ -11,8 +11,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CDCUtils.class)
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = CDCUtils.class)
 public class CDCUtilsTests {
 
     @Test

@@ -18,20 +18,22 @@ import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = { NotificationService.class, SNSHandler.class })
+//@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = { NotificationService.class, SNSHandler.class })
 public class NotificationServiceTests {
 
     @InjectMocks
@@ -40,6 +42,10 @@ public class NotificationServiceTests {
     @Mock
     SNSHandler snsHandler;
 
+    @Before
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void sendAccountRegisteredNotification_ShouldSendNotificationToRegistrationSNSTopicWithAccountData() throws JsonProcessingException {
         // given

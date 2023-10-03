@@ -26,8 +26,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * AccountInfoHandlerTests
  */
 @ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AccountInfoHandler.class)
+//@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest//(classes = AccountInfoHandler.class)
 public class AccountInfoHandlerTests {
 
     private final String MOCK_CIPDC = "us";
