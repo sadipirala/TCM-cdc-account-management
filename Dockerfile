@@ -1,4 +1,4 @@
-FROM amazoncorretto:17
+FROM amazoncorretto:17.0.7-alpine3.15
 CMD apt-get install awscli.
 COPY credentials /root/.aws/credentials
 WORKDIR /app

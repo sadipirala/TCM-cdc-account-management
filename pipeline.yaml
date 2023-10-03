@@ -1,5 +1,5 @@
 build:
-  image: amazoncorretto:17
+  image: amazoncorretto:17.0.7-alpine3.15
   steps:
     - mvn clean package -U
 
