@@ -9,7 +9,7 @@ containerBuild:
 deployment:
   name: cdc-account-management
   namespace: cdcam
-  cpu: 100m
+  cpu: 150m
   memory: 2Gi
   replicas: 1
   containerPort: 8080
