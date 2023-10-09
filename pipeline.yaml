@@ -32,8 +32,8 @@ environments:
         value: qa4
       - name: SPRING.PROFILES.ACTIVE
         value: qa4
-     # - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-     #   value: file:/etc/config/app-config-qa4.yml
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-qa4.yml
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -51,8 +51,8 @@ environments:
         value: qa4-cn
       - name: SPRING.PROFILES.ACTIVE
         value: qa4-cn
-    #  - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-     #   value: file:/etc/config/app-config.yml
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config.yml
     autoscaling:
       enabled: true
       minReplicas: 1
