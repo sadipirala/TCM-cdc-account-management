@@ -155,15 +155,15 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: ['**/dto/*'
-                                        ,'**/configs/*'
-                                        ,'**/enums/*'
-                                        ,'**/service/aws/*'
-                                        ,'**/service/ICDCService*'
-                                        ,'**/properties/*'
-                                        ,'**/exceptions/*'
-                                        ,'**/utils/*'
-                                        ,'com/thermofisher/identity/consent/FederationApp*'])
+            fileTree(dir: it, exclude: ['**/cdcam/aws/*'
+                                        ,'**/cdcam/enums/*'
+                                        ,'**/cdcam/services/SecretsService.*'
+                                        ,'**/cdcam/services/JWTValidator.*'
+                                        ,'**/cdcam/services/HttpService.*'
+                                        ,'**/cdcam/CorsFilterConfig.*'
+                                        ,'**/cdcam/builders/GSRequestFactory.*'       ])
+
+
         }))
     }
     violationRules {
