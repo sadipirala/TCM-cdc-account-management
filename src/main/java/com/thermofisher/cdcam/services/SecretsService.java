@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.services;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import com.thermofisher.cdcam.aws.SecretsManager;
 

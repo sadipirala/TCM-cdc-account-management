@@ -5,10 +5,8 @@ import com.google.gson.Gson;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.Utils;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.Locale;
 
 @Service
+@Slf4j
 public class UpdateAccountService {
-    private Logger logger = LogManager.getLogger(this.getClass());
     private static final int SUCCESS_CODE = 200;
     private static final int BAD_REQUEST = 400;
 
@@ -31,7 +29,7 @@ public class UpdateAccountService {
     GigyaService gigyaService;
 
     public HttpStatus updateTimezoneInCDC(String uid, String timezone) throws JSONException {
-        logger.info(String.format("Account update for time zone triggered. UID: %s", uid));
+        log.info(String.format("Account update for time zone triggered. UID: %s", uid));
 
         Profile profile = Profile.builder().timezone(timezone).build();
         JSONObject jsonAccount = new JSONObject();
@@ -43,9 +41,9 @@ public class UpdateAccountService {
         ObjectNode response = gigyaService.update(jsonAccount);
 
         if (response.get("code").asInt() == SUCCESS_CODE) {
-            logger.info(String.format("Account update success. UID: %s", uid));
+            log.info(String.format("Account update success. UID: %s", uid));
         } else {
-            logger.error(String.format("Account update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
+            log.error(String.format("Account update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
         }
 
         return HttpStatus.valueOf(response.get("code").asInt());
@@ -53,9 +51,9 @@ public class UpdateAccountService {
 
     public HttpStatus updateProfile(ProfileInfoDTO profileInfoDTO) throws JSONException {
         String uid = profileInfoDTO.getUid();
-        logger.info(String.format("User Profile update by UID: %s", uid));
+        log.info(String.format("User Profile update by UID: %s", uid));
         if (Utils.isNullOrEmpty(uid)) {
-            logger.error("UID is null or empty");
+            log.error("UID is null or empty");
             return HttpStatus.valueOf(BAD_REQUEST);
         }
 
@@ -80,9 +78,9 @@ public class UpdateAccountService {
 
         ObjectNode response = gigyaService.update(jsonAccount);
         if (response.get("code").asInt() == SUCCESS_CODE) {
-            logger.info(String.format("Profile update success. UID: %s", uid));
+            log.info(String.format("Profile update success. UID: %s", uid));
         } else {
-            logger.error(String.format("Profile update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
+            log.error(String.format("Profile update failed. UID: %s. Error: %s", uid, response.get("log").asText()));
         }
 
         return HttpStatus.valueOf(response.get("code").asInt());

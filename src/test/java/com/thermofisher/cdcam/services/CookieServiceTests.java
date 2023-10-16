@@ -1,28 +1,26 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.enums.CookieType;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 public class CookieServiceTests {
     private String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private String CUSTOM_RP_CIP_AUTHDATA_COOKIE = "eyJjbGllbnRfaWQiOiI3bnp2N0ptSlQtM1IxWjBGWkVxX1Y1RTgiLCJyZWdSZWRpcmVjdFVyaSI6Imh0dHBzOi8vd3d3LnFhNC50aGVybW9maXNoZXIuY29tL2F1dGgvbG9naW4vY3JlYXRlIiwic2lnbkluUmVkaXJlY3RVcmkiOiJodHRwczovL3d3dy5xYTQudGhlcm1vZmlzaGVyLmNvbS9hdXRoL2xvZ2luIiwicmV0dXJuVXJsIjoiaHR0cHM6Ly93d3cucWE0LnRoZXJtb2Zpc2hlci5jb20ifQ==";
@@ -36,7 +34,7 @@ public class CookieServiceTests {
     @Value("${identity.registration.get-login-endpoint.path}")
     String getOidcLoginEndpointPath;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(cookieService, "identityResetPasswordClientId", "id");

@@ -1,8 +1,3 @@
-build:
-  image: maven:3.8.3-amazoncorretto-17
-  steps:
-    - mvn clean package -U
-
 containerBuild:
   imageName: cdcam/cdc-account-management
 

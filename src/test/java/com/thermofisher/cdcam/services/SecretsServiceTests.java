@@ -1,27 +1,28 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertEquals;
+import com.thermofisher.cdcam.aws.SecretsManager;
+import org.json.JSONException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import com.thermofisher.cdcam.aws.SecretsManager;
-
-import org.json.JSONException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-@ActiveProfiles("test")
-//@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = { SecretsService.class, SecretsManager.class })
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class SecretsServiceTests {
 
     @InjectMocks
@@ -30,7 +31,7 @@ public class SecretsServiceTests {
     @Mock
     SecretsManager secretsManager;
 
-    @Before
+    @BeforeEach
     public void setup() throws JSONException {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(secretsService, "env", "prod");

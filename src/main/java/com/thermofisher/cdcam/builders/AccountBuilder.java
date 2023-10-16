@@ -19,12 +19,10 @@ import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
 
 import com.thermofisher.cdcam.utils.cdc.ThermofisherAttributesHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+@Slf4j
 public class AccountBuilder {
-    private Logger logger = LogManager.getLogger(this.getClass());
 
     public AccountInfo getAccountInfo(GSObject obj) {
         String uid = null;
@@ -87,7 +85,7 @@ public class AccountBuilder {
                     .build();
 
         } catch (Exception e) {
-            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -159,7 +157,7 @@ public class AccountBuilder {
                     .build();
 
         } catch (Exception e) {
-            logger.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("Error building account info object. UID: %s. Message: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }

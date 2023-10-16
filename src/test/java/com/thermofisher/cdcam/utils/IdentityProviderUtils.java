@@ -1,16 +1,15 @@
 package com.thermofisher.cdcam.utils;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 
-import org.json.simple.parser.ParseException;
+import java.io.IOException;
+import java.util.HashMap;
+
 
 public class IdentityProviderUtils {
     
-    public static String getIdentityProviderJsonString() throws IOException, ParseException {
+    public static String getIdentityProviderJsonString() throws IOException {
         String path = "src/test/resources/CDCResponses/identity-provider.json";
         return TestUtils.getJSONFromFile(path).toString();
     }

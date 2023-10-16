@@ -1,6 +1,6 @@
 package com.thermofisher.cdcam.services;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;

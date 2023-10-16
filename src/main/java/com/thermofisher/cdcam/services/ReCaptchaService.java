@@ -1,12 +1,11 @@
 package com.thermofisher.cdcam.services;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,10 +14,9 @@ import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-
+@Slf4j
 @Service
 public class ReCaptchaService {
-    Logger logger = LoggerFactory.getLogger(ReCaptchaService.class);
     public static final String CAPTCHA_TOKEN_HEADER = "x-captcha-token";
     private String reCaptchaV3Secret;
     private String reCaptchaV2Secret;
@@ -65,12 +63,12 @@ public class ReCaptchaService {
 
     private String getReCaptchaSecret(String captchaValidationJWT) {
         if (StringUtils.isBlank(captchaValidationJWT)) {
-            logger.info("No captcha token, using reCaptcha v3.");
+            log.info("No captcha token, using reCaptcha v3.");
             return reCaptchaV3Secret;
         } else {
-            logger.info("Captcha validation token received, verifying JWT: {}", captchaValidationJWT);
+            log.info("Captcha validation token received, verifying JWT: {}", captchaValidationJWT);
             jwtService.verify(captchaValidationJWT);
-            logger.info("Valid captcha JWT, using reCaptchaV2.");
+            log.info("Valid captcha JWT, using reCaptchaV2.");
             return reCaptchaV2Secret;
         }
     }

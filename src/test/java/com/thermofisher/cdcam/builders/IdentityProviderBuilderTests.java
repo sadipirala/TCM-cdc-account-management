@@ -1,28 +1,26 @@
 package com.thermofisher.cdcam.builders;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 import com.gigya.socialize.GSObject;
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.utils.IdentityProviderUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+@ExtendWith(MockitoExtension.class)
 public class IdentityProviderBuilderTests {
     @InjectMocks
     private IdentityProviderBuilder identityProviderBuilder;
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -36,8 +34,8 @@ public class IdentityProviderBuilderTests {
         IdentityProviderResponse result = identityProviderBuilder.getIdPInformation(gsObject);
         
         // then
-        assertNotNull(result);
-        assertNotNull(result.getName());
+        Assertions.assertThat(result).isNotNull();
+        Assertions.assertThat(result.getName()).isNotNull();
     }
 
     @Test
@@ -50,6 +48,6 @@ public class IdentityProviderBuilderTests {
         IdentityProviderResponse result = identityProviderBuilder.getIdPInformation(gsObject);
 
         // then
-        assertNull(result);
+        Assertions.assertThat(result).isNull();
     }
 }

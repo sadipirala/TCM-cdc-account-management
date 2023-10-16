@@ -1,17 +1,16 @@
 package com.thermofisher.cdcam.models.notifications;
 
-import static org.junit.Assert.assertEquals;
-
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.AccountUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringRunner;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
-
+@ExtendWith(MockitoExtension.class)
 public class MergedAccountNotificationTests {
     
     @Test

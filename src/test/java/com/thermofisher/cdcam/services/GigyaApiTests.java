@@ -1,19 +1,9 @@
 package com.thermofisher.cdcam.services;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.GSRequestFactory;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -24,26 +14,32 @@ import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-//@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class GigyaApiTests {
 
     @Value("${cdc.main.datacenter}")
@@ -55,7 +51,7 @@ public class GigyaApiTests {
     @Mock
     SecretsService secretsService;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -109,7 +105,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -128,7 +124,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -148,9 +144,9 @@ public class GigyaApiTests {
         final String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
@@ -170,7 +166,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -190,9 +186,9 @@ public class GigyaApiTests {
         final String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(new NullPointerException(""));
@@ -210,8 +206,8 @@ public class GigyaApiTests {
         // given
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -236,7 +232,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -261,7 +257,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -286,7 +282,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -307,7 +303,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -327,9 +323,9 @@ public class GigyaApiTests {
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
@@ -355,8 +351,8 @@ public class GigyaApiTests {
         
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
-        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
-        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
+//        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+//        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
         when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -386,7 +382,7 @@ public class GigyaApiTests {
 
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
-        doNothing().when(gsRequestMock).setParam((eq("regToken")), eq(regToken));
+//        doNothing().when(gsRequestMock).setParam((eq("regToken")), eq(regToken));
         when(gsRequestMock.send()).thenReturn(initResponse, gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -400,7 +396,7 @@ public class GigyaApiTests {
         }
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void registerLiteAccount_ShouldThrowCustomGigyaErrorException_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         String email = "ivan.quintana@thermofisher.com";
@@ -409,26 +405,28 @@ public class GigyaApiTests {
         GSObject data = mock(GSObject.class);
         data.put("regToken", regToken);
         GSResponse initRegResponse = mock(GSResponse.class);
-        when(initRegResponse.getData()).thenReturn(data);
+//        when(initRegResponse.getData()).thenReturn(data);
 
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
-        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
-        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
-        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+//        doNothing().when(gsRequestMock).setParam(eq("profile"), eq(String.format("{\"email\":\"%s\"}", email)));
+//        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
 
         try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtils.when(() -> CDCUtils.isErrorResponse(any())).thenReturn(true);
 
             // when
-            gigyaApi.registerLiteAccount(email);
+            Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+                        gigyaApi.registerLiteAccount(email);
+                    });
 
             // then
             verify(gsRequestMock, times(0)).send();
         }
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void registerLiteAccount_V3_ShouldThrowCustomGigyaError_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException, JSONException {
         // given
         LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder()
@@ -440,18 +438,20 @@ public class GigyaApiTests {
         GSObject data = mock(GSObject.class);
         data.put("regToken", regToken);
         GSResponse initRegResponse = mock(GSResponse.class);
-        when(initRegResponse.getData()).thenReturn(data);
+//        when(initRegResponse.getData()).thenReturn(data);
 
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
-        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
-        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
+//        when(gsRequestMock.send()).thenReturn(initRegResponse, gsResponseMock);
 
         try (MockedStatic<CDCUtils> cdcUtils = Mockito.mockStatic(CDCUtils.class)) {
             cdcUtils.when(() -> CDCUtils.isErrorResponse(any())).thenReturn(true);
 
             // when
-            gigyaApi.registerLiteAccount(liteAccountDTO);
+            Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+                        gigyaApi.registerLiteAccount(liteAccountDTO);
+                    });
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -465,7 +465,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -506,9 +506,9 @@ public class GigyaApiTests {
         CDCNewAccount cdcNewAccount = CDCNewAccount.builder().build();
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
@@ -548,9 +548,9 @@ public class GigyaApiTests {
         CDCNewAccountV2 cdcNewAccount = CDCNewAccountV2.builder().build();
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
@@ -570,7 +570,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -590,9 +590,9 @@ public class GigyaApiTests {
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
@@ -613,7 +613,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -633,8 +633,8 @@ public class GigyaApiTests {
         GSObject gsObject = new GSObject();
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -654,9 +654,9 @@ public class GigyaApiTests {
         GSObject gsObject = new GSObject();
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
-        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
-        when(gsRequestMock.send()).thenReturn(gsResponseMock);
+//        doNothing().when(gsRequestMock).setParam(anyString(), anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
             gsRequestStaticMock.when(() -> GSRequestFactory.create(any(), any(), any(), any())).thenThrow(NullPointerException.class);
@@ -676,7 +676,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {
@@ -697,7 +697,7 @@ public class GigyaApiTests {
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
         doNothing().when(gsRequestMock).setParam(anyString(), anyString());
-        doNothing().when(gsRequestMock).setAPIDomain(anyString());
+//        doNothing().when(gsRequestMock).setAPIDomain(anyString());
         when(gsRequestMock.send()).thenReturn(gsResponseMock);
 
         try (MockedStatic<GSRequestFactory> gsRequestStaticMock = Mockito.mockStatic(GSRequestFactory.class)) {

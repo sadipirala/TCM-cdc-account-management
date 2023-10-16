@@ -3,39 +3,37 @@ package com.thermofisher.cdcam.handlers;
 import com.gigya.socialize.GSResponse;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.services.GigyaApi;
-import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.UserDetails;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
+import com.thermofisher.cdcam.services.GigyaApi;
+import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+@ExtendWith(MockitoExtension.class)
 public class UsersHandlerTests {
 
     @Value("${cdc.main.datacenter}")
@@ -50,7 +48,7 @@ public class UsersHandlerTests {
     @Mock
     GigyaService gigyaService;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -88,7 +86,7 @@ public class UsersHandlerTests {
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
-        Assert.assertEquals(userDetails.size(),1);
+        Assertions.assertEquals(userDetails.size(),1);
     }
 
     @Test
@@ -133,7 +131,7 @@ public class UsersHandlerTests {
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
-        Assert.assertEquals(userDetails.size(),1);
+        Assertions.assertEquals(userDetails.size(),1);
     }
 
     @Test
@@ -161,7 +159,7 @@ public class UsersHandlerTests {
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         // then
-        Assert.assertEquals(userDetails.size(), 0);
+        Assertions.assertEquals(userDetails.size(), 0);
     }
 
     @Test
@@ -178,7 +176,7 @@ public class UsersHandlerTests {
         ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
 
         //validation
-        Assert.assertEquals(gson.toJson(profileInfoDTO), gson.toJson(profileInfoDTOMock));
+        Assertions.assertEquals(gson.toJson(profileInfoDTO), gson.toJson(profileInfoDTOMock));
     }
 
     @Test
@@ -192,6 +190,6 @@ public class UsersHandlerTests {
         ProfileInfoDTO profileInfoDTO = usersHandler.getUserProfileByUID(uid);
 
         // then
-        Assert.assertNull(profileInfoDTO);
+        Assertions.assertNull(profileInfoDTO);
     }
 }

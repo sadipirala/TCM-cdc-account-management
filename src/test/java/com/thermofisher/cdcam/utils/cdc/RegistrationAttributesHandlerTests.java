@@ -1,17 +1,22 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
-import com.thermofisher.cdcam.model.cdc.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.thermofisher.cdcam.model.cdc.China;
+import com.thermofisher.cdcam.model.cdc.Japan;
+import com.thermofisher.cdcam.model.cdc.Korea;
+import com.thermofisher.cdcam.model.cdc.Registration;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 @ActiveProfiles("test")
-@RunWith(SpringRunner.class)
+@ExtendWith(value= SpringExtension.class)
 public class RegistrationAttributesHandlerTests {
     private RegistrationAttributesHandler registrationAttributesHandler;
 

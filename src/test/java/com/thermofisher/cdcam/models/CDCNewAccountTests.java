@@ -1,25 +1,25 @@
 package com.thermofisher.cdcam.models;
 
-import static org.junit.Assert.assertEquals;
-
 import com.google.gson.Gson;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.Data;
 import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.utils.AccountUtils;
-
 import org.json.JSONException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class CDCNewAccountTests {
     Profile profile;
     Data data;
 
-    @Before
+    @BeforeEach
     public void setup() {
         profile = AccountUtils.getProfile();
         data = AccountUtils.getData();
@@ -40,7 +40,7 @@ public class CDCNewAccountTests {
             profile);
 
         // then
-        assertEquals(expectedData, result.getData());
+        Assertions.assertEquals(expectedData, result.getData());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class CDCNewAccountTests {
             profile);
 
         // then
-        assertEquals(expectedProfile, result.getProfile());
+        Assertions.assertEquals(expectedProfile, result.getProfile());
     }
 
     private static String prepareData(Data data) throws JSONException {

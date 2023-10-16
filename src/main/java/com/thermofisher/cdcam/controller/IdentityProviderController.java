@@ -2,13 +2,16 @@ package com.thermofisher.cdcam.controller;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotBlank;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.constraints.NotBlank;
 
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import com.thermofisher.cdcam.services.GigyaService;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
@@ -19,30 +22,26 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 
 @RestController
+@Slf4j
 @RequestMapping("/identity-provider")
 @ConditionalOnProperty(prefix = "cdc.main.apiKey", name = "federation")
 public class IdentityProviderController {
-    private Logger logger = LogManager.getLogger(this.getClass());
-    
+
     @Autowired
     GigyaService gigyaService;
 
     @GetMapping("/{identityProvider}")
-    @ApiOperation(value = "Gets information about an Identity Provider.")
+    @Operation(description = "Gets information about an Identity Provider.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    @ApiImplicitParam(name = "identityProvider", value = "IdP (Identity Provider Name)", required = true)
+    @Parameter(name = "identityProvider", description = "IdP (Identity Provider Name)", required = true)
     public ResponseEntity<IdentityProviderResponse> getIdentityProviderInformation(@PathVariable @NotBlank String identityProvider) {
-        logger.info("Identity Provider information requested.");
+        log.info("Identity Provider information requested.");
         IdentityProviderResponse idpInformation = gigyaService.getIdPInformation(identityProvider);
         
         HttpHeaders headers = new HttpHeaders();

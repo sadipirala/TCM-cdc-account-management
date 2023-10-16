@@ -1,35 +1,35 @@
 package com.thermofisher.cdcam.builders;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gigya.socialize.GSObject;
+import com.google.gson.JsonSyntaxException;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.utils.AccountUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gigya.socialize.GSObject;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.utils.AccountUtils;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.simple.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = AccountBuilder.class)
+@Slf4j
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class AccountBuilderTests {
-    private Logger logger = LogManager.getLogger(AccountBuilder.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedCdcResponse;
@@ -49,8 +49,8 @@ public class AccountBuilderTests {
     @Mock
     AccountBuilder accountBuilder = new AccountBuilder();
 
-    @Before
-    public void setup() throws ParseException, IOException {
+    @BeforeEach
+    public void setup() throws IOException,JsonSyntaxException {
         MockitoAnnotations.openMocks(this);
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
         siteCdcResponseV2 = AccountUtils.getSiteAccountJsonStringV2();
@@ -66,21 +66,21 @@ public class AccountBuilderTests {
         siteAccountJapan = AccountUtils.getSiteAccountJapan();
         siteAccountIncompleteAccount = AccountUtils.getSiteAccountIncomplete();
 
-        ReflectionTestUtils.setField(accountBuilder, "logger", logger);
+     //   ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
     }
 
     @Test
     public void getAccountInfo_ifGivenFederatedUserInfoAndObj_returnAccountInfo() throws Exception {
         // given
         when(accountBuilder.getAccountInfo(any(GSObject.class))).thenCallRealMethod();
-        
+
         // when
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(federatedCdcResponse));
 
         // then
         String expectedAccount = mapper.writeValueAsString(federatedAccount);
         String resAccount = mapper.writeValueAsString(res);
-        assertEquals(expectedAccount, resAccount);
+        Assertions.assertThat(expectedAccount).isEqualTo(resAccount);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AccountBuilderTests {
         // then
         String expectedAccount = mapper.writeValueAsString(siteAccountJapan);
         String resAccount = mapper.writeValueAsString(res);
-        assertTrue(expectedAccount.equals(resAccount));
+        Assertions.assertThat(expectedAccount).isEqualTo(resAccount);
     }
 
     @Test
@@ -107,7 +107,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseJapan));
 
         // then
-        assertEquals(res.getHiraganaName(), hiraganaName);
+        Assertions.assertThat(res.getHiraganaName()).isEqualTo(hiraganaName);
     }
     @Test
     public void getAccountInfo_ifGivenSiteUserWithJobRole_returnAccountInfoWithJobRole() throws Exception {
@@ -119,7 +119,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
-        assertEquals(res.getJobRole(), jobRole);
+        Assertions.assertThat(res.getJobRole()).isEqualTo(jobRole);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
-        assertEquals(res.getInterest(), interest);
+        Assertions.assertThat(res.getInterest()).isEqualTo(interest);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseChina));
 
         // then
-        assertEquals(res.getPhoneNumber(), phoneNumber);
+        Assertions.assertThat(res.getPhoneNumber()).isEqualTo(phoneNumber);
     }
 
     @Test
@@ -158,7 +158,7 @@ public class AccountBuilderTests {
         AccountInfo response = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(receiveMarketingInformation, response.getReceiveMarketingInformation());
+        Assertions.assertThat(receiveMarketingInformation).isEqualTo(response.getReceiveMarketingInformation());
     }
 
     @Test
@@ -171,9 +171,8 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getThirdPartyTransferPersonalInfoMandatory(), thirdPartyTransferPersonalInfoMandatory);
+        Assertions.assertThat(res.getThirdPartyTransferPersonalInfoMandatory()).isEqualTo(thirdPartyTransferPersonalInfoMandatory);
     }
-
     @Test
     public void getAccountInfo_ifGivenSiteUserWithThirdPartyTransferPersonalInfoOptional_returnAccountInfoWithThirdPartyTransferPersonalInfoOptional() throws Exception {
         // given
@@ -184,7 +183,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getThirdPartyTransferPersonalInfoOptional(), thirdPartyTransferPersonalInfoOptional);
+        Assertions.assertThat(res.getThirdPartyTransferPersonalInfoOptional()).isEqualTo(thirdPartyTransferPersonalInfoOptional);
     }
 
     @Test
@@ -197,7 +196,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoMandatory()).isEqualTo(collectionAndUsePersonalInfoMandatory);
     }
 
     @Test
@@ -210,7 +209,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoOptional(), collectionAndUsePersonalInfoOptional);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoOptional()).isEqualTo(collectionAndUsePersonalInfoOptional);
     }
 
     @Test
@@ -223,7 +222,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoMarketing(), collectionAndUsePersonalInfoMarketing);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoMarketing()).isEqualTo(collectionAndUsePersonalInfoMarketing);
     }
 
     @Test
@@ -236,7 +235,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getOverseasTransferPersonalInfoMandatory(), overseasTransferPersonalInfoMandatory);
+        Assertions.assertThat(res.getOverseasTransferPersonalInfoMandatory()).isEqualTo(overseasTransferPersonalInfoMandatory);
     }
 
     @Test
@@ -249,9 +248,9 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponseKorea));
 
         // then
-        assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);
+        Assertions.assertThat(res.getOverseasTransferPersonalInfoOptional()).isEqualTo(overseasTransferPersonalInfoOptional);
     }
-    
+
     @Test
     public void getAccountInfoV2_ifGivenSiteUserWithReceiveMarketingInformation_returnAccountInfoWithReceiveMarketingInformation() throws Exception {
         // given
@@ -262,7 +261,7 @@ public class AccountBuilderTests {
         AccountInfo response = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(receiveMarketingInformation, response.getReceiveMarketingInformation());
+        Assertions.assertThat(receiveMarketingInformation).isEqualTo(response.getReceiveMarketingInformation());
     }
 
     @Test
@@ -275,7 +274,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getThirdPartyTransferPersonalInfoMandatory(), thirdPartyTransferPersonalInfoMandatory);
+        Assertions.assertThat(res.getThirdPartyTransferPersonalInfoMandatory()).isEqualTo(thirdPartyTransferPersonalInfoMandatory);
     }
 
     @Test
@@ -288,7 +287,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getThirdPartyTransferPersonalInfoOptional(), thirdPartyTransferPersonalInfoOptional);
+        Assertions.assertThat(res.getThirdPartyTransferPersonalInfoOptional()).isEqualTo(thirdPartyTransferPersonalInfoOptional);
     }
 
     @Test
@@ -301,7 +300,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoMandatory()).isEqualTo(collectionAndUsePersonalInfoMandatory);
     }
     @Test
     public void getAccountInfoV2_getThermofisher_legacyUserName() throws Exception {
@@ -314,7 +313,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getLegacyUserName(), legacyUsername);
+        Assertions.assertThat(res.getLegacyUserName()).isEqualTo(legacyUsername);
     }
 
     @Test
@@ -327,7 +326,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoOptional(), collectionAndUsePersonalInfoOptional);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoOptional()).isEqualTo(collectionAndUsePersonalInfoOptional);
     }
 
     @Test
@@ -340,7 +339,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getCollectionAndUsePersonalInfoMarketing(), collectionAndUsePersonalInfoMarketing);
+        Assertions.assertThat(res.getCollectionAndUsePersonalInfoMarketing()).isEqualTo(collectionAndUsePersonalInfoMarketing);
     }
 
     @Test
@@ -353,7 +352,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getOverseasTransferPersonalInfoMandatory(), overseasTransferPersonalInfoMandatory);
+        Assertions.assertThat(res.getOverseasTransferPersonalInfoMandatory()).isEqualTo(overseasTransferPersonalInfoMandatory);
     }
 
     @Test
@@ -366,7 +365,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponseKoreaV2));
 
         // then
-        assertEquals(res.getOverseasTransferPersonalInfoOptional(), overseasTransferPersonalInfoOptional);
+        Assertions.assertThat(res.getOverseasTransferPersonalInfoOptional()).isEqualTo(overseasTransferPersonalInfoOptional);
     }
 
     @Test
@@ -379,9 +378,9 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
 
         // then
-        assertEquals(res.getEmailAddress(), "");
-        assertEquals(res.getFirstName(), "");
-        assertEquals(res.getLastName(), "");
+        Assertions.assertThat(res.getEmailAddress()).isEqualTo("");
+        Assertions.assertThat(res.getFirstName()).isEqualTo("");
+        Assertions.assertThat(res.getLastName()).isEqualTo("");
     }
 
     @Test
@@ -394,7 +393,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
 
         // then
-        Assert.assertNull(res);
+        Assertions.assertThat(res).isNull();
     }
 
     @Test
@@ -407,7 +406,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
 
         // then
-        assertTrue(res.isMarketingConsent());
+        Assertions.assertThat(res.isMarketingConsent()).isTrue();
     }
 
     @Test
@@ -420,9 +419,9 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
 
         // then
-        assertEquals(res.getEmailAddress(), "");
-        assertEquals(res.getFirstName(), "");
-        assertEquals(res.getLastName(), "");
+        Assertions.assertThat(res.getEmailAddress()).isEqualTo("");
+        Assertions.assertThat(res.getFirstName()).isEqualTo("");
+        Assertions.assertThat(res.getLastName()).isEqualTo("");
     }
 
     @Test
@@ -435,7 +434,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
 
         // then
-        assertTrue(res.isMarketingConsent());
+        Assertions.assertThat(res.isMarketingConsent()).isTrue();
     }
 
     @Test
@@ -448,7 +447,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
 
         // then
-        Assert.assertNull(res);
+        Assertions.assertThat(res).isNull();
     }
 
     @Test
@@ -461,9 +460,9 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(jsonObj);
 
         // then
-        assertFalse(res.isMarketingConsent());
+        Assertions.assertThat(res.isMarketingConsent()).isFalse();
     }
-    
+
     @Test
     public void getAccountInfoV2_WhenPreferencesIsAnEmptyObject_ThenIsConsentGrantedShouldBeFalse() throws Exception {
         // given
@@ -474,7 +473,7 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfoV2(jsonObj);
 
         // then
-        assertFalse(res.isMarketingConsent());
+        Assertions.assertThat(res.isMarketingConsent()).isFalse();
     }
 
     public void getAccountInfo_GivenAccountHasOpenIdProvider_ThenReturnAssignProviderClientId() throws Exception {
@@ -486,6 +485,6 @@ public class AccountBuilderTests {
         AccountInfo res = accountBuilder.getAccountInfo(new GSObject(siteCdcResponse));
 
         // then
-        assertEquals(res.getOpenIdProviderId(), openIdProviderId);
+        Assertions.assertThat(res.getOpenIdProviderId()).isEqualTo(openIdProviderId);
     }
 }

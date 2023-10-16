@@ -4,12 +4,10 @@ import java.util.HashMap;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 public class IdentityProviderBuilder {
-    private Logger logger = LogManager.getLogger(this.getClass());
-    
+
     public IdentityProviderResponse getIdPInformation(GSObject obj) {
         try {
         GSObject config = (GSObject) obj.get("config");
@@ -34,7 +32,7 @@ public class IdentityProviderBuilder {
             .build();
 
         }catch(Exception e) {
-            logger.error(String.format("Error building IdP info object. Message: %s", e.getMessage()));
+            log.error(String.format("Error building IdP info object. Message: %s", e.getMessage()));
             return null;
         }
     }

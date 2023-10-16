@@ -2,7 +2,7 @@ package com.thermofisher.cdcam.services;
 
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
@@ -22,17 +22,16 @@ import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class GigyaApi {
-    private Logger logger = LogManager.getLogger(this.getClass());
     private String mainCdcSecretKey;
     private String secondaryDCSecretKey;
 
@@ -59,15 +58,15 @@ public class GigyaApi {
         try {
             if (env.equals("local") || env.equals("test")) return;
 
-            logger.info("Setting up CDC credentials.");
+            log.info("Setting up CDC credentials.");
             mainCdcSecretKey = secretsService.get(CdcamSecrets.MAIN_DC.getKey());
 
             if (CDCUtils.isSecondaryDCSupported(env)) {
-                logger.info("Setting up Secondary DC Credentials");
+                log.info("Setting up Secondary DC Credentials");
                 secondaryDCSecretKey = secretsService.get(CdcamSecrets.SECONDARY_DC.getKey());
             }
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while configuring CDC credentials. Error: %s", Utils.stackTraceToString(e)));
         }
     }
 
@@ -86,7 +85,7 @@ public class GigyaApi {
     public GSResponse getAccount(String uid) {
         try {
             String apiMethod = APIMethods.GET.getValue();
-            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+            log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
@@ -94,7 +93,7 @@ public class GigyaApi {
             request.setParam("extraProfileFields", "username,locale,work");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -102,7 +101,7 @@ public class GigyaApi {
     public GSResponse getAccountV2(String uid) {
         try {
             String apiMethod = APIMethods.GET.getValue();
-            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+            log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
@@ -110,14 +109,14 @@ public class GigyaApi {
             request.setParam("extraProfileFields", "username,locale,work");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while retrieving an account. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
 
     public GSResponse getJWTPublicKey() {
         String apiMethod = APIMethods.GET_JWT_PUBLIC_KEY.getValue();
-        logger.info(String.format("%s triggered.", apiMethod));
+        log.info(String.format("%s triggered.", apiMethod));
 
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
         request.setParam("mainApiKey", mainApiKey);
@@ -164,13 +163,13 @@ public class GigyaApi {
             request.setParam(key, value);
         }
 
-        logger.info(String.format("%s triggered. UID: %s", apiMethod, account.getUID()));
+        log.info(String.format("%s triggered. UID: %s", apiMethod, account.getUID()));
         return request.send();
     }
 
     public GSResponse setUserInfo(String uid, String data, String profile, String removeLoginEmails, String username) {
         String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
-        logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+        log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
         request.setParam("UID", uid);
@@ -188,14 +187,14 @@ public class GigyaApi {
     public GSResponse changeAccountStatus(String uid, boolean status) {
         try {
             String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
-            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+            log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = GSRequestFactory.create(mainApiKey,mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
             request.setParam("isActive", status);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while changing the account status. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -204,11 +203,11 @@ public class GigyaApi {
         final boolean isLite = true;
         GSResponse initRegResponse = initRegistration(isLite);        
         if (CDCUtils.isErrorResponse(initRegResponse)) {
-            logger.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
-            logger.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
-            logger.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
-            logger.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
-            logger.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
+            log.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
+            log.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
+            log.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
+            log.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
+            log.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
             throw new CustomGigyaErrorException("Error during lite registration. Error code: " + initRegResponse.getErrorCode());
         }
         
@@ -227,11 +226,11 @@ public class GigyaApi {
         final boolean isLite = true;
         GSResponse initRegResponse = initRegistration(isLite);        
         if (CDCUtils.isErrorResponse(initRegResponse)) {
-            logger.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
-            logger.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
-            logger.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
-            logger.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
-            logger.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
+            log.error(String.format("[CDC ERROR] - Error on accounts.initRegistration. Code: %d", initRegResponse.getErrorCode()));
+            log.error(String.format("[CDC ERROR] - Log: %s", initRegResponse.getLog()));
+            log.error(String.format("[CDC ERROR] - Error message: %s", initRegResponse.getErrorMessage()));
+            log.error(String.format("[CDC ERROR] - Error details: %s", initRegResponse.getErrorDetails()));
+            log.error(String.format("[CDC ERROR] - Response text: %s", initRegResponse.getResponseText()));
             throw new CustomGigyaErrorException("Error during lite registration. Error code: " + initRegResponse.getErrorCode());
         }
         
@@ -247,7 +246,7 @@ public class GigyaApi {
 
     public GSResponse search(String query, AccountType accountType, String apiDomain) {
         String apiMethod = APIMethods.SEARCH.getValue();
-        logger.info(String.format("%s triggered. Query: %s", apiMethod, query));
+        log.info(String.format("%s triggered. Query: %s", apiMethod, query));
 
         GSRequest request = buildGSRequest(apiMethod, apiDomain);
         request.setParam("accountTypes", accountType.getValue());
@@ -255,7 +254,7 @@ public class GigyaApi {
         
         String context = String.format("search/%s", UUID.randomUUID().toString());
         request.setParam("context", context);
-        logger.info(String.format("%s called. Context: %s", apiMethod, context));
+        log.info(String.format("%s called. Context: %s", apiMethod, context));
     
         return request.send();
     }
@@ -263,7 +262,7 @@ public class GigyaApi {
     public GSResponse register(CDCNewAccount newAccount) {
         try {
             String apiMethod = APIMethods.REGISTER.getValue();
-            logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
+            log.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("username", newAccount.getUsername());
@@ -275,7 +274,7 @@ public class GigyaApi {
             request.setParam("finalizeRegistration", "true");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -283,7 +282,7 @@ public class GigyaApi {
     public GSResponse register(CDCNewAccountV2 newAccount) {
         try {
             String apiMethod = APIMethods.REGISTER.getValue();
-            logger.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
+            log.info(String.format("%s triggered. Username: %s", apiMethod, newAccount.getUsername()));
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("username", newAccount.getUsername());
@@ -296,7 +295,7 @@ public class GigyaApi {
             request.setParam("finalizeRegistration", "true");
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while creating account. Username: %s. Error: %s", newAccount.getUsername(), Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -304,14 +303,14 @@ public class GigyaApi {
     public GSResponse sendVerificationEmail(String uid) {
         try {
             String apiMethod = APIMethods.SEND_VERIFICATION_EMAIL.getValue();
-            logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+            log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
             GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
             request.setParam("UID", uid);
 
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while sending the verification email to the user. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while sending the verification email to the user. UID: %s. Error: %s", uid, Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -319,11 +318,11 @@ public class GigyaApi {
     public GSResponse resetPassword(GSObject params) {
         try {
             String apiMethod = APIMethods.RESET_PASSWORD.getValue();
-            logger.info(String.format("%s triggered.", apiMethod));
+            log.info(String.format("%s triggered.", apiMethod));
             GSRequest request = GSRequestFactory.createWithParams(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod, params);
             return request.send();
         } catch (Exception e) {
-            logger.error(String.format("An error occurred while calling the reset password endpoint . Error: %s",  Utils.stackTraceToString(e)));
+            log.error(String.format("An error occurred while calling the reset password endpoint . Error: %s",  Utils.stackTraceToString(e)));
             return null;
         }
     }
@@ -335,7 +334,7 @@ public class GigyaApi {
 
         String context = String.format("isAvailableLoginId/%s", UUID.randomUUID().toString());
         request.setParam("context", context);
-        logger.info(String.format("%s called. Context: %s", apiMethod, context));
+        log.info(String.format("%s called. Context: %s", apiMethod, context));
 
         return request.send();
     }
@@ -351,7 +350,7 @@ public class GigyaApi {
 
     public GSResponse updateRequirePasswordCheck(String uid) {
         String apiMethod = APIMethods.SET_ACCOUNT_INFO.getValue();
-        logger.info(String.format("%s triggered. UID: %s", apiMethod, uid));
+        log.info(String.format("%s triggered. UID: %s", apiMethod, uid));
 
         GSRequest request = GSRequestFactory.create(mainApiKey, mainCdcSecretKey, mainApiDomain, apiMethod);
         request.setParam("UID", uid);
@@ -362,10 +361,10 @@ public class GigyaApi {
     private GSRequest buildGSRequest(String apiMethod, String apiDomain) {
         GSRequest request;
         if (isMainApiDomain(apiDomain)) {
-            logger.info("CDC request built for main domain");
+            log.info("CDC request built for main domain");
             request =  GSRequestFactory.create(mainApiKey, mainCdcSecretKey, apiDomain, apiMethod);
         } else {
-            logger.info("CDC request built for secondary domain");
+            log.info("CDC request built for secondary domain");
             request =  GSRequestFactory.create(secondaryApiKey, secondaryDCSecretKey, apiDomain, apiMethod);
         }
         return request;
@@ -398,7 +397,7 @@ public class GigyaApi {
 
         String context = String.format("initRegistration/%s", UUID.randomUUID().toString());;
         request.setParam("context", context);
-        logger.info(String.format("%s called. Context: %s", apiMethod, context));
+        log.info(String.format("%s called. Context: %s", apiMethod, context));
 
         return request.send();
     }

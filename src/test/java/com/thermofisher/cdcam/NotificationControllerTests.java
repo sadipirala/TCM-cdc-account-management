@@ -1,11 +1,7 @@
 package com.thermofisher.cdcam;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 import com.google.gson.Gson;
-import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.controller.NotificationController;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.EmailVerificationDTO;
@@ -13,30 +9,25 @@ import com.thermofisher.cdcam.model.dto.UpdateMarketingConsentDTO;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.utils.AccountUtils;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@ActiveProfiles("test")
-//@ExtendWith(SpringExtension.class)
-@SpringBootTest//(classes = CdcamApplication.class)
-//@RunWith(MockitoJUnitRunner.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 public class NotificationControllerTests {
 
     @InjectMocks
@@ -47,7 +38,7 @@ public class NotificationControllerTests {
 
     @Mock
     NotificationService notificationService;
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -92,8 +83,8 @@ public class NotificationControllerTests {
         // given
         EmailVerificationDTO emailVerification = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", EmailVerificationDTO.class);
         when(gigyaService.getAccountInfo(any())).thenThrow(CustomGigyaErrorException.class);
-        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+       // doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+       // doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.sendEmailVerificationSNS(emailVerification);
@@ -107,8 +98,8 @@ public class NotificationControllerTests {
         // given
         UpdateMarketingConsentDTO marketingConsent = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", UpdateMarketingConsentDTO.class);
         when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+//        doNothing().when(notificationService).sendPublicAccountUpdatedNotification(any());
+ //       doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.notifyMarketingConsentUpdated(marketingConsent);
@@ -124,8 +115,8 @@ public class NotificationControllerTests {
         // given
         UpdateMarketingConsentDTO marketingConsent = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", UpdateMarketingConsentDTO.class);
         when(gigyaService.getAccountInfo(any())).thenThrow(new CustomGigyaErrorException("Unknown user", 403005));
-        doNothing().when(notificationService).sendPublicMarketingConsentUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateMarketingConsentUpdatedNotification(any());
+      //  doNothing().when(notificationService).sendPublicMarketingConsentUpdatedNotification(any());
+      //  doNothing().when(notificationService).sendPrivateMarketingConsentUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.notifyMarketingConsentUpdated(marketingConsent);
@@ -139,8 +130,8 @@ public class NotificationControllerTests {
         // given
         UpdateMarketingConsentDTO marketingConsent = new Gson().fromJson("{ \"uid\": \"496264a07789452b8fb331906bbf86ee\"}", UpdateMarketingConsentDTO.class);
         when(gigyaService.getAccountInfo(any())).thenThrow(new CustomGigyaErrorException("Internal Server Error", 500000));
-        doNothing().when(notificationService).sendPublicMarketingConsentUpdatedNotification(any());
-        doNothing().when(notificationService).sendPrivateMarketingConsentUpdatedNotification(any());
+      //  doNothing().when(notificationService).sendPublicMarketingConsentUpdatedNotification(any());
+       // doNothing().when(notificationService).sendPrivateMarketingConsentUpdatedNotification(any());
 
         // when
         ResponseEntity<String> resp = notificationController.notifyMarketingConsentUpdated(marketingConsent);

@@ -3,8 +3,8 @@ package com.thermofisher.cdcam.model;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanWrapperImpl;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class OptionalRequiredConstraintValidator
     implements ConstraintValidator<OptionalRequiredConstraint, Object> {

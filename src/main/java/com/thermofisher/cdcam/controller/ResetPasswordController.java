@@ -4,13 +4,19 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,16 +59,12 @@ import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.Utils;
 
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 
 @RestController
+@Slf4j
 @RequestMapping("/identity/reset-password")
 public class ResetPasswordController {
-    private Logger logger = LogManager.getLogger(this.getClass());
+
     private final String REQUEST_EXCEPTION_HEADER = "Request-Exception";
 
     @Value("${identity.reset-password.get-login-endpoint.path}")
@@ -99,27 +101,27 @@ public class ResetPasswordController {
     URLService urlService;
 
     @PostMapping("/email")
-    @ApiOperation(value = "sends the request to reset a password.")
+    @Operation(description = "sends the request to reset a password.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "OK"),
-        @ApiResponse(code = 400, message = "Bad request."),
-        @ApiResponse(code = 500, message = "Internal server error.")
+        @ApiResponse(responseCode = "200", description = "OK"),
+        @ApiResponse(responseCode = "400", description = "Bad request."),
+        @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     public ResponseEntity<?> sendResetPasswordEmail(
         @RequestBody ResetPasswordRequest body,
         @CookieValue(name = "cip_authdata", required = false) String cipAuthData,
         @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
     ) {
-        logger.info(String.format("Requested reset password for user: %s", body.getUsername()));
+        log.info(String.format("Requested reset password for user: %s", body.getUsername()));
         if (Utils.isNullOrEmpty(cipAuthData)) {
-            logger.info("Cookie not present.");
+            log.info("Cookie not present.");
             cipAuthData = cookieService.buildDefaultCipAuthDataCookie(CookieType.RESET_PASSWORD);
         }
         try {
             JSONObject reCaptchaResponse = reCaptchaService.verifyToken(body.getCaptchaToken(), captchaValidationToken);
-            logger.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
+            log.info(String.format("reCaptcha response for %s: %s", body.getUsername(), reCaptchaResponse.toString()));
             String passwordToken = gigyaService.resetPasswordRequest(body.getUsername());
-            logger.info(String.format("Request reset password was successfully for: %s", body.getUsername()));
+            log.info(String.format("Request reset password was successfully for: %s", body.getUsername()));
             RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()
                     .passwordToken(passwordToken)
                     .authData(cipAuthData)
@@ -127,44 +129,44 @@ public class ResetPasswordController {
 
             sendRequestResetPasswordEmail(body.getUsername(), requestResetPasswordDTO);
 
-            logger.info(String.format("Request for reset password successful for: %s", body.getUsername()));
+            log.info(String.format("Request for reset password successful for: %s", body.getUsername()));
             return ResponseEntity.ok().build();
         } catch (LoginIdDoesNotExistException e) {
-            logger.info(e.getMessage());
+            log.info(e.getMessage());
             return ResponseEntity.ok().build();
         } catch (CustomGigyaErrorException e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (ReCaptchaLowScoreException v3Exception) {
             String jwtToken = jwtService.create();
-            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", body.getUsername(), v3Exception.getMessage()));
+            log.error(String.format("reCaptcha v3 error for: %s. message: %s", body.getUsername(), v3Exception.getMessage()));
             return ResponseEntity.accepted().header(ReCaptchaService.CAPTCHA_TOKEN_HEADER, jwtToken).build();
         } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
-            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", body.getUsername(), v2Exception.getMessage()));
+            log.error(String.format("reCaptcha v2 error for: %s. message: %s", body.getUsername(), v2Exception.getMessage()));
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error(String.format("Error: %s", e.getMessage()));
+            log.error(String.format("Error: %s", e.getMessage()));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
 
     @PutMapping("/")
-    @ApiOperation(value = "resets the password.")
+    @Operation(description = "resets the password.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(responseCode= "200", description = "OK"),
+            @ApiResponse(responseCode= "400", description = "Bad request."),
+            @ApiResponse(responseCode= "500", description = "Internal server error.")
     })
     public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordSubmit body) {
-        logger.info(String.format("Reset password process started for: %s", body.getUid()));
+        log.info(String.format("Reset password process started for: %s", body.getUid()));
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<ResetPasswordSubmit>> violations = validator.validate(body);
         final int EXPIRED_TOKEN_ERROR = 403025;
 
         if (violations.size() > 0) {
-            logger.error(String.format("One or more errors occurred while creating the reset password object. %s", violations.toArray()));
+            log.error(String.format("One or more errors occurred while creating the reset password object. %s", violations.toArray()));
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -175,10 +177,10 @@ public class ResetPasswordController {
                 if (response.getResponseCode() == EXPIRED_TOKEN_ERROR) {
                     HttpHeaders responseHeaders = new HttpHeaders();
                     responseHeaders.set("redirect", "/expired");
-                    logger.warn(String.format("Expired token, user UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
+                    log.warn(String.format("Expired token, user UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
                     return new ResponseEntity<>(response, responseHeaders, HttpStatus.FOUND);
                 } else {
-                    logger.warn(String.format("Failed to reset password for user with UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
+                    log.warn(String.format("Failed to reset password for user with UID: %s. message: %s", body.getUid(), response.getResponseMessage()));
                     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                 }
             }
@@ -186,39 +188,39 @@ public class ResetPasswordController {
             try {
                 gigyaService.updateRequirePasswordCheck(body.getUid());
             } catch (CustomGigyaErrorException e) {
-                logger.error(e.getMessage());
+                log.error(e.getMessage());
             }
 
-            logger.info(String.format("Build password update notification started for: %s", body.getUid()));
+            log.info(String.format("Build password update notification started for: %s", body.getUid()));
             String hashedPassword = HashingService.toMD5(body.getNewPassword());
             PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder()
                 .newPassword(hashedPassword)
                 .uid(body.getUid())
                 .build();
             notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
-            
+
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error(String.format("An exception occurred: %s",e.getMessage()));
+            log.error(String.format("An exception occurred: %s",e.getMessage()));
             ResetPasswordResponse response = createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping(value = {"/oidc/rp", "/rp"})
-    @ApiOperation(value = "Redirect to the Request Reset Password Url. Validates cip_authdata cookie.")
+    @Operation(description = "Redirect to the Request Reset Password Url. Validates cip_authdata cookie.")
     @ApiResponses({
-            @ApiResponse(code = 302, message = "RP config found, will set cookie data and redirect to Registration page."),
-            @ApiResponse(code = 400, message = "Bad request, missing or invalid params."),
-            @ApiResponse(code = 404, message = "clientId not found."),
-            @ApiResponse(code = 500, message = "Internal server error.")
+            @ApiResponse(responseCode= "302", description = "RP config found, will set cookie data and redirect to Registration page."),
+            @ApiResponse(responseCode= "400", description = "Bad request, missing or invalid params."),
+            @ApiResponse(responseCode= "404", description = "clientId not found."),
+            @ApiResponse(responseCode= "500", description = "Internal server error.")
     })
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "client_id", value = "RP Client ID", required = true, dataType = "String", paramType = "query"),
-            @ApiImplicitParam(name = "redirect_uri", value = "URL to redirect", required = true, dataType = "String", paramType = "query"),
-            @ApiImplicitParam(name = "state", value = "State", dataType = "String", paramType = "query", required = false),
-            @ApiImplicitParam(name = "response_type", value = "Response Type", required = true, dataType = "String", paramType = "query"),
-            @ApiImplicitParam(name = "scope", value = "Scope", required = true, dataType = "String", paramType = "query")
+    @Parameters({
+            @Parameter(name = "client_id", description = "RP Client ID", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
+            @Parameter(name = "redirect_uri", description = "URL to redirect", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
+            @Parameter(name = "state", description = "State", schema = @Schema(type = "string"), in = ParameterIn.QUERY, required = false),
+            @Parameter(name = "response_type", description = "Response Type", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
+            @Parameter(name = "scope", description = "Scope", required = true,schema = @Schema(type = "string"), in = ParameterIn.QUERY)
     })
     public ResponseEntity<?> getRPResetPasswordConfig(
             @RequestParam("client_id") String clientId,
@@ -239,34 +241,34 @@ public class ResetPasswordController {
                 .scope(scope)
                 .build();
 
-        logger.info("Get RP Process started");
+        log.info("Get RP Process started");
         if (cipAuthData.areClientIdAndRedirectUriInvalid()) {
-            logger.error("Either clientId or redirectURI missing");
+            log.error("Either clientId or redirectURI missing");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         try {
             boolean uriExists = false;
-            logger.info("Getting RP data");
+            log.info("Getting RP data");
             OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(cipAuthData.getClientId());
             for (String uri : openIdRelyingParty.getRedirectUris()) {
-                logger.info(String.format("Find %s in OpenId redirectURIs", cipAuthData.getRedirectUri()));
+                log.info(String.format("Find %s in OpenId redirectURIs", cipAuthData.getRedirectUri()));
                 if (uri.equalsIgnoreCase(cipAuthData.getRedirectUri())) {
                     uriExists = true;
-                    logger.info(String.format("%s was found", cipAuthData.getRedirectUri()));
+                    log.info(String.format("%s was found", cipAuthData.getRedirectUri()));
                     break;
                 }
             }
 
             if (!uriExists) {
                 String error = String.format("%s was not found in RP URIs", cipAuthData.getRedirectUri());
-                logger.error(error);
+                log.error(error);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, error).build();
             }
 
-            logger.info("Building cip_authdata cookie to get login endpoint.");
+            log.info("Building cip_authdata cookie to get login endpoint.");
             String cipAuthDataCookie = cookieService.createCIPAuthDataCookie(cipAuthData, getOidcLoginEndpointPath);
-            logger.info("cip_authdata cookie built.");
+            log.info("cip_authdata cookie built.");
 
             return ResponseEntity
                     .status(HttpStatus.FOUND)
@@ -280,7 +282,7 @@ public class ResetPasswordController {
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(REQUEST_EXCEPTION_HEADER, customGigyaException.getMessage()).body(null);
         } catch (GSKeyNotFoundException gsKeyNotFoundException) {
-            logger.error(String.format("GSKeyNotFoundException: %s", gsKeyNotFoundException.getMessage()));
+            log.error(String.format("GSKeyNotFoundException: %s", gsKeyNotFoundException.getMessage()));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -293,10 +295,10 @@ public class ResetPasswordController {
     }
 
     private void sendRequestResetPasswordEmail(String username, RequestResetPasswordDTO requestResetPasswordDTO) throws IOException, CustomGigyaErrorException {
-        logger.info("Preparing request reset password confirmation email");
+        log.info("Preparing request reset password confirmation email");
         String email = gigyaService.getEmailByUsername(username);
         AccountInfo account = gigyaService.getAccountInfoByEmail(email);
         notificationService.sendRequestResetPasswordEmailNotification(account, requestResetPasswordDTO);
-        logger.info("Request reset password email sent");
+        log.info("Request reset password email sent");
     }
 }

@@ -2,9 +2,9 @@ package com.thermofisher.cdcam.model.dto;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Null;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
 
 import com.thermofisher.cdcam.model.Ciphertext;
 

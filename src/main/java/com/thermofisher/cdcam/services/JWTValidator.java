@@ -15,12 +15,10 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 
 import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import lombok.extern.slf4j.Slf4j;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+@Slf4j
 public class JWTValidator {
-    private static final Logger logger = LogManager.getLogger(JWTValidator.class);
     private static final int JWT_HEADER = 0;
     private static final int JWT_PAYLOAD = 1;
     private static final int JWT_SIGNATURE = 2;
@@ -56,13 +54,13 @@ public class JWTValidator {
 
             return rsaSig.verify(keySignature);
         } catch (InvalidKeySpecException exception) {
-            logger.info(String.format("InvalidKeySpecException: %s", exception.getMessage()));
+            log.info(String.format("InvalidKeySpecException: %s", exception.getMessage()));
         } catch (SignatureException exception) {
-            logger.info(String.format("SignatureException: %s", exception.getMessage()));
+            log.info(String.format("SignatureException: %s", exception.getMessage()));
         } catch (NoSuchAlgorithmException exception) {
-            logger.info(String.format("NoSuchAlgorithmException: %s", exception.getMessage()));
+            log.info(String.format("NoSuchAlgorithmException: %s", exception.getMessage()));
         } catch (Exception exception) {
-            logger.info(String.format("Something went wrong while validating the JWT signature: %s", exception.getMessage()));
+            log.info(String.format("Something went wrong while validating the JWT signature: %s", exception.getMessage()));
         }
 
         return false;

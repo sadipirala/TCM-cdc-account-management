@@ -6,20 +6,19 @@ import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
 import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 @ActiveProfiles("test")
-//@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = CDCAccountsHandler.class)
+@ExtendWith(value= SpringExtension.class)
 public class CDCAccountsHandlerTests {
 
     @Test

@@ -1,20 +1,8 @@
 package com.thermofisher.cdcam;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.google.gson.JsonParseException;
-import com.thermofisher.CdcamApplication;
+import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.controller.RegistrationController;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
@@ -25,28 +13,38 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.utils.Utils;
-
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
-@ContextConfiguration(classes = RegistrationController.class)
-@TestPropertySource(locations = "/application-test.properties", properties = {"tf.home=https://www.thermofisher.com/"})
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 public class RegistrationControllerTests {
     private String CLIENT_ID = "1000000";
     private String REDIRECT_URL = "http://example.com";
@@ -80,7 +78,7 @@ public class RegistrationControllerTests {
 
     @Mock
     LoginService loginService;
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -99,7 +97,7 @@ public class RegistrationControllerTests {
             .redirectUris(redirectUris)
             .build();
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
         when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
 
@@ -125,7 +123,7 @@ public class RegistrationControllerTests {
             .redirectUris(redirectUris)
             .build();
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+    //    when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(gigyaService.getRP(anyString())).thenReturn(openIdRelyingParty);
 
         // when
@@ -139,7 +137,7 @@ public class RegistrationControllerTests {
     public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValidAndClientIdDoesNotExists_ThenShouldReturnBadRequest() throws Exception {
         //given
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+    //    when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("404000"));
 
         // when
@@ -153,7 +151,7 @@ public class RegistrationControllerTests {
     public void getRPRegistrationConfig_GivenMethodCalled_WhenParametersAreValidAndAErrorOccurred_ThenShouldReturnBadRequest() throws Exception {
         //given
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+    //    when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(gigyaService.getRP(anyString())).thenThrow(new CustomGigyaErrorException("599999"));
 
         // when
@@ -167,7 +165,7 @@ public class RegistrationControllerTests {
     public void getRPRegistrationConfig_GivenMethodCalled_WhenClientIDIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
         //given
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(null, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -180,7 +178,7 @@ public class RegistrationControllerTests {
     public void getRPRegistrationConfig_GivenMethodCalled_WhenRedirectURLIsNullOrEmpty_ThenShouldReturnBadRequest() throws Exception {
         //given
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, "", STATE, RESPONSE_TYPE, SCOPE);
@@ -195,9 +193,9 @@ public class RegistrationControllerTests {
         ReflectionTestUtils.setField(registrationController, "createAccountEndpointPath", CREATE_ACCOUNT_ENDPOINT_PATH);
         ReflectionTestUtils.setField(registrationController, "getOidcLoginEndpointPath", GET_LOGIN_ENDPOINT_PATH);
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+     //   when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         when(gigyaService.getRP(anyString())).thenThrow(new GSKeyNotFoundException(""));
-        when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
+      //  when(cookieService.createCIPAuthDataCookie(any(CIPAuthDataDTO.class), anyString())).thenReturn(RandomStringUtils.randomAlphanumeric(10));
 
         // when
         ResponseEntity<?> response = registrationController.getRPRegistrationConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
@@ -252,8 +250,8 @@ public class RegistrationControllerTests {
         // given
         String cookie = null;
         cipAuthData = null;
-        when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_INVALID)).thenReturn(cipAuthData);
-        when(loginService.generateDefaultLoginUrl("https://www.thermofisher.com/")).thenReturn("https://www.dev3.thermofisher.com/auth/login?returnUrl=http://example.com");
+  //      when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_INVALID)).thenReturn(cipAuthData);
+   //     when(loginService.generateDefaultLoginUrl("https://www.thermofisher.com/")).thenReturn("https://www.dev3.thermofisher.com/auth/login?returnUrl=http://example.com");
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, REDIRECT_URL, IS_SIGN_IN_URL);
@@ -268,7 +266,7 @@ public class RegistrationControllerTests {
         String cookie = null;
         String redirectUrl = null;
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
         
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, IS_SIGN_IN_URL);
@@ -283,7 +281,7 @@ public class RegistrationControllerTests {
         String cookie = "";
         String redirectUrl = "http://google.com";
         String params = "?state=state&redirect_uri=redirect";
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(cookie, redirectUrl, false);
@@ -306,8 +304,8 @@ public class RegistrationControllerTests {
         String params = "?state=state&redirect_uri=redirect";
         String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenReturn(cipAuthData);
-        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+//        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+ //       when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);
@@ -330,8 +328,8 @@ public class RegistrationControllerTests {
         String params = "?state=state&redirect_uri=redirect";
         String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenThrow(new JsonParseException(""));
-        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+     //   when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+      //  when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);
@@ -354,8 +352,8 @@ public class RegistrationControllerTests {
         String params = "?state=state&redirect_uri=redirect";
         String queryParams = "https://www.thermofisher.com?client_id=clientId&redirect_uri=redirectUri&state=state&scope=scope&response_type=responseType";
         when(cookieService.decodeCIPAuthDataCookie(COOKIE_CIP_AUTHDATA_VALID)).thenThrow(new NullPointerException(""));
-        when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
-        when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
+    //    when(urlService.queryParamMapper(cipAuthData)).thenReturn(queryParams);
+    //    when(encodeService.encodeUTF8(anyString())).thenReturn(URLDecoder.decode(params, StandardCharsets.UTF_8.toString()));
 
         // when
         ResponseEntity<?> response = registrationController.redirectLoginAuth(COOKIE_CIP_AUTHDATA_VALID, REDIRECT_URL, false);

@@ -11,10 +11,10 @@
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </File>
     </Appenders>
-    <Loggers>
+    <logs>
         <Root level="INFO">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="CdcamLogFile"/>
         </Root>
-    </Loggers>
+    </logs>
 </Configuration>

@@ -1,10 +1,41 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+
+import com.gigya.socialize.GSKeyNotFoundException;
+import com.thermofisher.cdcam.aws.SNSHandler;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCValidationError;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
+import com.thermofisher.cdcam.model.dto.ConsentDTO;
+import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
+import com.thermofisher.cdcam.utils.AccountUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -13,38 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.amazonaws.services.dynamodbv2.xspec.S;
-import com.thermofisher.cdcam.model.cdc.*;
-import com.thermofisher.cdcam.model.dto.ConsentDTO;
-import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.util.ReflectionTestUtils;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-import com.gigya.socialize.GSKeyNotFoundException;
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.aws.SNSHandler;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
-import com.thermofisher.cdcam.utils.AccountUtils;
-
-@ActiveProfiles("test")
-//@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+@ExtendWith(MockitoExtension.class)
 public class AccountsServiceTests {
     private final List<String> uids = new ArrayList<>();
 
@@ -71,7 +75,7 @@ public class AccountsServiceTests {
 
     private AccountInfo federationAccount;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
         uids.add("001");
@@ -155,7 +159,7 @@ public class AccountsServiceTests {
     public void onAccountRegistered_GivenAccountDoesntHaveProvider_ThenShouldNotFetchRPData_AndSavedProviderShouldBeNull() throws IOException, CustomGigyaErrorException, JSONException, GSKeyNotFoundException{
         // given
         String uid = UUID.randomUUID().toString();
-        when(gigyaService.getRP(anyString())).thenCallRealMethod();
+//        when(gigyaService.getRP(anyString())).thenCallRealMethod();
 
         when(gigyaService.getAccountInfo(anyString())).thenReturn(federationAccount);
         doNothing().when(gigyaService).setAccountInfo(any(CDCAccount.class));
@@ -199,10 +203,11 @@ public class AccountsServiceTests {
         verify(notificationService).sendAccountRegisteredNotification(any(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void processRegistrationRequest_givenANullAccount_ThrowNullPointerException() throws NoSuchAlgorithmException, JSONException, IOException, CustomGigyaErrorException{
-        // when
-        accountsService.createAccount(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            accountsService.createAccount(null);
+        });
     }
 
     @Test
@@ -239,7 +244,7 @@ public class AccountsServiceTests {
         verify(gigyaService).register(any(CDCNewAccountV2.class));
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void processRegistrationRequest_GivenCDCReturnsAnErrorResponse_ThenThrowCustomGigyaErrorException() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
         // given
         ReflectionTestUtils.setField(accountsService, "isNewMarketingConsentEnabled", false);
@@ -256,11 +261,12 @@ public class AccountsServiceTests {
         cdcResponseData.setValidationErrors(errors);
         when(gigyaService.register(any(CDCNewAccount.class))).thenReturn(cdcResponseData);
 
-        // when
-        accountsService.createAccount(accountInfo);
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+            accountsService.createAccount(accountInfo);
+        });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void processRegistrationRequest_GivenCDCReturnsAnErrorResponse_ThenThrowCustomGigyaErrorException_V2() throws IOException, NoSuchAlgorithmException, JSONException, CustomGigyaErrorException {
         // given
         ReflectionTestUtils.setField(accountsService, "isNewMarketingConsentEnabled", true);
@@ -277,14 +283,16 @@ public class AccountsServiceTests {
         cdcResponseData.setValidationErrors(errors);
         when(gigyaService.register(any(CDCNewAccountV2.class))).thenReturn(cdcResponseData);
 
-        // when
-        accountsService.createAccount(accountInfo);
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+            accountsService.createAccount(accountInfo);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void givenOnAccountMergedIsCalled_WhenUidParameterIsNull_ThenNullPointerExceptionShouldBeThrown() {
-        // when
-        accountsService.onAccountMerged(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            accountsService.onAccountMerged(null);
+        });
     }
 
     @Test
@@ -313,7 +321,7 @@ public class AccountsServiceTests {
         AccountInfo accountMock = AccountUtils.getFederatedAccount();
         MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountMock);
         when(gigyaService.getAccountInfo(uid)).thenThrow(new CustomGigyaErrorException(("")));
-        doNothing().when(notificationService).sendAccountMergedNotification(any());
+//        doNothing().when(notificationService).sendAccountMergedNotification(any());
 
         // when
         accountsService.onAccountMerged(uid);
@@ -329,7 +337,7 @@ public class AccountsServiceTests {
         AccountInfo accountMock = AccountUtils.getSiteAccount();
         MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountMock);
         when(gigyaService.getAccountInfo(uid)).thenReturn(accountMock);
-        doNothing().when(notificationService).sendAccountMergedNotification(any());
+//        doNothing().when(notificationService).sendAccountMergedNotification(any());
 
         try (MockedStatic<MergedAccountNotification> mergedAccountNotificationStatic = Mockito.mockStatic(MergedAccountNotification.class)) {
             // when
@@ -360,7 +368,7 @@ public class AccountsServiceTests {
         // given
         String uid = UUID.randomUUID().toString();
         when(gigyaService.getAccountInfo(anyString())).thenReturn(AccountUtils.getSiteAccount());
-        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+//        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         accountsService.onAccountUpdated(uid);
@@ -374,7 +382,7 @@ public class AccountsServiceTests {
         // given
         String uid = AccountUtils.uid;
         when(gigyaService.getAccountInfo(uid)).thenThrow(new CustomGigyaErrorException(("")));
-        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
+//        doNothing().when(notificationService).sendPrivateAccountUpdatedNotification(any());
 
         // when
         accountsService.onAccountUpdated(uid);
@@ -398,7 +406,7 @@ public class AccountsServiceTests {
         verify(gigyaService).setAccountInfo(mapCaptor.capture());
         Map<String, String> params = mapCaptor.getValue();
         assertEquals(params.get("UID"), account.getUid());
-        assertTrue(new Boolean(params.get("isVerified")).booleanValue());
+        assertTrue(Boolean.parseBoolean(params.get("isVerified")));
     }
 
     @Test

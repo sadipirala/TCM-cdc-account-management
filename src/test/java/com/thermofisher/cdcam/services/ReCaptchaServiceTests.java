@@ -1,30 +1,31 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
 import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-//@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ReCaptchaServiceTests {
     private final String reCaptchaToken = "";
     private final String captchaValidationJWT = "";
@@ -42,7 +43,7 @@ public class ReCaptchaServiceTests {
     SecretsService secretsService;
 
 
-    @Before
+    @BeforeEach
     public void init() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(reCaptchaService, "RECAPTCHA_MIN_THRESHOLD", 0.5);
@@ -65,7 +66,7 @@ public class ReCaptchaServiceTests {
         assertTrue(reCaptchaResponse.equals(response));
     }
 
-    @Test(expected = ReCaptchaLowScoreException.class)
+    @Test
     public void verifyToken_givenReCaptchaTokenIsValidAndScoreIsLowerThanMinThreshold_ThenReCaptchaLowScoreExceptionShouldBeThrown()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
@@ -75,11 +76,12 @@ public class ReCaptchaServiceTests {
         HttpServiceResponse httpResponse = HttpServiceResponse.builder().responseBody(reCaptchaResponse).build();
         when(httpService.post(any())).thenReturn(httpResponse);
 
-        // then
-        reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
+        Assertions.assertThrows(ReCaptchaLowScoreException.class, () -> {
+            reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
+        });
     }
 
-    @Test(expected = ReCaptchaUnsuccessfulResponseException.class)
+    @Test
     public void verifyToken_givenReCaptchaTokenIsValidAndHasNoScoreAndIsUnsuccessful_ThenReCaptchaUnsuccessfulResponseExceptionShouldBeThrown()
             throws JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException {
         // given
@@ -89,6 +91,8 @@ public class ReCaptchaServiceTests {
         when(httpService.post(any())).thenReturn(httpResponse);
 
         // then
-        reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
+        Assertions.assertThrows(ReCaptchaUnsuccessfulResponseException.class,()-> {
+            reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
+        });
     }
 }

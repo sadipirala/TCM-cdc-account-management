@@ -3,7 +3,7 @@ package com.thermofisher.cdcam.services.hashing;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import com.google.common.base.Preconditions;
 

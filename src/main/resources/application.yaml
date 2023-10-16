@@ -1,0 +1,655 @@
+spring:
+  application:
+    name: cdcam
+  profiles:
+    active: test
+  cache:
+    cache-names: federationDomain,federationCG,federationCGM
+    caffeine:
+      spec: expireAfterWrite=24h
+
+
+  jpa:
+    properties:
+      javax:
+        persistence:
+          validation:
+            mode: none
+  main:
+    allow-bean-definition-overriding: true
+  config:
+    additional-location: ${SPRING_CONFIG_ADDITIONAL_LOCATION}
+
+
+server.servlet.context-path: /cdcam
+server.max-http-header-size: 32KB
+    
+cdcam.secrets: cdcam-secrets
+    
+recaptcha.siteverify.url: https://www.google.com/recaptcha/api/siteverify
+    
+account.legacy_username.validation: false
+    
+eec.v3.request.limit: 100
+---
+spring.profiles.group.qa1: qa1_shared,debug
+---
+spring.profiles.group.qa1-cn: qa1_cn_shared,debug
+---
+spring.profiles.group.qa4: qa4_shared,debug
+---
+spring.profiles.group.qa4-cn: qa4_cn_shared,debug
+---
+spring.profiles.group.stage: stage_shared,debug
+---
+spring.profiles.group.stage-cn: stage_cn_shared,debug
+---
+spring.profiles.group.prod: prod_shared,debug
+---
+spring.profiles.group.prod-cn: prod_cn_shared,debug
+---
+spring.profiles.group.test: test_shared,debug
+---
+spring.config.activate.on-profile: debug
+  # set debug log levels by package name below
+logging.level:
+  httpclient.wire: INFO
+  org.springframework: INFO
+  com.thermofisher: INFO
+---
+spring.config.activate.on-profile: qa1_shared
+env.name: qa1
+
+general.cipdc: us
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_TWlw-o8sB38qyZpV4t0z35B8C7nnx1kpadSoOctwht8RbO9PdSYreiWiKiaslKEm
+cdc.main.apiKey.federation: 3_VWzuCR-3YacNdo7bxaaSq7TU8ObWVpMEvUCR6-zSqyr3w1Q5Ff2hG6wW1r6GP7T5
+cdc.main.datacenter: us1.gigya.com
+cdc.main.datacenter.name: us
+
+cdc.secondary.apiKey: 3_3Jl92qYQvsDi5nwX16HGYT8t2HE2nSIDSUvL4KW9Z9-gatm5-pPkarj2vmvGpB6p
+cdc.secondary.datacenter: cn1.sapcdm.cn
+cdc.secondary.datacenter.name: cn
+
+aws.sns.client.region: us-east-1
+aws.sns.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-registration-qa1
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-qa1
+aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-info-qa1
+aws.sns.password.update: arn:aws:sns:us-east-1:926796168120:cdcam-password-reset-qa1
+aws.sns.account.updated: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-updated-qa1
+aws.sns.email.service: arn:aws:sns:us-east-1:926796168120:cdcam-email-service-qa1
+
+eec.request.limit: 1000
+
+tf.home: https://www.qa.thermofisher.com/
+
+tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
+data.protection.decryption.url: https://www.qa.thermofisher.com/api-gateway/data-protection/decrypt
+recaptcha.threshold.minimum: 0.0
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.qa.thermofisher.com/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.qa.thermofisher.com/auth/login
+
+# oidc default data
+identity.oidc.rp.id: iQNigGp5De3AaIfNhgNj_eyE
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.qa.thermofisher.com/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.qa.thermofisher.com/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: iQNigGp5De3AaIfNhgNj_eyE
+identity.reset-password.oidc.rp.redirect_uri: https://www.qa.thermofisher.com/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.com
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /api-gateway/accounts
+identity.registration.get-login-endpoint.path: /api-gateway/identity/registration
+identity.reset-password.get-login-endpoint.path: /api-gateway/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country: https://armadillo-qa1-api.tfcom-cluster-na-qa1.cloudqa.thermofisher.net/identity/account/api/invite/invitation/country
+---
+spring.config.activate.on-profile: qa1_cn_shared
+env.name: qa1-cn
+
+general.cipdc: cn
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_3Jl92qYQvsDi5nwX16HGYT8t2HE2nSIDSUvL4KW9Z9-gatm5-pPkarj2vmvGpB6p
+cdc.main.datacenter: cn1.sapcdm.cn
+cdc.main.datacenter.name: cn
+
+cdc.secondary.apiKey: 3_TWlw-o8sB38qyZpV4t0z35B8C7nnx1kpadSoOctwht8RbO9PdSYreiWiKiaslKEm
+cdc.secondary.datacenter: us1.gigya.com
+cdc.secondary.datacenter.name: us
+
+aws.sns.client.region: cn-north-1
+aws.sns.reg.topic: arn:aws-cn:sns:cn-north-1:656779925206:cdcam-notify-registration-qa1
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-qa1
+aws.sns.accnt.info.topic: arn:aws-cn:sns:cn-north-1:656779925206:cdcam-notify-account-info-qa1
+aws.sns.password.update: arn:aws-cn:sns:cn-north-1:656779925206:cdcam-password-reset-qa1
+aws.sns.account.updated: arn:aws-cn:sns:cn-north-1:656779925206:cdcam-notify-account-updated-qa1
+aws.sns.email.service: arn:aws-cn:sns:cn-north-1:656779925206:cdcam-email-service-qa1
+
+eec.request.limit: 1000
+
+tf.home: https://qa1.thermofisher.cn/
+
+tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
+data.protection.decryption.url:
+recaptcha.siteverify.url: https://www.recaptcha.net/recaptcha/api/siteverify
+recaptcha.threshold.minimum: 0.0
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://qa1.thermofisher.cn/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://qa1.thermofisher.cn/auth/login
+
+# oidc default data
+identity.oidc.rp.id: 4tootaIovv1a_m7arSTynxCa
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.qa1.thermofisher.cn/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://qa1.thermofisher.cn/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: 4tootaIovv1a_m7arSTynxCa
+identity.reset-password.oidc.rp.redirect_uri: https://qa1.thermofisher.cn/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.cn
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /cdcam/accounts
+identity.registration.get-login-endpoint.path: /cdcam/identity/registration
+identity.reset-password.get-login-endpoint.path: /cdcam/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country:
+
+---
+spring.config.activate.on-profile: qa4_shared
+env.name: qa4
+
+general.cipdc: us
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_MytFv5DvNsx3ez2oP2Zuss7HWUIP994H5kg926nJAtThr2hUWNiPXAdcJ5fy9HRq
+cdc.main.apiKey.federation: 3_MJT2tVQLIJv59-uXp-jytPaUMKGC6q73-MO0PrK4XUqizL26tVop9BGjjWcvrpZi
+cdc.main.datacenter: us1.gigya.com
+cdc.main.datacenter.name: us
+
+cdc.secondary.apiKey: 3_VFbmr7hBvRkRqoNtetmXDeiH0aYx_8tTKAJ5-eHkSzQ2tUtAm3GhZr_THhLvaKi1
+cdc.secondary.datacenter: cn1.sapcdm.cn
+cdc.secondary.datacenter.name: cn
+
+aws.sns.client.region: us-east-1
+aws.sns.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-registration-qa4
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-qa4
+aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-info-qa4
+aws.sns.password.update: arn:aws:sns:us-east-1:926796168120:cdcam-password-reset-qa4
+aws.sns.account.updated: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-updated-qa4
+aws.sns.email.service: arn:aws:sns:us-east-1:926796168120:cdcam-email-service-qa4
+
+eec.request.limit: 1000
+
+tf.home: https://www.qa4.thermofisher.com/
+
+tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
+data.protection.decryption.url: https://www.qa4.thermofisher.com/api-gateway/data-protection/decrypt
+recaptcha.threshold.minimum: 0.7
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.qa4.thermofisher.com/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.qa4.thermofisher.com/auth/login
+
+# oidc default data
+identity.oidc.rp.id: 7nzv7JmJT-3R1Z0FZEq_V5E8
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.qa4.thermofisher.com/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.qa4.thermofisher.com/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: 7nzv7JmJT-3R1Z0FZEq_V5E8
+identity.reset-password.oidc.rp.redirect_uri: https://www.qa4.thermofisher.com/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.com
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /api-gateway/accounts
+identity.registration.get-login-endpoint.path: /api-gateway/identity/registration
+identity.reset-password.get-login-endpoint.path: /api-gateway/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country: https://armadillo-qa4-api.tfcom-cluster-na-qa1.cloudqa.thermofisher.net/identity/account/api/invite/invitation/country
+---
+spring.config.activate.on-profile: qa4_cn_shared
+env.name: qa4-cn
+
+general.cipdc: cn
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_VFbmr7hBvRkRqoNtetmXDeiH0aYx_8tTKAJ5-eHkSzQ2tUtAm3GhZr_THhLvaKi1
+cdc.main.datacenter: cn1.sapcdm.cn
+cdc.main.datacenter.name: cn
+
+cdc.secondary.apiKey: 3_MytFv5DvNsx3ez2oP2Zuss7HWUIP994H5kg926nJAtThr2hUWNiPXAdcJ5fy9HRq
+cdc.secondary.datacenter: us1.gigya.com
+cdc.secondary.datacenter.name: us
+
+aws.sns.client.region: cn-north-1
+aws.sns.reg.topic: arn:aws-cn:sns:cn-north-1:436531936255:cdcam-notify-registration-qa4
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-qa4
+aws.sns.accnt.info.topic: arn:aws-cn:sns:cn-north-1:436531936255:cdcam-notify-account-info-qa4
+aws.sns.password.update: arn:aws-cn:sns:cn-north-1:436531936255:cdcam-password-reset-qa4
+aws.sns.account.updated: arn:aws-cn:sns:cn-north-1:436531936255:cdcam-notify-account-updated-qa4
+aws.sns.email.service: arn:aws-cn:sns:cn-north-1:436531936255:cdcam-email-service-qa4
+
+eec.request.limit: 1000
+
+tf.home: https://qa4.thermofisher.cn/
+
+tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa4/email-notification
+data.protection.decryption.url:
+recaptcha.siteverify.url: https://www.recaptcha.net/recaptcha/api/siteverify
+recaptcha.threshold.minimum: 0.7
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://qa4.thermofisher.cn/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://qa4.thermofisher.cn/auth/login
+
+# oidc default data
+identity.oidc.rp.id: 5kWTRiABjotYBuSNhBTsnhGz
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.qa4.thermofisher.cn/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://qa4.thermofisher.cn/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: 5kWTRiABjotYBuSNhBTsnhGz
+identity.reset-password.oidc.rp.redirect_uri: https://qa4.thermofisher.cn/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.cn
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /cdcam/accounts
+identity.registration.get-login-endpoint.path: /cdcam/identity/registration
+identity.reset-password.get-login-endpoint.path: /cdcam/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country:
+
+---
+spring.config.activate.on-profile: test_shared
+env.name: test
+general.cipdc: us
+
+is-new-marketing-enabled: false
+
+cdc.main.apiKey: 3_8-UzwsA0J4GscN38KQagSVgrEiEERuigt8tvFPwTGJew-wLUdDy5mtzoa8ex1I2l
+cdc.main.apiKey.federation: 3_8-UzwsA0J4GscN38KQagSVgrEiEERuigt8tvFPwTGJew-wLUdDy5mtzoa8ex1I2l
+cdc.main.datacenter: us1.gigya.com
+cdc.main.datacenter.name: us
+
+cdc.secondary.apiKey:
+cdc.secondary.datacenter:
+cdc.secondary.datacenter.name:
+
+aws.sns.client.region: us-east-1
+aws.sns.reg.topic: reg-sns
+aws.sns.aspire.reg.topic: aspire-sns
+aws.sns.accnt.info.topic: accnt-sns
+aws.sns.password.update: password-reset-sns
+aws.sns.account.updated: account-updated-sns
+aws.sns.email.service: tfgns-email-notification-sns
+aws.secrets.name: abc
+eec.request.limit: 2
+eec.v3.request.limit: 3
+aws.region: us
+tf.home: https://www.thermofisher.com/
+
+tfrn.email-notification.url: https://google.com
+data.protection.decryption.url: https://www.dev3.thermofisher.com/api-gateway/data-protection/decrypt
+recaptcha.threshold.minimum: 0.5
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.dev3.thermofisher.com/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.dev3.thermofisher.con/auth/login
+
+# oidc default data
+identity.oidc.rp.id: eZc3CGSFO2-phATVvTvL_4tf
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.dev3.thermofisher.com/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.dev3.thermofisher.com/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: AMzhM1KFsPRgaJPhuMZhyn87
+identity.reset-password.oidc.rp.redirect_uri: https://www.dev3.thermofisher.com/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.com
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /api-gateway/accounts
+identity.registration.get-login-endpoint.path: /api-gateway/identity/registration
+identity.reset-password.get-login-endpoint.path: /api-gateway/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country: https://www.dev3.thermofisher.com/api-gateway/identity/api/invite/invitation/country
+
+email-verification.enabled: false
+email-verification.global: false
+email-verification.includedCountries: es,uk,fr
+email-verification.excludedCountries: us
+---
+spring.config.activate.on-profile: stage_shared
+env.name: stage
+
+general.cipdc: us
+
+is-new-marketing-enabled: false
+
+cdc.main.apiKey: 3_TZOzKVqx0aJ2cvYE-nr_rGrkpQAnFwiHzo5JEcQshWWW5HXIMmVOIrLyQGM2CNRk
+cdc.main.datacenter: us1.gigya.com
+cdc.main.datacenter.name: us
+
+cdc.secondary.apiKey:
+cdc.secondary.datacenter:
+cdc.secondary.datacenter.name:
+
+aws.sns.client.region: us-east-1
+aws.sns.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-registration-stage
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-stage
+aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-info-stage
+aws.sns.password.update: arn:aws:sns:us-east-1:926796168120:cdcam-password-reset-stage
+aws.sns.account.updated: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-updated-stage
+aws.sns.email.service: arn:aws:sns:us-east-1:926796168120:cdcam-email-service-stage
+
+eec.request.limit: 1000
+
+tf.home: https://www.stage.thermofisher.com/
+
+tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
+data.protection.decryption.url: https://www.stage.thermofisher.com/api-gateway/data-protection/decrypt
+recaptcha.threshold.minimum: 0.0
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.stage.thermofisher.com/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.stage.thermofisher.com/auth/login
+
+# oidc default data
+identity.oidc.rp.id: BdtrBcfgTgUga24Gx08BArKR
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.stage.thermofisher.com/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.stage.thermofisher.com/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: BdtrBcfgTgUga24Gx08BArKR
+identity.reset-password.oidc.rp.redirect_uri: https://www.stage.thermofisher.com/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.com
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /api-gateway/accounts
+identity.registration.get-login-endpoint.path: /api-gateway/identity/registration
+identity.reset-password.get-login-endpoint.path: /api-gateway/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country: https://www.stage.thermofisher.com/api-gateway/identity/api/invite/invitation/country
+---
+spring.config.activate.on-profile: stage_cn_shared
+env.name: stage-cn
+
+general.cipdc: cn
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey:
+cdc.main.datacenter: cn1.sapcdm.cn
+cdc.main.datacenter.name: cn
+
+cdc.secondary.apiKey: 3_TZOzKVqx0aJ2cvYE-nr_rGrkpQAnFwiHzo5JEcQshWWW5HXIMmVOIrLyQGM2CNRk
+cdc.secondary.datacenter: us1.gigya.com
+cdc.secondary.datacenter.name: us
+
+aws.sns.client.region: cn-north-1
+aws.sns.reg.topic:
+aws.sns.aspire.reg.topic:
+aws.sns.accnt.info.topic:
+aws.sns.password.update:
+aws.sns.account.updated:
+aws.sns.email.service:
+
+eec.request.limit: 1000
+
+tf.home: https://stage.thermofisher.cn/
+
+tfrn.email-notification.url:
+data.protection.decryption.url:
+recaptcha.siteverify.url: https://www.recaptcha.net/recaptcha/api/siteverify
+recaptcha.threshold.minimum: 0.0
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://stage.thermofisher.cn/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://stage.thermofisher.cn/auth/login
+
+# oidc default data
+identity.oidc.rp.id:
+
+# reset password oidc data
+reset-password.url: https://stage.thermofisher.cn/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id:
+identity.reset-password.oidc.rp.redirect_uri: https://stage.thermofisher.cn/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.cn
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /cdcam/accounts
+identity.registration.get-login-endpoint.path: /cdcam/identity/registration
+identity.reset-password.get-login-endpoint.path: /cdcam/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+---
+spring.config.activate.on-profile: prod_shared
+env.name: prod
+
+general.cipdc: us
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_MdUAygy5UVqlKdsaLRZym6539xfyKYmfYHpWpN5Z_R_HSWbAv8i2ByqEnntrrcFH
+cdc.main.apiKey.federation: 3_3p9D3AWfLsOjj4GdjDGNstLC2PEdaLiiI7LGGVMxMHtozi_ryDbK7r11FsKsGWed
+cdc.main.datacenter: us1.gigya.com
+cdc.main.datacenter.name: us
+
+cdc.secondary.apiKey: 3_iubVAtzr-bza_9Prfy_RW4aCuUQRaTSsbaiDQwaq1nvSvXiqmQQ18-ifj-he1_ty
+cdc.secondary.datacenter: cn1.sapcdm.cn
+cdc.secondary.datacenter.name: cn
+
+aws.sns.client.region: us-east-1
+aws.sns.reg.topic: arn:aws:sns:us-east-1:956741099536:cdcam-notify-registration-prod
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:956741099536:cdcam-aspire-registration-prod
+aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:956741099536:cdcam-notify-account-info-prod
+aws.sns.password.update: arn:aws:sns:us-east-1:956741099536:cdcam-password-reset-prod
+aws.sns.account.updated: arn:aws:sns:us-east-1:956741099536:cdcam-notify-account-updated-prod
+aws.sns.email.service: arn:aws:sns:us-east-1:956741099536:cdcam-email-service-prod
+
+eec.request.limit: 1000
+
+tf.home: https://www.thermofisher.com/
+
+tfrn.email-notification.url: https://qm2jdzfsn1-vpce-0a2b732fc024a1918.execute-api.us-east-1.amazonaws.com/prod/email-notification
+data.protection.decryption.url: https://www.thermofisher.com/api-gateway/data-protection/decrypt
+recaptcha.threshold.minimum: 0.7
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.thermofisher.com/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.thermofisher.com/auth/login
+
+# oidc default data
+identity.oidc.rp.id: QuibnISfymD5KJf_H8i4mnPz
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.thermofisher.com/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.thermofisher.com/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: QuibnISfymD5KJf_H8i4mnPz
+identity.reset-password.oidc.rp.redirect_uri: https://www.thermofisher.com/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.com
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /api-gateway/accounts
+identity.registration.get-login-endpoint.path: /api-gateway/identity/registration
+identity.reset-password.get-login-endpoint.path: /api-gateway/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country: https://armadillo-api.tfcom-cluster-na-prodb.cloud.thermofisher.net/identity/account/api/invite/invitation/country
+---
+spring.config.activate.on-profile: prod_cn_shared
+env.name: prod-cn
+
+general.cipdc: cn
+
+is-new-marketing-enabled: true
+
+cdc.main.apiKey: 3_iubVAtzr-bza_9Prfy_RW4aCuUQRaTSsbaiDQwaq1nvSvXiqmQQ18-ifj-he1_ty
+cdc.main.datacenter: cn1.sapcdm.cn
+cdc.main.datacenter.name: cn
+
+cdc.secondary.apiKey: 3_MdUAygy5UVqlKdsaLRZym6539xfyKYmfYHpWpN5Z_R_HSWbAv8i2ByqEnntrrcFH
+cdc.secondary.datacenter: us1.gigya.com
+cdc.secondary.datacenter.name: us
+
+aws.sns.client.region: cn-north-1
+aws.sns.reg.topic: arn:aws-cn:sns:cn-north-1:656866788086:cdcam-notify-registration-prod
+aws.sns.aspire.reg.topic:
+aws.sns.accnt.info.topic: arn:aws-cn:sns:cn-north-1:656866788086:cdcam-notify-account-info-prod
+aws.sns.password.update: arn:aws-cn:sns:cn-north-1:656866788086:cdcam-password-reset-prod
+aws.sns.account.updated: arn:aws-cn:sns:cn-north-1:656866788086:cdcam-notify-account-updated-prod
+aws.sns.email.service: arn:aws-cn:sns:cn-north-1:656866788086:cdcam-email-service-prod
+
+eec.request.limit: 1000
+
+tf.home: https://www.thermofisher.cn/
+
+tfrn.email-notification.url: https://qm2jdzfsn1-vpce-0a2b732fc024a1918.execute-api.us-east-1.amazonaws.com/prod/email-notification
+data.protection.decryption.url:
+recaptcha.siteverify.url: https://www.recaptcha.net/recaptcha/api/siteverify
+recaptcha.threshold.minimum: 0.7
+
+# default RP oidc data
+identity.oidc.authorize.endpoint: https://www.thermofisher.cn/api-gateway/identity-authorization/identity/oidc/op/authorize
+default.login.path: https://www.thermofisher.cn/auth/login
+
+# oidc default data
+identity.oidc.rp.id: 64siHv4lL67p2EtQtO9ulG6u
+
+# registration redirection
+identity.registration.oidc.rp.redirect_uri: https://www.thermofisher.cn/identity/api/cip/v1/registration/auth?uid={0}
+
+# reset password oidc data
+reset-password.url: https://www.thermofisher.cn/identity/account/reset-password/
+identity.reset-password.redirect_uri: /identity/account/reset-password/request
+identity.reset-password.oidc.rp.client_id: 64siHv4lL67p2EtQtO9ulG6u
+identity.reset-password.oidc.rp.redirect_uri: https://www.thermofisher.cn/auth/login
+identity.reset-password.oidc.rp.response_type: code
+identity.reset-password.oidc.rp.scope: openid profile email username address
+identity.authorization.cookie.cip-authdata.domain: .thermofisher.cn
+
+# cookie paths
+identity.registration.create-account-endpoint.path: /cdcam/accounts
+identity.registration.get-login-endpoint.path: /cdcam/identity/registration
+identity.reset-password.get-login-endpoint.path: /cdcam/identity/reset-password
+identity.authorization.path: /api-gateway/identity-authorization/identity
+
+# CMGT call
+is-registration-notification-enabled: false
+
+# Email validation
+is-email-validation-enabled: false
+
+# Invite service
+identity.invitation.update_country:
+---

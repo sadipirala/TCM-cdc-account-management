@@ -7,8 +7,8 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.monitorjbl.json.JsonViewModule;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +34,7 @@ public class Utils {
     }
 
     public static <T> String convertJavaToJsonString(T t) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JsonViewModule());
+        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         return mapper.writeValueAsString(t);
     }
 

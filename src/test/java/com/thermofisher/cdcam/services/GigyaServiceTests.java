@@ -1,13 +1,58 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gigya.socialize.GSKeyNotFoundException;
+import com.gigya.socialize.GSObject;
+import com.gigya.socialize.GSResponse;
+import com.google.gson.JsonParseException;
+import com.thermofisher.cdcam.builders.AccountBuilder;
+import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
+import com.thermofisher.cdcam.enums.cdc.AccountType;
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
+import com.thermofisher.cdcam.model.AccountInfo;
+import com.thermofisher.cdcam.model.ResetPasswordResponse;
+import com.thermofisher.cdcam.model.ResetPasswordSubmit;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
+import com.thermofisher.cdcam.model.cdc.CDCSearchResponse;
+import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import com.thermofisher.cdcam.model.cdc.LoginIDs;
+import com.thermofisher.cdcam.model.cdc.LoginIdDoesNotExistException;
+import com.thermofisher.cdcam.model.cdc.OpenIdRelyingParty;
+import com.thermofisher.cdcam.model.cdc.SearchResponse;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
+import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
+import com.thermofisher.cdcam.utils.AccountUtils;
+import com.thermofisher.cdcam.utils.IdentityProviderUtils;
+import com.thermofisher.cdcam.utils.cdc.CDCUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.commons.logging.LoggerFactory;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,53 +61,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.gigya.socialize.GSKeyNotFoundException;
-import com.gigya.socialize.GSObject;
-import com.gigya.socialize.GSResponse;
-import com.google.gson.JsonParseException;
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.builders.AccountBuilder;
-import com.thermofisher.cdcam.builders.IdentityProviderBuilder;
-import com.thermofisher.cdcam.enums.cdc.AccountType;
-import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
-import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.ResetPasswordResponse;
-import com.thermofisher.cdcam.model.ResetPasswordSubmit;
-import com.thermofisher.cdcam.model.cdc.*;
-import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
-import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import com.thermofisher.cdcam.utils.AccountUtils;
-import com.thermofisher.cdcam.utils.IdentityProviderUtils;
-import com.thermofisher.cdcam.utils.cdc.CDCUtils;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.refEq;
+import static org.mockito.Mockito.*;
 
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.simple.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-@ActiveProfiles("test")
-//@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest//(classes = CdcamApplication.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class GigyaServiceTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private final String uid = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
@@ -100,10 +105,10 @@ public class GigyaServiceTests {
     @Captor
     ArgumentCaptor<GSObject> gsObjectCaptor;
 
-    @Before
+    @BeforeEach
     public void setup() throws JSONException {
         MockitoAnnotations.openMocks(this);
-        ReflectionTestUtils.setField(accountBuilder, "logger", LogManager.getLogger(AccountBuilder.class));
+       // ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
         loginIdAvailable.put("totalCount", 0);
         loginIdNotAvailable.put("totalCount", 1);
     }
@@ -155,7 +160,7 @@ public class GigyaServiceTests {
         assertTrue(_accountInfo.equals(_account));
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldThrowCustomGigyaErrorException() throws Exception {
         // given
         ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", false);
@@ -164,11 +169,12 @@ public class GigyaServiceTests {
         when(gigyaApi.getAccount(anyString())).thenReturn(gsResponse);
         when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
-        // when
-        gigyaService.getAccountInfo(uid);
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+            gigyaService.getAccountInfo(uid);
+        });
     }
     
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldThrowCustomGigyaErrorException_V2() throws Exception {
         // given
         ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
@@ -177,8 +183,9 @@ public class GigyaServiceTests {
         when(gigyaApi.getAccountV2(anyString())).thenReturn(gsResponse);
         when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
-        // when
-        gigyaService.getAccountInfo(uid);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+            gigyaService.getAccountInfo(uid);
+        });
     }
 
     @Test
@@ -196,8 +203,8 @@ public class GigyaServiceTests {
         ObjectNode updateResponse = gigyaService.update(user);
 
         // then
-        Assert.assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("error").asText());
+        assertEquals(HttpStatus.OK.value(), updateResponse.get("code").asInt());
+        assertEquals(message, updateResponse.get("error").asText());
     }
 
     @Test
@@ -217,8 +224,8 @@ public class GigyaServiceTests {
         ObjectNode updateResponse = gigyaService.update(user);
 
         // then
-        Assert.assertEquals(errorCode, updateResponse.get("code").asInt());
-        Assert.assertEquals(message, updateResponse.get("error").asText());
+        assertEquals(errorCode, updateResponse.get("code").asInt());
+        assertEquals(message, updateResponse.get("error").asText());
     }
 
     @Test
@@ -276,7 +283,7 @@ public class GigyaServiceTests {
         boolean updateResponse = gigyaService.disableAccount(uid);
 
         // then
-        Assert.assertTrue(updateResponse);
+        assertTrue(updateResponse);
     }
 
     @Test
@@ -299,7 +306,7 @@ public class GigyaServiceTests {
         boolean updateResponse = gigyaService.disableAccount(uid);
 
         // then
-        Assert.assertFalse(updateResponse);
+        assertFalse(updateResponse);
     }
 
     @Test
@@ -314,7 +321,7 @@ public class GigyaServiceTests {
         CDCResponseData response = gigyaService.sendVerificationEmail("test");
 
         // then
-        Assert.assertEquals(response.getStatusCode(), HttpStatus.OK.value());
+        assertEquals(response.getStatusCode(), HttpStatus.OK.value());
     }
 
     @Test
@@ -326,7 +333,7 @@ public class GigyaServiceTests {
         CDCResponseData response = gigyaService.sendVerificationEmail("test");
 
         // then
-        Assert.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
     @Test
@@ -363,7 +370,7 @@ public class GigyaServiceTests {
         verify(gigyaApi).resetPassword(any());
     }
 
-    @Test(expected = LoginIdDoesNotExistException.class)
+    @Test
     public void resetPasswordRequest_whenAnInValidUsername_throwLoginIdDoesNotExistException()
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
@@ -386,11 +393,12 @@ public class GigyaServiceTests {
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue());
 
-        // when
-        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        Assertions.assertThrows(LoginIdDoesNotExistException.class, ()-> {
+            gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void resetPasswordRequest_whenAnUnhandledErrorOccurs_throwCustomGigyaErrorException()
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
@@ -413,11 +421,12 @@ public class GigyaServiceTests {
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
-        // when
-        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        Assertions.assertThrows(CustomGigyaErrorException.class,()->{
+            gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        });
     }
 
-    @Test(expected = LoginIdDoesNotExistException.class)
+    @Test
     public void resetPasswordRequest_whenNoResultsFromSearch_throwLoginIdDoesNotExistException() throws GSKeyNotFoundException, CustomGigyaErrorException, JsonProcessingException, LoginIdDoesNotExistException {
         // given
         ArrayList<CDCAccount> mockAccount = new ArrayList<>();
@@ -436,8 +445,9 @@ public class GigyaServiceTests {
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
-        // when
-        gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        Assertions.assertThrows(LoginIdDoesNotExistException.class,()-> {
+            gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
+        });
     }
 
     @Test
@@ -578,7 +588,7 @@ public class GigyaServiceTests {
         ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
-        Assert.assertEquals(response.getResponseCode(),errorResponseCode);
+        assertEquals(response.getResponseCode(),errorResponseCode);
     }
 
     @Test
@@ -597,7 +607,7 @@ public class GigyaServiceTests {
         ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
-        Assert.assertEquals(response.getResponseCode(),successResponseCode);
+        assertEquals(response.getResponseCode(),successResponseCode);
     }
 
     @Test
@@ -696,7 +706,7 @@ public class GigyaServiceTests {
         }
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void isAvailableLoginID_GivenAnErrorOccurs_ShouldThrowCustomGigyaErrorException() throws Exception {
         // given
         int errorCode = 1;
@@ -704,8 +714,9 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.search(any(), any(), any())).thenReturn(mockGSResponse);
 
-        // when
-        gigyaService.isAvailableLoginId("test");
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+            gigyaService.isAvailableLoginId("test");
+        });
     }
 
     @Test
@@ -766,7 +777,7 @@ public class GigyaServiceTests {
         assertEquals(e, result.getE());
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void getJWTPublicKey_shouldThrowAnError() throws Exception {
         // given
         int errorCode = 400404;
@@ -775,10 +786,12 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
 
         // when
+        Assertions.assertThrows(CustomGigyaErrorException.class,()->{
         gigyaService.getJWTPublicKey();
+    });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void search_GivenTheresAResponseCodeDifferentThanZero_ThenItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, IOException {
         // given
         String query = "";
@@ -788,8 +801,9 @@ public class GigyaServiceTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        // when
-        gigyaService.search(query, AccountType.FULL_LITE, mainApiDomain);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+            gigyaService.search(query, AccountType.FULL_LITE, mainApiDomain);
+        });
     }
 
     @Test
@@ -829,7 +843,7 @@ public class GigyaServiceTests {
     }
 
     @Test
-    public void liteRegisterUser_V3_GivenTheresAValidResponse_ItShouldReturnTheSameNumberOfResultsAsCDCAccounts() throws GSKeyNotFoundException, CustomGigyaErrorException, IOException, JSONException, ParseException {
+    public void liteRegisterUser_V3_GivenTheresAValidResponse_ItShouldReturnTheSameNumberOfResultsAsCDCAccounts() throws GSKeyNotFoundException, CustomGigyaErrorException, IOException, JSONException {
         // given
         String uid = "9f6f2133e57144d787574d49c0b9908e";
         LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder().build();
@@ -844,8 +858,8 @@ public class GigyaServiceTests {
         assertEquals(uid, cdcResponse.getUID());
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
-    public void liteRegisterUser_V3_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, GSKeyNotFoundException, IOException, ParseException, JSONException {
+    @Test
+    public void liteRegisterUser_V3_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, GSKeyNotFoundException, IOException, JSONException {
         // given
         int errorCode = 400;
         LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder().build();
@@ -854,11 +868,12 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getResponseText()).thenReturn(AccountUtils.getLiteRegistrationErrorJsonString());
         when(gigyaApi.registerLiteAccount(any(LiteAccountDTO.class))).thenReturn(cdcMockResponse);
 
-        // when
-        gigyaService.registerLiteAccount(liteAccountDTO);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+            gigyaService.registerLiteAccount(liteAccountDTO);
+        });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void liteRegisterUser_GivenTheresAnError_ItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, IOException, GSKeyNotFoundException {
         // given
         int errorCode = 400;
@@ -869,10 +884,12 @@ public class GigyaServiceTests {
         when(gigyaApi.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        gigyaService.registerLiteAccount("");
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+            gigyaService.registerLiteAccount("");
+        });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void changePassword_givenTheresAnError_ThenCustomGigyaErrorExceptionShouldBeThrown() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
@@ -885,8 +902,10 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getResponseText()).thenReturn(gsResponse);
         when(gigyaApi.changePassword(anyString(), anyString(), anyString())).thenReturn(cdcMockResponse);
 
-        // when
-        gigyaService.changePassword(uid, newPassword, oldPassword);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.changePassword(uid, newPassword, oldPassword);
+        });
     }
 
     @Test
@@ -909,7 +928,7 @@ public class GigyaServiceTests {
         assertEquals(uris, result.getRedirectUris());
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void getRP_givenMethodCalled_whenClientIdNoExist_ThenCustomGigyaErrorExceptionShouldBeThrown() throws Exception {
         //given
         int errorCode = 404;
@@ -920,11 +939,13 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.getRP(clientId)).thenReturn(mockGSResponse);
 
-        //when
-        gigyaService.getRP(clientId);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.getRP(clientId);
+        });
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void updateRequirePasswordCheck_givenTheresAnError_ThenCustomGigyaErrorExceptionShouldBeThrown() throws CustomGigyaErrorException {
         // given
         String uid = Long.toString(1L);
@@ -933,8 +954,10 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
 
-        // when
-        gigyaService.updateRequirePasswordCheck(uid);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.updateRequirePasswordCheck(uid);
+        });
     }
 
     @Test
@@ -967,7 +990,7 @@ public class GigyaServiceTests {
         verify(gigyaApi).setAccountInfo(cdcAccount);
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void setAccountInfo_GivenTheresAnErrorFromCDC_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
         // given
         CDCAccount cdcAccount = CDCAccount.builder().build();
@@ -975,8 +998,10 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.setAccountInfo(any(CDCAccount.class))).thenReturn(gsResponseMock);
 
-        // when
-        gigyaService.setAccountInfo(cdcAccount);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.setAccountInfo(cdcAccount);
+        });
     }
 
     @Test
@@ -997,7 +1022,7 @@ public class GigyaServiceTests {
         assertEquals(gsObject.get("HelloThere"), mockValue);
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void setAccountInfo_WhenParamsArePassed_AndTheresAnError_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
         // given
         Map<String, String> params = new HashMap<>();
@@ -1005,8 +1030,10 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.setAccountInfo(any(GSObject.class))).thenReturn(gsResponseMock);
 
-        // when
-        gigyaService.setAccountInfo(params);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.setAccountInfo(params);
+        });
     }
 
     @Test
@@ -1192,7 +1219,7 @@ public class GigyaServiceTests {
         assertEquals(accountInfo.getUsername(), "arm@test.com");
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void searchInBothDC_GivenTheresAResponseCodeDifferentThanZero_ThenItShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException, IOException {
         // given
         String username = "armatest@test.com";
@@ -1202,8 +1229,10 @@ public class GigyaServiceTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        // when
-        gigyaService.searchInBothDC(username);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.searchInBothDC(username);
+        });
     }
 
     @Test
@@ -1362,7 +1391,7 @@ public class GigyaServiceTests {
         verify(gigyaApi).finalizeRegistration(regToken);
     }
 
-    @Test(expected = CustomGigyaErrorException.class)
+    @Test
     public void finalizeRegistration_GivenTheresAnErrorFromCDC_ShouldThrowCustomGigyaErrorException() throws CustomGigyaErrorException {
         // given
         String regToken = "regTokenTest";
@@ -1370,7 +1399,9 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
 
-        // when
-        gigyaService.finalizeRegistration(regToken);
+        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+
+            gigyaService.finalizeRegistration(regToken);
+        });
     }
 }

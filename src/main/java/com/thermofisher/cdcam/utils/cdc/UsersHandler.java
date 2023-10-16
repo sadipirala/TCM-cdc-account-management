@@ -18,16 +18,13 @@ import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.services.GigyaApi;
 import com.thermofisher.cdcam.services.GigyaService;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-
+@Slf4j
 @Configuration
 public class UsersHandler {
-
-    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${cdc.main.datacenter}")
     private String mainApiDomain;
@@ -42,7 +39,7 @@ public class UsersHandler {
         final int ONE_ACCOUNT = 1;
         final int TWO_ACCOUNTS = 2;
 
-        logger.info(String.format("Requested user details for one or multiple users. Count: %d", uids.size()));
+        log.info(String.format("Requested user details for one or multiple users. Count: %d", uids.size()));
 
         List<UserDetails> userDetails = new ArrayList<>();
 
@@ -81,14 +78,14 @@ public class UsersHandler {
                 }
             }
         } else {
-            logger.error(String.format("An error occurred when searching users. Error: %s", cdcSearchResponse.getStatusReason()));
+            log.error(String.format("An error occurred when searching users. Error: %s", cdcSearchResponse.getStatusReason()));
         }
 
         return userDetails;
     }
 
     public ProfileInfoDTO getUserProfileByUID(String uid) throws IOException {
-        logger.info("Requested user profile by UID.");
+        log.info("Requested user profile by UID.");
 
         ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder().build();
         AccountInfo accountInfo;
@@ -96,7 +93,7 @@ public class UsersHandler {
             accountInfo = gigyaService.getAccountInfo(uid);
             profileInfoDTO = ProfileInfoDTO.build(accountInfo);
         } catch (CustomGigyaErrorException e) {
-            logger.error(String.format("An error occurred when searching user. Error: %s", e.getMessage()));
+            log.error(String.format("An error occurred when searching user. Error: %s", e.getMessage()));
             profileInfoDTO = null;
         }
 
