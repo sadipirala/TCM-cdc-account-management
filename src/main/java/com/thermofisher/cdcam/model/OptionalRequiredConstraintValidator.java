@@ -1,13 +1,12 @@
 package com.thermofisher.cdcam.model;
 
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanWrapperImpl;
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-
 public class OptionalRequiredConstraintValidator
-    implements ConstraintValidator<OptionalRequiredConstraint, Object> {
+        implements ConstraintValidator<OptionalRequiredConstraint, Object> {
 
     private String optionalField;
     private String requiredField;

@@ -1,19 +1,17 @@
 package com.thermofisher.cdcam.aws;
 
-import java.util.Map;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -41,9 +39,9 @@ public class SNSHandler {
         }
 
         AmazonSNS snsClient = AmazonSNSClient.builder()
-            .withRegion(region)
-            .withCredentials(new InstanceProfileCredentialsProvider(false))
-            .build();
+                .withRegion(region)
+                .withCredentials(new InstanceProfileCredentialsProvider(false))
+                .build();
 
         snsClient.publish(request);
     }

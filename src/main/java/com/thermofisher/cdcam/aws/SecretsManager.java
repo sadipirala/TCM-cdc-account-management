@@ -1,7 +1,5 @@
 package com.thermofisher.cdcam.aws;
 
-import java.util.Base64;
-
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
@@ -10,12 +8,13 @@ import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
 import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
 import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
-
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.Base64;
 
 @Service
 @Slf4j
@@ -23,7 +22,6 @@ public class SecretsManager {
 
     @Value("${aws.sns.client.region}")
     private String region;
-
 
     public String getSecret(String secretName) {
         AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
@@ -38,7 +36,7 @@ public class SecretsManager {
 
         try {
             getSecretValueResult = client.getSecretValue(getSecretValueRequest);
-        } catch(ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException e) {
             log.error("The requested secret " + secretName + " was not found");
             throw e;
         } catch (InvalidRequestException e) {
@@ -53,8 +51,7 @@ public class SecretsManager {
 
         if (getSecretValueResult.getSecretString() != null) {
             return getSecretValueResult.getSecretString();
-        }
-        else {
+        } else {
             return new String(Base64.getDecoder().decode(getSecretValueResult.getSecretBinary()).array());
         }
     }

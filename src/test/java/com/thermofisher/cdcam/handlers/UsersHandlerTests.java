@@ -12,7 +12,6 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +21,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,7 +41,7 @@ public class UsersHandlerTests {
 
     @Mock
     GigyaApi gigyaApi;
-    
+
     @Mock
     GigyaService gigyaService;
 
@@ -86,11 +83,11 @@ public class UsersHandlerTests {
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
-        Assertions.assertEquals(userDetails.size(),1);
+        Assertions.assertEquals(userDetails.size(), 1);
     }
 
     @Test
-    public void getUsers_GivenAValidUIDWithMoreThanOneAccount_returnOneUserDetails() throws IOException {   
+    public void getUsers_GivenAValidUIDWithMoreThanOneAccount_returnOneUserDetails() throws IOException {
         //setup
         List<String> uids = new ArrayList<>();
         uids.add("001");
@@ -131,7 +128,7 @@ public class UsersHandlerTests {
         List<UserDetails> userDetails = usersHandler.getUsers(uids);
 
         //validation
-        Assertions.assertEquals(userDetails.size(),1);
+        Assertions.assertEquals(userDetails.size(), 1);
     }
 
     @Test
@@ -143,13 +140,13 @@ public class UsersHandlerTests {
         uids.add("003");
 
         GSResponse mockSearchResponse = Mockito.mock(GSResponse.class);
-        String searchResponse = "{\n" + 
-                "  \"totalCount\": 1,\n" + 
+        String searchResponse = "{\n" +
+                "  \"totalCount\": 1,\n" +
                 "  \"statusCode\": 200,\n" +
                 "  \"errorCode\": 400,\n" +
-                "  \"statusReason\": \"OK\",\n" + 
-                "  \"results\": [\n" + 
-                "  ]\n" + 
+                "  \"statusReason\": \"OK\",\n" +
+                "  \"results\": [\n" +
+                "  ]\n" +
                 "}";
 
         when(mockSearchResponse.getResponseText()).thenReturn(searchResponse);
@@ -169,7 +166,7 @@ public class UsersHandlerTests {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         AccountInfo accountInfoMock = AccountUtils.getSiteAccount();
         ProfileInfoDTO profileInfoDTOMock = ProfileInfoDTO.build(accountInfoMock);
-        
+
         when(gigyaService.getAccountInfo(anyString())).thenReturn(accountInfoMock);
 
         //execution

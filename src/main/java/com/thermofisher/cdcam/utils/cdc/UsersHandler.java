@@ -1,10 +1,5 @@
 package com.thermofisher.cdcam.utils.cdc;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gigya.socialize.GSResponse;
 import com.thermofisher.cdcam.enums.cdc.AccountType;
@@ -17,11 +12,16 @@ import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.services.GigyaApi;
 import com.thermofisher.cdcam.services.GigyaService;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Configuration
 public class UsersHandler {

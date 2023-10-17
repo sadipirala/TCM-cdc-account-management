@@ -1,15 +1,14 @@
 package com.thermofisher.cdcam.model.cdc;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Objects;
 
 @Getter
 @Setter
@@ -53,14 +52,14 @@ public class Korea {
         }
 
         return Korea.builder()
-            .receiveMarketingInformation(receiveMarketingInformation)
-            .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
-            .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
-            .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
-            .collectionAndUsePersonalInfoOptional(collectionAndUsePersonalInfoOptional)
-            .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
-            .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
-            .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
-            .build();
+                .receiveMarketingInformation(receiveMarketingInformation)
+                .thirdPartyTransferPersonalInfoMandatory(thirdPartyTransferPersonalInfoMandatory)
+                .thirdPartyTransferPersonalInfoOptional(thirdPartyTransferPersonalInfoOptional)
+                .collectionAndUsePersonalInfoMandatory(collectionAndUsePersonalInfoMandatory)
+                .collectionAndUsePersonalInfoOptional(collectionAndUsePersonalInfoOptional)
+                .collectionAndUsePersonalInfoMarketing(collectionAndUsePersonalInfoMarketing)
+                .overseasTransferPersonalInfoMandatory(overseasTransferPersonalInfoMandatory)
+                .overseasTransferPersonalInfoOptional(overseasTransferPersonalInfoOptional)
+                .build();
     }
 }

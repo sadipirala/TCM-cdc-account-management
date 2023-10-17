@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UsernameRecoveryUserInfoDTO {
-  private String email;
-  private String redirectUrl;
+    private String email;
+    private String redirectUrl;
 }

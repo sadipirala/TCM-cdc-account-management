@@ -84,6 +84,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 @Slf4j
 @RestController
 @RequestMapping("/accounts")
@@ -209,7 +210,7 @@ public class AccountsController {
 
     @PostMapping("/user")
     @Operation(description = "Notifies a user successful registration in CDC to the subscribed entities.")
-    @ApiResponses(value={
+    @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Bad request."),
             @ApiResponse(responseCode = "500", description = "Internal server error.")
@@ -252,7 +253,7 @@ public class AccountsController {
 
     @PostMapping()
     @Operation(description = "Inserts a new Account")
-    @ApiResponses(value={
+    @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Bad request."),
             @ApiResponse(responseCode = "500", description = "Internal server error.")

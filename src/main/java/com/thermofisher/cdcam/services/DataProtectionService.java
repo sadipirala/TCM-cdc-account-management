@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.model.Ciphertext;
 import com.thermofisher.cdcam.model.HttpServiceResponse;
-
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;

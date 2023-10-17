@@ -4,6 +4,9 @@
 
 package com.thermofisher.cdcam.services;
 
+import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
+import lombok.extern.slf4j.Slf4j;
+
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -13,9 +16,6 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
-
-import com.thermofisher.cdcam.model.cdc.JWTPublicKey;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JWTValidator {

@@ -1,38 +1,5 @@
 package com.thermofisher.cdcam.controller;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Set;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-
-import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.cdcam.enums.CookieType;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -50,14 +17,45 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import com.thermofisher.cdcam.services.CookieService;
 import com.thermofisher.cdcam.services.EncodeService;
 import com.thermofisher.cdcam.services.GigyaService;
-import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.JWTService;
+import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.SecretsService;
 import com.thermofisher.cdcam.services.URLService;
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.Utils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Set;
 
 
 @RestController
@@ -103,14 +101,14 @@ public class ResetPasswordController {
     @PostMapping("/email")
     @Operation(description = "sends the request to reset a password.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Bad request."),
-        @ApiResponse(responseCode = "500", description = "Internal server error.")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     public ResponseEntity<?> sendResetPasswordEmail(
-        @RequestBody ResetPasswordRequest body,
-        @CookieValue(name = "cip_authdata", required = false) String cipAuthData,
-        @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
+            @RequestBody ResetPasswordRequest body,
+            @CookieValue(name = "cip_authdata", required = false) String cipAuthData,
+            @RequestHeader(name = ReCaptchaService.CAPTCHA_TOKEN_HEADER, required = false) String captchaValidationToken
     ) {
         log.info(String.format("Requested reset password for user: %s", body.getUsername()));
         if (Utils.isNullOrEmpty(cipAuthData)) {
@@ -154,9 +152,9 @@ public class ResetPasswordController {
     @PutMapping("/")
     @Operation(description = "resets the password.")
     @ApiResponses({
-            @ApiResponse(responseCode= "200", description = "OK"),
-            @ApiResponse(responseCode= "400", description = "Bad request."),
-            @ApiResponse(responseCode= "500", description = "Internal server error.")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordSubmit body) {
         log.info(String.format("Reset password process started for: %s", body.getUid()));
@@ -194,14 +192,14 @@ public class ResetPasswordController {
             log.info(String.format("Build password update notification started for: %s", body.getUid()));
             String hashedPassword = HashingService.toMD5(body.getNewPassword());
             PasswordUpdateNotification passwordUpdateNotification = PasswordUpdateNotification.builder()
-                .newPassword(hashedPassword)
-                .uid(body.getUid())
-                .build();
+                    .newPassword(hashedPassword)
+                    .uid(body.getUid())
+                    .build();
             notificationService.sendPasswordUpdateNotification(passwordUpdateNotification);
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            log.error(String.format("An exception occurred: %s",e.getMessage()));
+            log.error(String.format("An exception occurred: %s", e.getMessage()));
             ResetPasswordResponse response = createResetPasswordResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -210,17 +208,17 @@ public class ResetPasswordController {
     @GetMapping(value = {"/oidc/rp", "/rp"})
     @Operation(description = "Redirect to the Request Reset Password Url. Validates cip_authdata cookie.")
     @ApiResponses({
-            @ApiResponse(responseCode= "302", description = "RP config found, will set cookie data and redirect to Registration page."),
-            @ApiResponse(responseCode= "400", description = "Bad request, missing or invalid params."),
-            @ApiResponse(responseCode= "404", description = "clientId not found."),
-            @ApiResponse(responseCode= "500", description = "Internal server error.")
+            @ApiResponse(responseCode = "302", description = "RP config found, will set cookie data and redirect to Registration page."),
+            @ApiResponse(responseCode = "400", description = "Bad request, missing or invalid params."),
+            @ApiResponse(responseCode = "404", description = "clientId not found."),
+            @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
     @Parameters({
             @Parameter(name = "client_id", description = "RP Client ID", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
             @Parameter(name = "redirect_uri", description = "URL to redirect", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
             @Parameter(name = "state", description = "State", schema = @Schema(type = "string"), in = ParameterIn.QUERY, required = false),
             @Parameter(name = "response_type", description = "Response Type", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY),
-            @Parameter(name = "scope", description = "Scope", required = true,schema = @Schema(type = "string"), in = ParameterIn.QUERY)
+            @Parameter(name = "scope", description = "Scope", required = true, schema = @Schema(type = "string"), in = ParameterIn.QUERY)
     })
     public ResponseEntity<?> getRPResetPasswordConfig(
             @RequestParam("client_id") String clientId,
@@ -275,8 +273,7 @@ public class ResetPasswordController {
                     .header(HttpHeaders.SET_COOKIE, cipAuthDataCookie)
                     .header(HttpHeaders.LOCATION, rpRedirectUri)
                     .build();
-        }
-        catch (CustomGigyaErrorException customGigyaException) {
+        } catch (CustomGigyaErrorException customGigyaException) {
             if (customGigyaException.getMessage().contains("404000")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
@@ -287,7 +284,7 @@ public class ResetPasswordController {
         }
     }
 
-    private ResetPasswordResponse createResetPasswordResponse(int responseCode,String responseMessage) {
+    private ResetPasswordResponse createResetPasswordResponse(int responseCode, String responseMessage) {
         return ResetPasswordResponse.builder()
                 .responseCode(responseCode)
                 .responseMessage(responseMessage)

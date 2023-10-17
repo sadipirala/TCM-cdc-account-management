@@ -20,7 +20,6 @@ import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +27,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -77,11 +74,11 @@ public class LiteRegistrationServiceTests {
 
     private CDCAccount buildAccount(String uid, boolean isActive, boolean isRegistered, Profile profile) {
         return CDCAccount.builder()
-        .UID(uid)
-        .isActive(isActive)
-        .isRegistered(isRegistered)
-        .profile(profile)
-        .build();
+                .UID(uid)
+                .isActive(isActive)
+                .isRegistered(isRegistered)
+                .profile(profile)
+                .build();
     }
 
     @Test
@@ -200,7 +197,7 @@ public class LiteRegistrationServiceTests {
 
         // when
         List<EECUserV2> result = liteRegistrationService.registerEmailAccounts(emailList);
-        
+
         // then
         EECUserV2 userV2 = (EECUserV2) result.get(0);
         Assertions.assertEquals(MOCKED_UID, userV2.getUid());
@@ -232,7 +229,7 @@ public class LiteRegistrationServiceTests {
 
         // when
         List<EECUserV2> output = liteRegistrationService.registerEmailAccounts(emailList);
-        
+
         // then
         EECUserV2 userV2 = (EECUserV2) output.get(0);
         Assertions.assertEquals(MOCKED_UID, userV2.getUid());
@@ -268,7 +265,7 @@ public class LiteRegistrationServiceTests {
     public void createLiteAccountsV2_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
 //        when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
-        
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -370,7 +367,7 @@ public class LiteRegistrationServiceTests {
 
         // when
         List<EECUser> result = liteRegistrationService.createLiteAccountsV1(emailList);
-        
+
         // then
         EECUserV1 userV1 = (EECUserV1) result.get(0);
         Assertions.assertEquals(MOCKED_UID, userV1.getUid());
@@ -387,7 +384,7 @@ public class LiteRegistrationServiceTests {
         CDCSearchResponse cdcSearchResponse = new CDCSearchResponse();
         cdcSearchResponse.setResults(accounts);
         SearchResponse searchResponse = SearchResponse.builder().cdcSearchResponse(cdcSearchResponse).dataCenter(DataCenter.US).build();
-  //      when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
+        //      when(gigyaService.search(anyString(), any(), any())).thenReturn(cdcSearchResponse);
         when(gigyaService.searchInBothDC(anyString())).thenReturn(searchResponse);
 
         CDCResponseData cdcResponseData = new CDCResponseData();
@@ -400,7 +397,7 @@ public class LiteRegistrationServiceTests {
 
         // when
         List<EECUser> output = liteRegistrationService.createLiteAccountsV1(emailList);
-        
+
         // then
         EECUserV1 userV1 = (EECUserV1) output.get(0);
         Assertions.assertEquals(MOCKED_UID, userV1.getUid());
@@ -435,7 +432,7 @@ public class LiteRegistrationServiceTests {
     public void createLiteAccountsV1_givenSearchThrowsAnyOtherException_returnEECUserWith500Error() throws IOException, CustomGigyaErrorException {
         // given
 //        when(gigyaService.search(anyString(), any(), anyString())).thenThrow(new IOException());
-        
+
         List<String> emails = new ArrayList<String>();
         emails.add("test1@mail.com");
         EmailList emailList = EmailList.builder().emails(emails).build();
@@ -474,7 +471,7 @@ public class LiteRegistrationServiceTests {
 
         // when
         List<EECUser> result = liteRegistrationService.createLiteAccountsV1(emailList);
-        
+
         // then
         EECUserV1 userV1 = (EECUserV1) result.get(0);
         Assertions.assertEquals(ResponseCode.SUCCESS.getValue(), userV1.getResponseCode());
@@ -484,25 +481,25 @@ public class LiteRegistrationServiceTests {
     public void registerLiteAccounts_givenValidAccount_thenReturnSuccess() throws CustomGigyaErrorException, IOException, GSKeyNotFoundException, JSONException {
         // given
         setProperties();
-        when( gigyaService.searchInBothDC(MOCKED_EMAIL_1))
-            .thenReturn(
-                SearchResponse
-                    .builder()
-                    .cdcSearchResponse(
-                        CDCSearchResponse
-                            .builder()
-                            .results(Collections.emptyList())
-                            .build()
-                    )
-                    .build()
-            );
+        when(gigyaService.searchInBothDC(MOCKED_EMAIL_1))
+                .thenReturn(
+                        SearchResponse
+                                .builder()
+                                .cdcSearchResponse(
+                                        CDCSearchResponse
+                                                .builder()
+                                                .results(Collections.emptyList())
+                                                .build()
+                                )
+                                .build()
+                );
         when(gigyaService.registerLiteAccount(any(LiteAccountDTO.class)))
-            .thenReturn(
-                CDCResponseData
-                    .builder()
-                    .UID(MOCKED_UID)
-                    .build()
-            );
+                .thenReturn(
+                        CDCResponseData
+                                .builder()
+                                .UID(MOCKED_UID)
+                                .build()
+                );
 
         LiteAccountDTO account = LiteAccountDTO.builder()
                 .email(MOCKED_EMAIL_1)
@@ -527,25 +524,25 @@ public class LiteRegistrationServiceTests {
     public void registerLiteAccounts_givenValidAccountWithoutClientId_thenReturnSuccessWithDefaultClientId() throws Exception {
         // given
         setProperties();
-        when( gigyaService.searchInBothDC(MOCKED_EMAIL_1))
-            .thenReturn(
-                SearchResponse
-                    .builder()
-                    .cdcSearchResponse(
-                        CDCSearchResponse
-                            .builder()
-                            .results(Collections.emptyList())
-                            .build()
-                    )
-                    .build()
-            );
+        when(gigyaService.searchInBothDC(MOCKED_EMAIL_1))
+                .thenReturn(
+                        SearchResponse
+                                .builder()
+                                .cdcSearchResponse(
+                                        CDCSearchResponse
+                                                .builder()
+                                                .results(Collections.emptyList())
+                                                .build()
+                                )
+                                .build()
+                );
         when(gigyaService.registerLiteAccount(any(LiteAccountDTO.class)))
-            .thenReturn(
-                CDCResponseData
-                    .builder()
-                    .UID(MOCKED_UID)
-                    .build()
-            );
+                .thenReturn(
+                        CDCResponseData
+                                .builder()
+                                .UID(MOCKED_UID)
+                                .build()
+                );
 
         LiteAccountDTO account = LiteAccountDTO.builder()
                 .email(MOCKED_EMAIL_1)
@@ -585,10 +582,10 @@ public class LiteRegistrationServiceTests {
         // given
         setProperties();
         List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email("test-email").build());
-    
+
         // when
         List<EECUserV3> result = liteRegistrationService.registerLiteAccounts(request);
-    
+
         // then
         Assertions.assertEquals(1, result.size());
         Assertions.assertEquals(RESPONSE_CODE_BAD_REQUEST, result.get(0).getResponseCode());
@@ -598,7 +595,7 @@ public class LiteRegistrationServiceTests {
     public void registerLiteAccounts_givenUnexpectedException_thenReturnGenericErrorCode() throws Exception {
         // given
         setProperties();
-        when( gigyaService.searchInBothDC(MOCKED_EMAIL_1)).thenThrow(RuntimeException.class);
+        when(gigyaService.searchInBothDC(MOCKED_EMAIL_1)).thenThrow(RuntimeException.class);
 
         List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(MOCKED_EMAIL_1).build());
 
@@ -614,7 +611,7 @@ public class LiteRegistrationServiceTests {
     public void registerLiteAccounts_givenCustomGigyaException_thenReturnGigyaErrorCode() throws Exception {
         // given
         setProperties();
-        when( gigyaService.searchInBothDC(MOCKED_EMAIL_1)).thenThrow(new CustomGigyaErrorException(MOCKED_GIGYA_ERROR_MSG, MOCKED_GIGYA_ERROR_CODE));
+        when(gigyaService.searchInBothDC(MOCKED_EMAIL_1)).thenThrow(new CustomGigyaErrorException(MOCKED_GIGYA_ERROR_MSG, MOCKED_GIGYA_ERROR_CODE));
 
         List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(MOCKED_EMAIL_1).build());
 
@@ -631,18 +628,18 @@ public class LiteRegistrationServiceTests {
     public void registerLiteAccounts_givenAnExistingAccount_thenReturnAccountAlreadyExists() throws IllegalArgumentException, CustomGigyaErrorException, IOException {
         // given
         setProperties();
-        when( gigyaService.searchInBothDC(MOCKED_EMAIL_1))
-        .thenReturn(
-            SearchResponse.builder()
-                .cdcSearchResponse(
-                    CDCSearchResponse.builder()
-                        .results(Collections.singletonList(
-                            CDCAccount.builder().UID(MOCKED_UID).profile(Profile.builder().email(MOCKED_EMAIL_1).build()).build()))
-                    .build()
-                )
-            .build()
-        );
-        
+        when(gigyaService.searchInBothDC(MOCKED_EMAIL_1))
+                .thenReturn(
+                        SearchResponse.builder()
+                                .cdcSearchResponse(
+                                        CDCSearchResponse.builder()
+                                                .results(Collections.singletonList(
+                                                        CDCAccount.builder().UID(MOCKED_UID).profile(Profile.builder().email(MOCKED_EMAIL_1).build()).build()))
+                                                .build()
+                                )
+                                .build()
+                );
+
         LiteAccountDTO account = LiteAccountDTO.builder()
                 .email(MOCKED_EMAIL_1)
                 .build();
@@ -670,10 +667,10 @@ public class LiteRegistrationServiceTests {
         // given
         setProperties();
         List<LiteAccountDTO> request = Arrays.asList(
-            LiteAccountDTO.builder().build(),
-            LiteAccountDTO.builder().build(),
-            LiteAccountDTO.builder().build(),
-            LiteAccountDTO.builder().build()
+                LiteAccountDTO.builder().build(),
+                LiteAccountDTO.builder().build(),
+                LiteAccountDTO.builder().build(),
+                LiteAccountDTO.builder().build()
         );
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {

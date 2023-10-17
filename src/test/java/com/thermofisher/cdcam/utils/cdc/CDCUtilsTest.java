@@ -2,15 +2,14 @@ package com.thermofisher.cdcam.utils.cdc;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(value= SpringExtension.class)
+@ExtendWith(value = SpringExtension.class)
 public class CDCUtilsTest {
-    
+
     @Test
     public void isSecondaryDCSupported_ShouldReturnTrueIfEnvContains_qa4() {
         // given

@@ -1,37 +1,39 @@
 package com.thermofisher.cdcam.builders;
 
-import java.util.HashMap;
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+
 @Slf4j
 public class IdentityProviderBuilder {
 
     public IdentityProviderResponse getIdPInformation(GSObject obj) {
         try {
-        GSObject config = (GSObject) obj.get("config");
-        GSObject attributeMap = config.containsKey("attributeMap") ? (GSObject) config.get("attributeMap") : null;
+            GSObject config = (GSObject) obj.get("config");
+            GSObject attributeMap = config.containsKey("attributeMap") ? (GSObject) config.get("attributeMap") : null;
 
-        return IdentityProviderResponse.builder()
-            .name(config.containsKey("name") ? config.getString("name") : "")
-            .entityID(config.containsKey("entityID") ? config.getString("entityID") : "")
-            .singleSignOnServiceUrl(config.containsKey("singleSignOnServiceUrl") ? config.getString("singleSignOnServiceUrl") : "")
-            .singleSignOnServiceBinding(config.containsKey("singleSignOnServiceBinding") ? config.getString("singleSignOnServiceBinding") : "")
-            .singleLogoutServiceUrl(config.containsKey("singleLogoutServiceUrl") ? config.getString("singleLogoutServiceUrl") : "")
-            .singleLogoutServiceBinding(config.containsKey("singleLogoutServiceBinding") ? config.getString("singleLogoutServiceBinding") : "")
-            .nameIDFormat(config.containsKey("nameIDFormat") ? config.getString("nameIDFormat") : "")
-            .attributeMap(getArrayNode(attributeMap))
-            .certificate(config.containsKey("certificate") ? config.getString("certificate") : "")
-            .spSigningAlgorithm(config.containsKey("spSigningAlgorithm") ? config.getString("spSigningAlgorithm") : "")
-            .signAuthnRequest(config.containsKey("signAuthnRequest") ? config.getBool("signAuthnRequest") : false)
-            .requireSAMLResponseSigned(config.containsKey("requireSAMLResponseSigned") ? config.getBool("requireSAMLResponseSigned") : false)
-            .requireAssertionSigned(config.containsKey("requireAssertionSigned") ? config.getBool("requireAssertionSigned") : false)
-            .requireAssertionEncrypted(config.containsKey("requireAssertionEncrypted") ? config.getBool("requireAssertionEncrypted") : false)
-            .useSessionNotOnOrAfter(config.containsKey("useSessionNotOnOrAfter") ? config.getBool("useSessionNotOnOrAfter") : false)
-            .build();
+            return IdentityProviderResponse.builder()
+                    .name(config.containsKey("name") ? config.getString("name") : "")
+                    .entityID(config.containsKey("entityID") ? config.getString("entityID") : "")
+                    .singleSignOnServiceUrl(config.containsKey("singleSignOnServiceUrl") ? config.getString("singleSignOnServiceUrl") : "")
+                    .singleSignOnServiceBinding(config.containsKey("singleSignOnServiceBinding") ? config.getString("singleSignOnServiceBinding") : "")
+                    .singleLogoutServiceUrl(config.containsKey("singleLogoutServiceUrl") ? config.getString("singleLogoutServiceUrl") : "")
+                    .singleLogoutServiceBinding(config.containsKey("singleLogoutServiceBinding") ? config.getString("singleLogoutServiceBinding") : "")
+                    .nameIDFormat(config.containsKey("nameIDFormat") ? config.getString("nameIDFormat") : "")
+                    .attributeMap(getArrayNode(attributeMap))
+                    .certificate(config.containsKey("certificate") ? config.getString("certificate") : "")
+                    .spSigningAlgorithm(config.containsKey("spSigningAlgorithm") ? config.getString("spSigningAlgorithm") : "")
+                    .signAuthnRequest(config.containsKey("signAuthnRequest") ? config.getBool("signAuthnRequest") : false)
+                    .requireSAMLResponseSigned(config.containsKey("requireSAMLResponseSigned") ? config.getBool("requireSAMLResponseSigned") : false)
+                    .requireAssertionSigned(config.containsKey("requireAssertionSigned") ? config.getBool("requireAssertionSigned") : false)
+                    .requireAssertionEncrypted(config.containsKey("requireAssertionEncrypted") ? config.getBool("requireAssertionEncrypted") : false)
+                    .useSessionNotOnOrAfter(config.containsKey("useSessionNotOnOrAfter") ? config.getBool("useSessionNotOnOrAfter") : false)
+                    .build();
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             log.error(String.format("Error building IdP info object. Message: %s", e.getMessage()));
             return null;
         }

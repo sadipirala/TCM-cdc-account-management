@@ -1,7 +1,10 @@
 package com.thermofisher.cdcam.model.identityProvider;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.HashMap;
-import lombok.*;
 
 @Getter
 @Setter

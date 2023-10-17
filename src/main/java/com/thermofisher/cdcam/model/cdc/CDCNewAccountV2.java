@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam.model.cdc;
 
 import com.google.gson.Gson;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +19,7 @@ public class CDCNewAccountV2 {
     public static CDCNewAccountV2 build(String username, String email, String password, Data data, Profile profile, Preferences preferences) {
         String dataString = new Gson().toJson(data);
         String profileString = new Gson().toJson(profile);
-        String preferencesString = new Gson().toJson(preferences); 
+        String preferencesString = new Gson().toJson(preferences);
 
         return CDCNewAccountV2.builder()
                 .username(username)

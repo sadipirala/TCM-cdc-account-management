@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 @Slf4j
 @Service
 public class LiteRegistrationService {
@@ -51,7 +52,7 @@ public class LiteRegistrationService {
         log.info(String.format("Lite registration initiated. %d users requested", liteAccountList.size()));
         String errorMessage = "";
 
-        if(Utils.isNullOrEmpty(liteAccountList)) {
+        if (Utils.isNullOrEmpty(liteAccountList)) {
             errorMessage = "No users requested.";
             log.error(errorMessage);
             throw new IllegalArgumentException(errorMessage);
@@ -65,10 +66,10 @@ public class LiteRegistrationService {
 
         for (LiteAccountDTO account : liteAccountList) {
             try {
-                if(Utils.isNullOrEmpty(account.getEmail())) {
+                if (Utils.isNullOrEmpty(account.getEmail())) {
                     throw new IllegalArgumentException("Email is null or empty.");
                 }
-                if(!Utils.isValidEmail(account.getEmail())) {
+                if (!Utils.isValidEmail(account.getEmail())) {
                     throw new IllegalArgumentException("Email is invalid.");
                 }
                 EECUserV3 user = registerLiteAccount(account);
@@ -188,9 +189,9 @@ public class LiteRegistrationService {
         List<EECUserV2> liteRegisteredUsersV2 = registerEmailAccounts(emailList);
         List<EECUser> liteRegisteredUsersV1 = new ArrayList<>();
 
-        for(EECUserV2 eecuser : liteRegisteredUsersV2) {
+        for (EECUserV2 eecuser : liteRegisteredUsersV2) {
             EECUser eecUserV1 = EECUserV1.build(eecuser);
-            
+
             if (eecUserV1.getResponseCode() == ResponseCode.LOGINID_ALREADY_EXISTS.getValue()) {
                 eecUserV1.setResponseCode(ResponseCode.SUCCESS.getValue());
             }

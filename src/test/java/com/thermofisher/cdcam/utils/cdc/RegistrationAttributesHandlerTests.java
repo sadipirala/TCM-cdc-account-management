@@ -7,7 +7,6 @@ import com.thermofisher.cdcam.model.cdc.Korea;
 import com.thermofisher.cdcam.model.cdc.Registration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -16,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 @ActiveProfiles("test")
-@ExtendWith(value= SpringExtension.class)
+@ExtendWith(value = SpringExtension.class)
 public class RegistrationAttributesHandlerTests {
     private RegistrationAttributesHandler registrationAttributesHandler;
 
@@ -91,7 +90,7 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getInterest_IfChinaObjectIsNotNull_ShouldReturnInterest(){
+    public void getInterest_IfChinaObjectIsNotNull_ShouldReturnInterest() {
         // given
         China mockChina = China.builder().interest("China Interest").build();
         Registration registration = Registration.builder().china(mockChina).build();
@@ -119,7 +118,7 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getPhoneNumber_IfChinaObjectIsNotNull_ShouldReturnPhoneNumber(){
+    public void getPhoneNumber_IfChinaObjectIsNotNull_ShouldReturnPhoneNumber() {
         // given
         China mockChina = China.builder().phoneNumber("6648675309").build();
         Registration registration = Registration.builder().china(mockChina).build();
@@ -161,7 +160,7 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnThirdPartyTransferPersonalInfoMandatoryNull(){
+    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNull_ShouldReturnThirdPartyTransferPersonalInfoMandatoryNull() {
         // given
         Korea mockKorea = null;
         Registration registration = Registration.builder().korea(mockKorea).build();
@@ -175,7 +174,7 @@ public class RegistrationAttributesHandlerTests {
     }
 
     @Test
-    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnThirdPartyTransferPersonalInfoMandatory(){
+    public void getThirdPartyTransferPersonalInfoMandatory_IfKoreaObjectIsNotNull_ShouldReturnThirdPartyTransferPersonalInfoMandatory() {
         // given
         Korea mockKorea = Korea.builder().thirdPartyTransferPersonalInfoMandatory(true).build();
         Registration registration = Registration.builder().korea(mockKorea).build();

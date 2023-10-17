@@ -6,7 +6,6 @@ import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseExcep
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +15,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -91,7 +88,7 @@ public class ReCaptchaServiceTests {
         when(httpService.post(any())).thenReturn(httpResponse);
 
         // then
-        Assertions.assertThrows(ReCaptchaUnsuccessfulResponseException.class,()-> {
+        Assertions.assertThrows(ReCaptchaUnsuccessfulResponseException.class, () -> {
             reCaptchaService.verifyToken(reCaptchaToken, captchaValidationJWT);
         });
     }

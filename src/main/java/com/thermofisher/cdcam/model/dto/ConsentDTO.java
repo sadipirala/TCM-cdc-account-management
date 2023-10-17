@@ -1,12 +1,11 @@
 package com.thermofisher.cdcam.model.dto;
 
 import com.thermofisher.cdcam.model.OptionalRequiredConstraint;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 @Builder
 @Getter

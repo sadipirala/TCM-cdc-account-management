@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;
 import com.thermofisher.cdcam.utils.Utils;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,10 +35,10 @@ public class CIPAuthDataDTO {
 
     @SerializedName("regRedirectUri")
     private String regRedirectUri;
-  
+
     @SerializedName("signInRedirectUri")
     private String signInRedirectUri;
-  
+
     @SerializedName("returnUrl")
     private String returnUrl;
 
@@ -50,8 +49,8 @@ public class CIPAuthDataDTO {
 
     @JsonIgnore
     public boolean isCipAuthDataValid() {
-        return (this.clientId != null && this.redirectUri != null && this.scope != null && this.responseType != null) 
-        || (this.clientId != null && this.regRedirectUri != null && this.signInRedirectUri != null);
+        return (this.clientId != null && this.redirectUri != null && this.scope != null && this.responseType != null)
+                || (this.clientId != null && this.regRedirectUri != null && this.signInRedirectUri != null);
     }
 
     @JsonIgnore

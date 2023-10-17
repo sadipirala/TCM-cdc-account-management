@@ -18,12 +18,10 @@ import com.thermofisher.cdcam.services.LoginService;
 import com.thermofisher.cdcam.services.NotificationService;
 import com.thermofisher.cdcam.services.ReCaptchaService;
 import com.thermofisher.cdcam.services.SecretsService;
-import com.thermofisher.cdcam.utils.AccountUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,15 +31,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -72,7 +65,7 @@ public class ResetPasswordControllerTests {
 
     @Mock
     CookieService cookieService;
-    
+
     @Mock
     EncodeService encodeService;
 
@@ -91,7 +84,7 @@ public class ResetPasswordControllerTests {
     @Mock
     SecretsService secretsService;
 
-    
+
     @Captor
     ArgumentCaptor<String> reCaptchaSecretCaptor;
 
@@ -246,7 +239,7 @@ public class ResetPasswordControllerTests {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
 //        when(gigyaService.getEmailByUsername(username)).thenReturn(email);
         when(gigyaService.resetPasswordRequest(username)).thenThrow(new CustomGigyaErrorException(""));
- //       when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
+        //       when(encodeService.encodeBase64(anyString())).thenReturn(COOKIE_CIP_AUTHDATA_VALID.getBytes());
 
         //when
         ResponseEntity<?> result = resetPasswordController.sendResetPasswordEmail(resetPasswordRequestBody, new String(), null);
@@ -277,10 +270,10 @@ public class ResetPasswordControllerTests {
     public void resetPassword_WhenAValidBodyIsSent_ShouldTriggerRequestForResetPasswordConfirmationEmail_AndReturnOK() throws CustomGigyaErrorException {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a")
-            .build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a")
+                .build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
 //        when(gigyaService.getAccountInfo(any())).thenReturn(AccountUtils.getSiteAccount());
@@ -290,16 +283,16 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         //then
-        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.OK);
+        assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
     public void resetPassword_WhenTheSNSHandlerFails_returnINTERNAL_SERVER_ERROR() {
         // given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
@@ -308,16 +301,16 @@ public class ResetPasswordControllerTests {
         ResponseEntity<ResetPasswordResponse> resetPasswordResponse = resetPasswordController.resetPassword(mockResetPasswordBody);
 
         // then
-        assertEquals(resetPasswordResponse.getStatusCode(),HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(resetPasswordResponse.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void resetPassword_WhenAnExceptionIsThrown_returnINTERNAL_SERVER_ERROR() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(0);
         when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
         doThrow(NullPointerException.class).when(notificationService).sendPasswordUpdateNotification(any());
@@ -333,9 +326,9 @@ public class ResetPasswordControllerTests {
     public void resetPassword_WhenTheResetPasswordOnCDCFails_returnBAD_REQUEST() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(40001);
         when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 
@@ -351,9 +344,9 @@ public class ResetPasswordControllerTests {
     public void resetPassword_WhenTheResetPasswordTokenExpires_returnFOUND() {
         //given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(resetPasswordResponseMock.getResponseCode()).thenReturn(403025);
         when(gigyaService.resetPasswordSubmit(any())).thenReturn(resetPasswordResponseMock);
 
@@ -383,7 +376,7 @@ public class ResetPasswordControllerTests {
         ResponseEntity<?> response = resetPasswordController.getRPResetPasswordConfig(CLIENT_ID, REDIRECT_URL, STATE, RESPONSE_TYPE, SCOPE);
 
         // then
-        assertEquals(response.getStatusCode(), HttpStatus.FOUND );
+        assertEquals(response.getStatusCode(), HttpStatus.FOUND);
         assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Set-Cookie")));
         assertTrue(!Utils.isNullOrEmpty(response.getHeaders().get("Location")));
     }
@@ -465,12 +458,12 @@ public class ResetPasswordControllerTests {
     public void resetPassword_GivenUpdateForRequirePasswordCheck_ResponseShouldBeSuccessful() throws CustomGigyaErrorException {
         // given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         doNothing().when(gigyaService).updateRequirePasswordCheck(any());
-        
+
         // when
         ResponseEntity<ResetPasswordResponse> response = resetPasswordController.resetPassword(mockResetPasswordBody);
 
@@ -483,12 +476,12 @@ public class ResetPasswordControllerTests {
     public void resetPassword_GivenUpdateRequirePasswordCheckThrowsException_ResponseShouldStillBeSuccessful() throws CustomGigyaErrorException {
         // given
         ResetPasswordSubmit mockResetPasswordBody = ResetPasswordSubmit.builder()
-            .newPassword("testPassword1")
-            .resetPasswordToken("testTkn")
-            .uid("62623d97356b4815a9965d912fa3331a").build();
+                .newPassword("testPassword1")
+                .resetPasswordToken("testTkn")
+                .uid("62623d97356b4815a9965d912fa3331a").build();
         when(gigyaService.resetPasswordSubmit(mockResetPasswordBody)).thenReturn(resetPasswordResponseMock);
         doThrow(CustomGigyaErrorException.class).when(gigyaService).updateRequirePasswordCheck(any());
-        
+
         // when
         ResponseEntity<ResetPasswordResponse> response = resetPasswordController.resetPassword(mockResetPasswordBody);
 

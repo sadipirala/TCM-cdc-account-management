@@ -1,16 +1,12 @@
 package com.thermofisher.cdcam.controller;
 
-import java.util.Objects;
-
+import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
+import com.thermofisher.cdcam.services.GigyaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.constraints.NotBlank;
-
-import com.thermofisher.cdcam.model.identityProvider.IdentityProviderResponse;
-import com.thermofisher.cdcam.services.GigyaService;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,6 +17,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Objects;
 
 
 @RestController
@@ -43,12 +41,12 @@ public class IdentityProviderController {
     public ResponseEntity<IdentityProviderResponse> getIdentityProviderInformation(@PathVariable @NotBlank String identityProvider) {
         log.info("Identity Provider information requested.");
         IdentityProviderResponse idpInformation = gigyaService.getIdPInformation(identityProvider);
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.add("error-details", String.format("Registered idp name %s not found.", identityProvider));
-        
-        return Objects.nonNull(idpInformation) 
-            ? new ResponseEntity<>(idpInformation, HttpStatus.OK)  
-            : new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
+
+        return Objects.nonNull(idpInformation)
+                ? new ResponseEntity<>(idpInformation, HttpStatus.OK)
+                : new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
     }
 }

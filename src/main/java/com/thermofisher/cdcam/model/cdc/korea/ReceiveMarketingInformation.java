@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ReceiveMarketingInformation {
-	private boolean isConsentGranted;
+    private boolean isConsentGranted;
 }

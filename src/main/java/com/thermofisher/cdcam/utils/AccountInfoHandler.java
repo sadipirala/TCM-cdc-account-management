@@ -1,10 +1,5 @@
 package com.thermofisher.cdcam.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,8 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
-
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * AccountInfoHandler
@@ -101,7 +100,7 @@ public class AccountInfoHandler {
     }
 
     public static Map<String, MessageAttributeValue> buildMessageAttributesForAccountInfoSNS(AccountInfo account) {
-        final String NA_COUNTRY_VALUE =  "NOT_AVAILABLE";
+        final String NA_COUNTRY_VALUE = "NOT_AVAILABLE";
         String countryValue = account.getCountry();
         String country = (countryValue != null && !countryValue.trim().isEmpty()) ? countryValue : NA_COUNTRY_VALUE;
         Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();

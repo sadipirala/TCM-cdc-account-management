@@ -20,7 +20,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,9 +31,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -82,23 +78,23 @@ public class AccountsServiceTests {
         uids.add("002");
         uids.add("003");
         federationAccount = AccountInfo.builder()
-            .uid("0055")
-            .username("federatedUser@OIDC.com")
-            .emailAddress("federatedUser@OIDC.com")
-            .firstName("first")
-            .lastName("last")
-            .country("country")    
-            .localeName("en_US")
-            .loginProvider("oidc")
-            .password("Randompassword1")
-            .regAttempts(0)
-            .city("testCity")
-            .company("myCompany")
-            .build();
+                .uid("0055")
+                .username("federatedUser@OIDC.com")
+                .emailAddress("federatedUser@OIDC.com")
+                .firstName("first")
+                .lastName("last")
+                .country("country")
+                .localeName("en_US")
+                .loginProvider("oidc")
+                .password("Randompassword1")
+                .regAttempts(0)
+                .city("testCity")
+                .company("myCompany")
+                .build();
     }
 
     @Test
-    public void onAccountRegistered_GivenUIDisValid_ThenGetAccountInfo() throws IOException, CustomGigyaErrorException{
+    public void onAccountRegistered_GivenUIDisValid_ThenGetAccountInfo() throws IOException, CustomGigyaErrorException {
         // given
         String uid = UUID.randomUUID().toString();
         when(gigyaService.getAccountInfo(anyString())).thenReturn(federationAccount);
@@ -111,7 +107,7 @@ public class AccountsServiceTests {
     }
 
     @Test
-    public void onAccountRegistered_ThenSaveAWSQuickSightRole() throws IOException, CustomGigyaErrorException, JSONException{
+    public void onAccountRegistered_ThenSaveAWSQuickSightRole() throws IOException, CustomGigyaErrorException, JSONException {
         // given
         String uid = UUID.randomUUID().toString();
         String mockQuickSightRole = RandomStringUtils.random(10);
@@ -129,10 +125,10 @@ public class AccountsServiceTests {
     }
 
     @Test
-    public void onAccountRegistered_ThenSaveOpenIdProviderDescription() throws IOException, CustomGigyaErrorException, JSONException, GSKeyNotFoundException{
+    public void onAccountRegistered_ThenSaveOpenIdProviderDescription() throws IOException, CustomGigyaErrorException, JSONException, GSKeyNotFoundException {
         // given
         String uid = UUID.randomUUID().toString();
-        
+
         String providerClientId = RandomStringUtils.random(10);
         String providerDescriptionMock = RandomStringUtils.random(10);
         OpenIdRelyingParty rpMock = OpenIdRelyingParty.builder().clientId(providerClientId).description(providerDescriptionMock).build();
@@ -141,7 +137,7 @@ public class AccountsServiceTests {
         federationAccount.setOpenIdProviderId(providerClientId);
         when(gigyaService.getAccountInfo(anyString())).thenReturn(federationAccount);
         doNothing().when(gigyaService).setAccountInfo(any(CDCAccount.class));
-        
+
         // when
         accountsService.onAccountRegistered(uid);
 
@@ -149,21 +145,21 @@ public class AccountsServiceTests {
         verify(gigyaService).setAccountInfo(cdcAccountCaptor.capture());
         CDCAccount capturedCdcAccount = cdcAccountCaptor.getValue();
         String providerDescriptionResult = capturedCdcAccount.getData()
-            .getRegistration()
-            .getOpenIdProvider()
-            .getProviderName();
+                .getRegistration()
+                .getOpenIdProvider()
+                .getProviderName();
         assertEquals(providerDescriptionMock, providerDescriptionResult);
     }
 
     @Test
-    public void onAccountRegistered_GivenAccountDoesntHaveProvider_ThenShouldNotFetchRPData_AndSavedProviderShouldBeNull() throws IOException, CustomGigyaErrorException, JSONException, GSKeyNotFoundException{
+    public void onAccountRegistered_GivenAccountDoesntHaveProvider_ThenShouldNotFetchRPData_AndSavedProviderShouldBeNull() throws IOException, CustomGigyaErrorException, JSONException, GSKeyNotFoundException {
         // given
         String uid = UUID.randomUUID().toString();
 //        when(gigyaService.getRP(anyString())).thenCallRealMethod();
 
         when(gigyaService.getAccountInfo(anyString())).thenReturn(federationAccount);
         doNothing().when(gigyaService).setAccountInfo(any(CDCAccount.class));
-        
+
         // when
         accountsService.onAccountRegistered(uid);
 
@@ -172,8 +168,8 @@ public class AccountsServiceTests {
         verify(gigyaService).setAccountInfo(cdcAccountCaptor.capture());
         CDCAccount capturedCdcAccount = cdcAccountCaptor.getValue();
         OpenIdProvider openIdProviderResult = capturedCdcAccount.getData()
-            .getRegistration()
-            .getOpenIdProvider();
+                .getRegistration()
+                .getOpenIdProvider();
         assertNull(openIdProviderResult);
     }
 
@@ -204,7 +200,7 @@ public class AccountsServiceTests {
     }
 
     @Test
-    public void processRegistrationRequest_givenANullAccount_ThrowNullPointerException() throws NoSuchAlgorithmException, JSONException, IOException, CustomGigyaErrorException{
+    public void processRegistrationRequest_givenANullAccount_ThrowNullPointerException() throws NoSuchAlgorithmException, JSONException, IOException, CustomGigyaErrorException {
         Assertions.assertThrows(NullPointerException.class, () -> {
             accountsService.createAccount(null);
         });

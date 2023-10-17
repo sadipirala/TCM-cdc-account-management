@@ -3,7 +3,6 @@ package com.thermofisher.cdcam.services;
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.properties.EmailVerificationProperties;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +12,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,10 +31,12 @@ public class EmailVerificationServiceTests {
 
     @Mock
     GigyaService gigyaService;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     public void getDefaultVerifiedDate_GivenFeatureDisabled_ShouldReturnDefaultVerifiedDate() {
         try (MockedStatic<EmailVerificationProperties> emailVerificationProperties = Mockito.mockStatic(EmailVerificationProperties.class)) {
@@ -195,7 +194,7 @@ public class EmailVerificationServiceTests {
         // expect
         assertFalse(result);
     }
-    
+
     @Test
     public void sendVerificationByLinkEmailSync_triggerVerificationEmailProcess_givenRequestIsSuccessful_whenTriggered_ReturnResponse() throws IOException {
         // given

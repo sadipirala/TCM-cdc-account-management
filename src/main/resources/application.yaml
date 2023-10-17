@@ -23,13 +23,13 @@ spring:
 
 server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
-    
+
 cdcam.secrets: cdcam-secrets
-    
+
 recaptcha.siteverify.url: https://www.google.com/recaptcha/api/siteverify
-    
+
 account.legacy_username.validation: false
-    
+
 eec.v3.request.limit: 100
 ---
 spring.profiles.group.qa1: qa1_shared,debug
@@ -51,7 +51,7 @@ spring.profiles.group.prod-cn: prod_cn_shared,debug
 spring.profiles.group.test: test_shared,debug
 ---
 spring.config.activate.on-profile: debug
-  # set debug log levels by package name below
+# set debug log levels by package name below
 logging.level:
   httpclient.wire: INFO
   org.springframework: INFO

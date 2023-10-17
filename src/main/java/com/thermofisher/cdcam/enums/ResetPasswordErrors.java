@@ -8,7 +8,11 @@ public enum ResetPasswordErrors {
 
     private String value;
 
-    ResetPasswordErrors(String value) { this.value = value; }
+    ResetPasswordErrors(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 }

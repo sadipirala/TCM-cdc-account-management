@@ -1,7 +1,12 @@
 package com.thermofisher.cdcam.controller;
 
-import java.util.List;
-
+import com.thermofisher.cdcam.model.EECUser;
+import com.thermofisher.cdcam.model.EECUserV2;
+import com.thermofisher.cdcam.model.EECUserV3;
+import com.thermofisher.cdcam.model.EmailList;
+import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
+import com.thermofisher.cdcam.utils.Utils;
+import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -11,15 +16,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-
-import com.thermofisher.cdcam.model.EECUser;
-import com.thermofisher.cdcam.model.EECUserV2;
-import com.thermofisher.cdcam.model.EECUserV3;
-import com.thermofisher.cdcam.model.EmailList;
-import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
-import com.thermofisher.cdcam.utils.Utils;
-import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -39,17 +37,17 @@ public class EmailAccountsController {
 
     @Autowired
     LiteRegistrationService liteRegistrationService;
-    
+
     @PostMapping("/v3/accounts/lite")
     @Operation(description = "Request enhanced lite-account registration from a list of users. V3")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Invalid request. No elements were sent or limit was exceeded.", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
-        }),
-        @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description",  schema = @Schema(type = "string"))
-        })
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Invalid request. No elements were sent or limit was exceeded.", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            }),
+            @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            })
     })
     public ResponseEntity<List<EECUserV3>> addLiteAccount(@Valid @RequestBody List<LiteAccountDTO> accountList) {
         log.info("Lite account registration initiated. V3");
@@ -71,13 +69,13 @@ public class EmailAccountsController {
     @PostMapping("/v2/accounts/lite")
     @Operation(description = "Request email-only registration from a list of email addresses. V2")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Invalid request. Either no list elements were sent or limit was exceeded.", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description",  schema = @Schema(type = "string"))
-        }),
-        @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description",  schema = @Schema(type = "string"))
-        })
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Invalid request. Either no list elements were sent or limit was exceeded.", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            }),
+            @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            })
     })
     @Parameter(name = "emailList", description = "List of emails to 'email-only' register", required = true,
             content = @Content(schema = @Schema(type = "EmailList")), in = ParameterIn.QUERY)
@@ -93,7 +91,7 @@ public class EmailAccountsController {
             log.error(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         }
-        
+
         try {
             List<EECUserV2> response = liteRegistrationService.registerEmailAccounts(emailList);
             return ResponseEntity.ok().body(response);
@@ -112,13 +110,13 @@ public class EmailAccountsController {
     @PostMapping("/accounts/email-only/users")
     @Operation(description = "Request email-only registration from a list of email addresses.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "OK"),
-        @ApiResponse(responseCode = "400", description = "Invalid request. Either no list elements were sent or limit was exceeded.", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description",  schema = @Schema(type = "string"))
-        }),
-        @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
-            @Header(name = requestExceptionHeader, description = "Response description",  schema = @Schema(type = "string"))
-        })
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Invalid request. Either no list elements were sent or limit was exceeded.", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            }),
+            @ApiResponse(responseCode = "500", description = "Internal server error", headers = {
+                    @Header(name = requestExceptionHeader, description = "Response description", schema = @Schema(type = "string"))
+            })
     })
     @Parameter(name = "emailList", description = "List of emails to 'email-only' register", required = true, content = @Content(schema = @Schema(type = "EmailList", defaultValue = "0")), in = ParameterIn.QUERY)
     public ResponseEntity<List<EECUser>> emailOnlyRegistration(@Valid @RequestBody EmailList emailList) {
@@ -133,7 +131,7 @@ public class EmailAccountsController {
             log.error(errorMessage);
             return ResponseEntity.badRequest().header(requestExceptionHeader, errorMessage).body(null);
         }
-        
+
         try {
             List<EECUser> response = liteRegistrationService.createLiteAccountsV1(emailList);
             return ResponseEntity.ok().body(response);

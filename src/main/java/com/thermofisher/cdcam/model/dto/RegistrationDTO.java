@@ -4,7 +4,6 @@ import com.thermofisher.cdcam.model.cdc.China;
 import com.thermofisher.cdcam.model.cdc.Japan;
 import com.thermofisher.cdcam.model.cdc.Korea;
 import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

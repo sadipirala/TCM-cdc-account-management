@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,9 +14,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -29,19 +26,19 @@ public class UpdateAccountServiceTests {
     private final String uid = "1234567890";
     private final String timezone = "America/Tijuana";
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
-        .uid(uid)
-        .firstName("firstName")
-        .lastName("lastName")
-        .username("username")
-        .marketingConsentDTO(
-            MarketingConsentDTO.builder()
-                .city("city")
-                .company("company")
-                .country("country")
-                .consent(true)
-                .build()
-        ).build();
-    
+            .uid(uid)
+            .firstName("firstName")
+            .lastName("lastName")
+            .username("username")
+            .marketingConsentDTO(
+                    MarketingConsentDTO.builder()
+                            .city("city")
+                            .company("company")
+                            .country("country")
+                            .consent(true)
+                            .build()
+            ).build();
+
     @InjectMocks
     private UpdateAccountService updateAccountService;
 

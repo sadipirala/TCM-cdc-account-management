@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.controller;
 
 import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
-import com.thermofisher.cdcam.model.EmailUpdatedNotification;
 import com.thermofisher.cdcam.model.MarketingConsentUpdatedNotification;
 import com.thermofisher.cdcam.model.cdc.CustomGigyaErrorException;
 import com.thermofisher.cdcam.model.dto.EmailVerificationDTO;
@@ -10,7 +9,6 @@ import com.thermofisher.cdcam.model.dto.UpdateMarketingConsentDTO;
 import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.services.GigyaService;
 import com.thermofisher.cdcam.services.NotificationService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,9 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j

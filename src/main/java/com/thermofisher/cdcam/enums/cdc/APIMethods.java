@@ -16,7 +16,11 @@ public enum APIMethods {
 
     private String value;
 
-    APIMethods(String value) { this.value = value; }
+    APIMethods(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 }

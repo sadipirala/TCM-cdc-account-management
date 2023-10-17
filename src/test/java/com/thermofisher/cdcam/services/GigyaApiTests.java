@@ -17,7 +17,6 @@ import com.thermofisher.cdcam.utils.cdc.CDCUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,8 +29,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,6 +52,7 @@ public class GigyaApiTests {
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     public void setAccountInfo_ShouldSetAccountInfoSendRequest() throws JSONException {
         // given
@@ -202,7 +200,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void getJWTPublicKey_givenParametersToMakeGetJWTPublicKeyRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void getJWTPublicKey_givenParametersToMakeGetJWTPublicKeyRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         GSRequest gsRequestMock = mock(GSRequest.class);
         GSResponse gsResponseMock = mock(GSResponse.class);
@@ -222,7 +220,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String uid = "uid";
         String data = "data";
@@ -247,7 +245,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalledAndRemoveLoginEmailsIsNull_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalledAndRemoveLoginEmailsIsNull_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String uid = "uid";
         String data = "data";
@@ -272,7 +270,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalledAndUsernameIsNull_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void setUserInfo_givenParametersToMakeSetUserInfoRequest_whenMethodIsCalledAndUsernameIsNull_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String uid = "uid";
         String data = "data";
@@ -297,7 +295,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void changeAccountStatus_givenParametersToMakeChangeAccountStatusRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void changeAccountStatus_givenParametersToMakeChangeAccountStatusRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -318,7 +316,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void changeAccountStatus_givenParametersToMakeChangeAccountStatusRequest_whenNullPointerExceptionIsThrown_thenMethodSendFromGSRequestShouldNotBeCalled(){
+    public void changeAccountStatus_givenParametersToMakeChangeAccountStatusRequest_whenNullPointerExceptionIsThrown_thenMethodSendFromGSRequestShouldNotBeCalled() {
         // given
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -339,7 +337,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void registerLiteAccount_ShouldMakeTwoRequests_AndOneShouldBeSentWithTheRegTokenAndProfileParams() throws GSKeyNotFoundException, CustomGigyaErrorException{
+    public void registerLiteAccount_ShouldMakeTwoRequests_AndOneShouldBeSentWithTheRegTokenAndProfileParams() throws GSKeyNotFoundException, CustomGigyaErrorException {
         // given
         String email = "ivan.quintana@thermofisher.com";
         String regToken = RandomStringUtils.random(10);
@@ -348,7 +346,7 @@ public class GigyaApiTests {
         data.put("regToken", regToken);
         GSResponse initRegResponse = mock(GSResponse.class);
         when(initRegResponse.getData()).thenReturn(data);
-        
+
         GSResponse gsResponseMock = mock(GSResponse.class);
         GSRequest gsRequestMock = mock(GSRequest.class);
 //        doNothing().when(gsRequestMock).setParam(eq("regToken"), eq(regToken));
@@ -370,9 +368,9 @@ public class GigyaApiTests {
     public void registerLiteAccount_V3_ShouldMakeTwoRequests_AndTheyShouldHaveRegTokenAndProfileAndDataParams() throws GSKeyNotFoundException, CustomGigyaErrorException, JSONException {
         // given
         LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder()
-            .email("john.doe@mail.com")
-            .clientId("eZc3CGSFO2-phATVvTvL_4tf")
-            .build();
+                .email("john.doe@mail.com")
+                .clientId("eZc3CGSFO2-phATVvTvL_4tf")
+                .build();
         String regToken = RandomStringUtils.random(10);
 
         GSObject data = mock(GSObject.class);
@@ -418,8 +416,8 @@ public class GigyaApiTests {
 
             // when
             Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
-                        gigyaApi.registerLiteAccount(email);
-                    });
+                gigyaApi.registerLiteAccount(email);
+            });
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -430,9 +428,9 @@ public class GigyaApiTests {
     public void registerLiteAccount_V3_ShouldThrowCustomGigyaError_WhenCDCReturnsAnError() throws GSKeyNotFoundException, CustomGigyaErrorException, JSONException {
         // given
         LiteAccountDTO liteAccountDTO = LiteAccountDTO.builder()
-            .email("john.doe@mail.com")
-            .clientId("eZc3CGSFO2-phATVvTvL_4tf")
-            .build();
+                .email("john.doe@mail.com")
+                .clientId("eZc3CGSFO2-phATVvTvL_4tf")
+                .build();
         String regToken = RandomStringUtils.random(10);
 
         GSObject data = mock(GSObject.class);
@@ -450,8 +448,8 @@ public class GigyaApiTests {
 
             // when
             Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
-                        gigyaApi.registerLiteAccount(liteAccountDTO);
-                    });
+                gigyaApi.registerLiteAccount(liteAccountDTO);
+            });
 
             // then
             verify(gsRequestMock, times(0)).send();
@@ -459,7 +457,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void search_givenParametersToMakeSearchRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void search_givenParametersToMakeSearchRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String query = "query";
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -501,7 +499,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void register_shouldReturnNull_whenNullPointerExceptionIsThrown()  {
+    public void register_shouldReturnNull_whenNullPointerExceptionIsThrown() {
         // given
         CDCNewAccount cdcNewAccount = CDCNewAccount.builder().build();
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -628,7 +626,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void resetPassword_givenParametersToMakeResetPasswordRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void resetPassword_givenParametersToMakeResetPasswordRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         GSObject gsObject = new GSObject();
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -649,7 +647,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void resetPassword_shouldReturnNull_whenNullPointerExceptionIsThrown(){
+    public void resetPassword_shouldReturnNull_whenNullPointerExceptionIsThrown() {
         // given
         GSObject gsObject = new GSObject();
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -670,7 +668,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void getRP_givenParametersToMakeGetRPRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void getRP_givenParametersToMakeGetRPRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String clientID = "clientID";
         GSRequest gsRequestMock = mock(GSRequest.class);
@@ -691,7 +689,7 @@ public class GigyaApiTests {
     }
 
     @Test
-    public void updateRequirePasswordCheck_givenParametersToMakeUpdateRequirePasswordCheckRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled(){
+    public void updateRequirePasswordCheck_givenParametersToMakeUpdateRequirePasswordCheckRequest_whenMethodIsCalled_thenMethodSendFromGSRequestShouldBeCalled() {
         // given
         String uid = "uid";
         GSRequest gsRequestMock = mock(GSRequest.class);

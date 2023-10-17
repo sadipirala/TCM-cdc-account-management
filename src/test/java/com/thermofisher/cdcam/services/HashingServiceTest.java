@@ -2,15 +2,12 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.services.hashing.HashingService;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.security.NoSuchAlgorithmException;
@@ -53,7 +50,7 @@ public class HashingServiceTest {
     }
 
     @Test
-    public void toMD5_GivenAnInvalidHashAlgorithm() throws NoSuchAlgorithmException{
+    public void toMD5_GivenAnInvalidHashAlgorithm() throws NoSuchAlgorithmException {
         // given
         String PASSWORD_ALGORITHM = "X";
         ReflectionTestUtils.setField(HashingService.class, "PASSWORD_ALGORITHM", PASSWORD_ALGORITHM);

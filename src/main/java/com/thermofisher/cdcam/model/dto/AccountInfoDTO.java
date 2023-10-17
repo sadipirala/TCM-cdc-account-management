@@ -1,16 +1,14 @@
 package com.thermofisher.cdcam.model.dto;
 
-import java.util.Objects;
-
+import com.thermofisher.cdcam.model.Ciphertext;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
-
-import com.thermofisher.cdcam.model.Ciphertext;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Objects;
 
 @Builder
 @Getter

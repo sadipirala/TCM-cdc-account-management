@@ -7,12 +7,10 @@ import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 
 @ExtendWith(MockitoExtension.class)
 public class CDCNewAccountTests {
@@ -24,20 +22,20 @@ public class CDCNewAccountTests {
         profile = AccountUtils.getProfile();
         data = AccountUtils.getData();
     }
-    
+
     @Test
     public void whenBuildingCDCNewAccount_ThenDataPropertiesWithNullValuesShouldBeRemoved()
             throws JSONException {
         // given
         String expectedData = prepareData(data);
-        
+
         // when
         CDCNewAccount result = CDCNewAccount.build(
-            AccountUtils.username, 
-            AccountUtils.email, 
-            AccountUtils.password, 
-            data, 
-            profile);
+                AccountUtils.username,
+                AccountUtils.email,
+                AccountUtils.password,
+                data,
+                profile);
 
         // then
         Assertions.assertEquals(expectedData, result.getData());
@@ -48,14 +46,14 @@ public class CDCNewAccountTests {
             throws JSONException {
         // given
         String expectedProfile = prepareProfile(profile);
-        
+
         // when
         CDCNewAccount result = CDCNewAccount.build(
-            AccountUtils.username, 
-            AccountUtils.email, 
-            AccountUtils.password, 
-            data, 
-            profile);
+                AccountUtils.username,
+                AccountUtils.email,
+                AccountUtils.password,
+                data,
+                profile);
 
         // then
         Assertions.assertEquals(expectedProfile, result.getProfile());

@@ -5,7 +5,7 @@ import com.gigya.socialize.GSRequest;
 
 public class GSRequestFactory {
     private static boolean useHTTPS = true;
-    
+
     public static GSRequest create(String apiKey, String secretKey, String apiDomain, String apiMethod) {
         GSRequest request = new GSRequest(apiKey, secretKey, apiMethod, useHTTPS);
         request.setAPIDomain(apiDomain);

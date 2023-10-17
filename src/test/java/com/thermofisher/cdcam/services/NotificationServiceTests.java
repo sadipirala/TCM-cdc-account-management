@@ -14,7 +14,6 @@ import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,8 +25,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -48,6 +45,7 @@ public class NotificationServiceTests {
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     public void sendAccountRegisteredNotification_ShouldSendNotificationToRegistrationSNSTopicWithAccountData() throws JsonProcessingException {
         // given
@@ -241,7 +239,7 @@ public class NotificationServiceTests {
             accountInfoHandlerMock.when(() -> AccountInfoHandler.prepareForAspireNotification(any(AccountInfo.class))).thenCallRealMethod();
             // when
             notificationService.sendAspireRegistrationNotification(accountInfo);
-    
+
             // then
             accountInfoHandlerMock.verify(() -> AccountInfoHandler.prepareForAspireNotification(accountInfo));
             verify(snsHandler).sendNotification(anyString(), anyString());
@@ -299,7 +297,7 @@ public class NotificationServiceTests {
         // given
         AccountInfo account = AccountUtils.getSiteAccount();
         Assertions.assertThrows(NullPointerException.class, () -> {
-        notificationService.sendRequestResetPasswordEmailNotification(account, null);
+            notificationService.sendRequestResetPasswordEmailNotification(account, null);
         });
     }
 
@@ -323,7 +321,6 @@ public class NotificationServiceTests {
     }
 
 
-
     @Test
     public void sendConfirmationEmailNotification_GivenANullAccount_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> {
@@ -332,7 +329,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendResetPasswordConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ResetPasswordConfirmationEmailNotification(){
+    public void sendResetPasswordConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ResetPasswordConfirmationEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "redirectUrl", "redirectUrl");
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
@@ -347,7 +344,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ConfirmationEmailNotification(){
+    public void sendConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ConfirmationEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -361,7 +358,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendRecoveryUsernameEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RecoveryUsernameEmailNotification(){
+    public void sendRecoveryUsernameEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RecoveryUsernameEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         UsernameRecoveryDTO usernameRecoveryDTO = UsernameRecoveryDTO.builder()
@@ -379,7 +376,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendRequestResetPasswordEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RequestResetPasswordEmailNotification(){
+    public void sendRequestResetPasswordEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RequestResetPasswordEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()

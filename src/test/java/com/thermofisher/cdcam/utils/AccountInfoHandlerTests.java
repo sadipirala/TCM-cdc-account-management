@@ -7,15 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +32,10 @@ public class AccountInfoHandlerTests {
     private ObjectMapper mapper = new ObjectMapper();
 
     @AfterEach
-    public void after() { 
+    public void after() {
         mapper.setSerializationInclusion(JsonInclude.Include.USE_DEFAULTS);
     }
-    
+
     private String prepareJsonForNotification(ObjectNode json) throws JsonProcessingException {
         List<String> propertiesToRemove = new ArrayList<>();
         propertiesToRemove.add("loginProvider");
@@ -131,7 +128,7 @@ public class AccountInfoHandlerTests {
 
         // when
         String parsedAccount = AccountInfoHandler.prepareForProfileInfoNotification(account, AccountUtils.cipdc);
-        
+
         // then
         assertEquals(parsedAccount.indexOf("\"password\""), -1);
         assertEquals(expectedAccountToNotify, parsedAccount);
@@ -185,7 +182,7 @@ public class AccountInfoHandlerTests {
     }
 
     @Test
-    public void buildMessageAttributesForAccountInfoSNS_ShouldSetMessageAttributes(){
+    public void buildMessageAttributesForAccountInfoSNS_ShouldSetMessageAttributes() {
         // given
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
         MessageAttributeValue mockMessageAttributeValue = new MessageAttributeValue();
@@ -198,7 +195,7 @@ public class AccountInfoHandlerTests {
     }
 
     @Test
-    public void buildMessageAttributesForAccountInfoSNS_ShouldSetCountryMessageAttributeAsNotAvailableIfCountryValuesIsNotPresent(){
+    public void buildMessageAttributesForAccountInfoSNS_ShouldSetCountryMessageAttributeAsNotAvailableIfCountryValuesIsNotPresent() {
         // given
         AccountInfo mockAccount = AccountUtils.getSiteAccount();
         MessageAttributeValue mockMessageAttributeValue = new MessageAttributeValue();

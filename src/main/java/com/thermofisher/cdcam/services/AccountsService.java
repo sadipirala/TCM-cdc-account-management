@@ -1,13 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
-import jakarta.validation.constraints.NotBlank;
-
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
@@ -28,7 +20,7 @@ import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
-
+import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
@@ -38,6 +30,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -69,7 +67,7 @@ public class AccountsService {
 
         try {
             AccountInfo account = gigyaService.getAccountInfo(uid);
-            
+
             try {
                 log.info("Saving post registration data.");
                 setPostRegistrationData(account);
@@ -96,26 +94,26 @@ public class AccountsService {
 
     private void setPostRegistrationData(AccountInfo account) throws JSONException, GSKeyNotFoundException, CustomGigyaErrorException {
         String awsQuickSightRole = secretsService.get(CdcamSecrets.QUICKSIGHT_ROLE.getKey());
-        
+
         Registration registration = Registration.builder().build();
         if (StringUtils.isNotBlank(account.getOpenIdProviderId())) {
             OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(account.getOpenIdProviderId());
             OpenIdProvider openIdProvider = OpenIdProvider.builder()
-                .providerName(openIdRelyingParty.getDescription())
-                .build();
+                    .providerName(openIdRelyingParty.getDescription())
+                    .build();
 
             registration.setOpenIdProvider(openIdProvider);
         }
 
         Data data = Data.builder()
-            .awsQuickSightRole(awsQuickSightRole)
-            .registration(registration)
-            .build();
-        
+                .awsQuickSightRole(awsQuickSightRole)
+                .registration(registration)
+                .build();
+
         CDCAccount cdcAccount = CDCAccount.builder()
-            .UID(account.getUid())
-            .data(data)
-            .build();
+                .UID(account.getUid())
+                .data(data)
+                .build();
 
         gigyaService.setAccountInfo(cdcAccount);
     }

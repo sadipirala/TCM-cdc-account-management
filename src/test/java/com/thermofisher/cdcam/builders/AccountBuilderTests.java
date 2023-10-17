@@ -7,7 +7,6 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.utils.AccountUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,10 +15,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 
@@ -29,7 +24,7 @@ import static org.mockito.Mockito.when;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class AccountBuilderTests {
+public class  AccountBuilderTests {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String federatedCdcResponse;
@@ -50,7 +45,7 @@ public class AccountBuilderTests {
     AccountBuilder accountBuilder = new AccountBuilder();
 
     @BeforeEach
-    public void setup() throws IOException,JsonSyntaxException {
+    public void setup() throws IOException, JsonSyntaxException {
         MockitoAnnotations.openMocks(this);
         siteCdcResponse = AccountUtils.getSiteAccountJsonString();
         siteCdcResponseV2 = AccountUtils.getSiteAccountJsonStringV2();
@@ -66,7 +61,7 @@ public class AccountBuilderTests {
         siteAccountJapan = AccountUtils.getSiteAccountJapan();
         siteAccountIncompleteAccount = AccountUtils.getSiteAccountIncomplete();
 
-     //   ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
+        //   ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
     }
 
     @Test
@@ -109,6 +104,7 @@ public class AccountBuilderTests {
         // then
         Assertions.assertThat(res.getHiraganaName()).isEqualTo(hiraganaName);
     }
+
     @Test
     public void getAccountInfo_ifGivenSiteUserWithJobRole_returnAccountInfoWithJobRole() throws Exception {
         // given
@@ -173,6 +169,7 @@ public class AccountBuilderTests {
         // then
         Assertions.assertThat(res.getThirdPartyTransferPersonalInfoMandatory()).isEqualTo(thirdPartyTransferPersonalInfoMandatory);
     }
+
     @Test
     public void getAccountInfo_ifGivenSiteUserWithThirdPartyTransferPersonalInfoOptional_returnAccountInfoWithThirdPartyTransferPersonalInfoOptional() throws Exception {
         // given
@@ -302,6 +299,7 @@ public class AccountBuilderTests {
         // then
         Assertions.assertThat(res.getCollectionAndUsePersonalInfoMandatory()).isEqualTo(collectionAndUsePersonalInfoMandatory);
     }
+
     @Test
     public void getAccountInfoV2_getThermofisher_legacyUserName() throws Exception {
 

@@ -1,9 +1,7 @@
 package com.thermofisher.cdcam.services;
 
-import jakarta.annotation.PostConstruct;
-
 import com.thermofisher.cdcam.aws.SecretsManager;
-
+import jakarta.annotation.PostConstruct;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ public class SecretsService {
 
     @Autowired
     SecretsManager secretsManager;
-    
+
     @PostConstruct
     public void setup() throws JSONException {
         if (env.equals("local") || env.equals("test")) return;

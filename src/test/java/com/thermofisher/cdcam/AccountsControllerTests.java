@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam;
 
 import com.gigya.socialize.GSKeyNotFoundException;
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.builders.AccountBuilder;
 import com.thermofisher.cdcam.controller.AccountsController;
 import com.thermofisher.cdcam.enums.RegistrationType;
@@ -48,11 +47,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Assertions;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -60,15 +56,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -79,7 +71,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-//@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class AccountsControllerTests {
     private final List<String> uids = new ArrayList<>();
@@ -94,11 +85,11 @@ public class AccountsControllerTests {
     private final String CIPHERTEXT = "VTJGc2RHVmtYMStuTTlOT3ExeHZtNG5rUHpqNjhMTmhKbHRkVkJZU0xlMnpGTm5QVk1oV0oycUhrVm1JQ2ozSXJVUWdCK2pBaDBuczMyM0ZMYkdLVm1tSzJ4R3BENmtJZ1VGbm1JeURVMUNpSkcxcU1aNzBvRjBJeG80dHVCbHhmdU02TDJFMmtLUDdvUzdGMWpidU53PT0=";
     private final String COOKIE_CIP_AUTHDATA_VALID = "eyJjbGllbnRJZCI6ImNsaWVudElkIiwicmVkaXJlY3RVcmkiOiJyZWRpcmVjdFVyaSIsInN0YXRlIjoic3RhdGUiLCJzY29wZSI6InNjb3BlIiwicmVzcG9uc2VUeXBlIjoicmVzcG9uc2VUeXBlIn0=";
     private final MarketingConsentDTO marketingConsentDTO = MarketingConsentDTO.builder()
-        .city("city")
-        .company("company")
-        .country("country")
-        .consent(true)
-        .build();
+            .city("city")
+            .company("company")
+            .country("country")
+            .consent(true)
+            .build();
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
             .uid("1234567890")
             .firstName("firstName")
@@ -180,12 +171,12 @@ public class AccountsControllerTests {
     public void setup() {
         MockitoAnnotations.openMocks(this);
         reCaptchaResponse = new JSONObject();
-        if(uids.size()==0 ) {
+        if (uids.size() == 0) {
             uids.add("001");
             uids.add("002");
             uids.add("003");
         }
-    //  when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
+        //  when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
     }
 
     @Test
@@ -306,7 +297,7 @@ public class AccountsControllerTests {
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
-            
+
             // when
             accountsController.onAccountRegistered(jwt, body);
 
@@ -411,7 +402,7 @@ public class AccountsControllerTests {
     }
 
     @Test
-    public void newAccount_givenReCaptchaIsValid_ThenContinueWithRegistrationProcess() 
+    public void newAccount_givenReCaptchaIsValid_ThenContinueWithRegistrationProcess()
             throws IOException, JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
         when(reCaptchaService.verifyToken(any(), any())).thenReturn(reCaptchaResponse);
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
@@ -582,7 +573,7 @@ public class AccountsControllerTests {
         when(accountsService.verify(any(), any())).thenReturn(AccountUtils.getCdcResponse());
         when(invitationService.updateInvitationCountry(any())).thenReturn(200);
 
-        try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
+        try (MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
             emailVerificationServiceMock.when(() -> EmailVerificationService.isVerificationPending(any())).thenReturn(true);
 
             // when
@@ -602,7 +593,7 @@ public class AccountsControllerTests {
         when(accountsService.createAccount(any())).thenReturn(getEmailVerificationCDCResponse(AccountUtils.uid));
         when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
 
-        try(MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
+        try (MockedStatic<EmailVerificationService> emailVerificationServiceMock = Mockito.mockStatic(EmailVerificationService.class)) {
             emailVerificationServiceMock.when(() -> EmailVerificationService.isVerificationPending(any())).thenReturn(true);
 
             // when
@@ -685,7 +676,7 @@ public class AccountsControllerTests {
         // then
         verify(emailVerificationService, times(1)).sendVerificationByLinkEmail(any());
     }
-    
+
     @Test
     public void newAccount_givenRegistrationNotSuccessful_sendVerificationByLinkEmailShouldNotBeCalled() throws IOException,
             JSONException, ReCaptchaLowScoreException, ReCaptchaUnsuccessfulResponseException, NoSuchAlgorithmException, CustomGigyaErrorException {
@@ -1002,7 +993,7 @@ public class AccountsControllerTests {
         // then
         Assertions.assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
-    
+
     @Test
     public void sendVerificationByLinkEmail_WhenResponseReceived_ReturnSameStatus() {
         // given
@@ -1059,11 +1050,12 @@ public class AccountsControllerTests {
         // then
         Assertions.assertThat(HttpStatus.BAD_REQUEST).isEqualTo(response.getStatusCode());
     }
-    
+
     @Test
     public void newAccount_givenAnAccountWithShortPassword_returnBadRequest() throws IOException, JSONException {
         // given
-        final String SHORT_PASSWORD = RandomStringUtils.random(7);;
+        final String SHORT_PASSWORD = RandomStringUtils.random(7);
+        ;
         AccountInfoDTO accountDTO = AccountUtils.getAccountInfoDTO();
         accountDTO.setPassword(SHORT_PASSWORD);
 
@@ -1164,12 +1156,12 @@ public class AccountsControllerTests {
         String jwt = Utils.getAlphaNumericString(20);
         String body = CDCTestsUtils.getWebhookEventBody(WebhookEvent.MERGE, numberOfWebhookEvents);
         when(gigyaService.getJWTPublicKey()).thenReturn(null);
-       // doNothing().when(accountsService).onAccountMerged(anyString());
-       // doNothing().when(accountsService).onAccountUpdated(anyString());
+        // doNothing().when(accountsService).onAccountMerged(anyString());
+        // doNothing().when(accountsService).onAccountUpdated(anyString());
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
-            
+
             // when
             accountsController.onAccountsMerge(jwt, body);
 
@@ -1190,7 +1182,7 @@ public class AccountsControllerTests {
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
-            
+
             // when
             accountsController.onAccountsMerge(jwt, body);
 
@@ -1210,7 +1202,7 @@ public class AccountsControllerTests {
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
-            
+
             // when
             accountsController.onAccountsMerge(jwt, body);
 
@@ -1250,7 +1242,7 @@ public class AccountsControllerTests {
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(false);
-            
+
             // when
             accountsController.onAccountsMerge(jwt, body);
 
@@ -1270,7 +1262,7 @@ public class AccountsControllerTests {
 
         try (MockedStatic<JWTValidator> jwtValidatorMock = Mockito.mockStatic(JWTValidator.class)) {
             jwtValidatorMock.when(() -> JWTValidator.isValidSignature(anyString(), any())).thenReturn(true);
-            
+
             // when
             accountsController.onAccountsMerge(jwt, body);
 
@@ -1483,7 +1475,7 @@ public class AccountsControllerTests {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setNewPassword("Hello");
         changePasswordDTO.setPassword("World");
-        
+
         try (MockedStatic<PasswordUtils> passwordUtilsMock = Mockito.mockStatic(PasswordUtils.class)) {
             passwordUtilsMock.when(() -> PasswordUtils.isPasswordValid(anyString())).thenThrow(new NullPointerException());
 

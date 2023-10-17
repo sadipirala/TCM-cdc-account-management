@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
-
 import lombok.Getter;
 import lombok.Setter;
 

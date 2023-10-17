@@ -34,11 +34,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.platform.commons.logging.LoggerFactory;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -49,9 +47,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -86,7 +82,7 @@ public class GigyaServiceTests {
     private JSONObject loginIdAvailable = new JSONObject();
     private JSONObject loginIdNotAvailable = new JSONObject();
 
-    
+
     @InjectMocks
     GigyaService gigyaService;
 
@@ -108,7 +104,7 @@ public class GigyaServiceTests {
     @BeforeEach
     public void setup() throws JSONException {
         MockitoAnnotations.openMocks(this);
-       // ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
+        // ReflectionTestUtils.setField(accountBuilder, "log", LoggerFactory.getLogger(AccountBuilder.class));
         loginIdAvailable.put("totalCount", 0);
         loginIdNotAvailable.put("totalCount", 1);
     }
@@ -139,7 +135,7 @@ public class GigyaServiceTests {
         String _account = mapper.writeValueAsString(account);
         assertTrue(_accountInfo.equals(_account));
     }
-    
+
     @Test
     public void getAccount_WhenAGetAccountRequestInfoIsMade_ShouldReturnAnAccountInfoObjectWithResponseData_V2() throws Exception {
         // given
@@ -173,7 +169,7 @@ public class GigyaServiceTests {
             gigyaService.getAccountInfo(uid);
         });
     }
-    
+
     @Test
     public void getAccountInfo_WhenAGetAccountRequestInfoRequestIsResolvedWithError_ShouldThrowCustomGigyaErrorException_V2() throws Exception {
         // given
@@ -183,7 +179,7 @@ public class GigyaServiceTests {
         when(gigyaApi.getAccountV2(anyString())).thenReturn(gsResponse);
         when(gsResponse.getErrorCode()).thenReturn(ERROR_CODE);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.getAccountInfo(uid);
         });
     }
@@ -276,7 +272,7 @@ public class GigyaServiceTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(successCode);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        Mockito.when(gigyaApi.changeAccountStatus(anyString(),anyBoolean())).thenReturn(mockChangeStatusResponse);
+        Mockito.when(gigyaApi.changeAccountStatus(anyString(), anyBoolean())).thenReturn(mockChangeStatusResponse);
         Mockito.when(mockChangeStatusResponse.getErrorCode()).thenReturn(successCode);
 
         // when
@@ -341,7 +337,7 @@ public class GigyaServiceTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
         GSObject gsObject = new GSObject();
-        gsObject.put("passwordResetToken","");
+        gsObject.put("passwordResetToken", "");
         gsObject.put("requirePasswordCheck", false);
         ArrayList<CDCAccount> mockAccount = new ArrayList<>();
         LoginIDs loginIDs = LoginIDs.builder().username("armvalidtest@mail.com").build();
@@ -358,7 +354,7 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
@@ -389,11 +385,11 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(GigyaCodes.LOGIN_ID_DOES_NOT_EXIST.getValue());
 
-        Assertions.assertThrows(LoginIdDoesNotExistException.class, ()-> {
+        Assertions.assertThrows(LoginIdDoesNotExistException.class, () -> {
             gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
         });
     }
@@ -417,11 +413,11 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()->{
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
         });
     }
@@ -441,11 +437,11 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(1);
 
-        Assertions.assertThrows(LoginIdDoesNotExistException.class,()-> {
+        Assertions.assertThrows(LoginIdDoesNotExistException.class, () -> {
             gigyaService.resetPasswordRequest("arminvalidtest@mail.com");
         });
     }
@@ -455,7 +451,7 @@ public class GigyaServiceTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
         GSObject gsObject = new GSObject();
-        gsObject.put("passwordResetToken","");
+        gsObject.put("passwordResetToken", "");
         gsObject.put("requirePasswordCheck", false);
         ArrayList<CDCAccount> mockAccount = new ArrayList<>();
         LoginIDs loginIDs = LoginIDs.builder().username("arminvalidtest@mail.com").build();
@@ -472,7 +468,7 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
@@ -496,7 +492,7 @@ public class GigyaServiceTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
         GSObject gsObject = new GSObject();
-        gsObject.put("passwordResetToken","");
+        gsObject.put("passwordResetToken", "");
         gsObject.put("requirePasswordCheck", false);
         ArrayList<CDCAccount> mockAccount = new ArrayList<>();
         String[] emails = {"blrVerEmail@mail.com"};
@@ -514,7 +510,7 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
@@ -537,7 +533,7 @@ public class GigyaServiceTests {
             throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         // given
         GSObject gsObject = new GSObject();
-        gsObject.put("passwordResetToken","");
+        gsObject.put("passwordResetToken", "");
         gsObject.put("requirePasswordCheck", false);
         ArrayList<CDCAccount> mockAccount = new ArrayList<>();
         String[] emails = {"blrUnVerEmail@mail.com"};
@@ -555,7 +551,7 @@ public class GigyaServiceTests {
                 .build();
 
         when(mockSearchResponse.getResponseText()).thenReturn(mapper.writeValueAsString(mockCdcSearchResponse));
-        when(gigyaApi.search(any(),any(),any())).thenReturn(mockSearchResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockSearchResponse);
         when(gigyaApi.resetPassword(any())).thenReturn(mockCdcResponse);
         when(mockCdcResponse.getErrorCode()).thenReturn(0);
         when(mockCdcResponse.getData()).thenReturn(gsObject);
@@ -588,7 +584,7 @@ public class GigyaServiceTests {
         ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
-        assertEquals(response.getResponseCode(),errorResponseCode);
+        assertEquals(response.getResponseCode(), errorResponseCode);
     }
 
     @Test
@@ -607,7 +603,7 @@ public class GigyaServiceTests {
         ResetPasswordResponse response = gigyaService.resetPasswordSubmit(request);
 
         // then
-        assertEquals(response.getResponseCode(),successResponseCode);
+        assertEquals(response.getResponseCode(), successResponseCode);
     }
 
     @Test
@@ -615,7 +611,7 @@ public class GigyaServiceTests {
         // given
         GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [],\"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
         when(mockResponse.getData()).thenReturn(jsonResponse);
 
@@ -632,7 +628,7 @@ public class GigyaServiceTests {
         String testEmail = "this-is-a-test-88@mail.com";
         GSObject jsonResponse = new GSObject("{\"callId\": \"8ba37e7693594a7da17a134e79dfb950\",\"errorCode\": 0,\"apiVersion\": 2,\"statusCode\": 200,\"statusReason\": \"OK\",\"time\": \"2020-08-26T18:13:18.021Z\",\"results\": [{\"profile\": {\"username\":\"" + testEmail + "\"}}], \"objectsCount\": 0,\"totalCount\": 0}");
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
         when(mockResponse.getData()).thenReturn(jsonResponse);
 
@@ -650,7 +646,7 @@ public class GigyaServiceTests {
         GSObject gsObject = Mockito.mock(GSObject.class);
         when(gsObject.getArray(any())).thenThrow(GSKeyNotFoundException.class);
         when(mockResponse.getData()).thenReturn(gsObject);
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
 
         // when
         String username = gigyaService.getUsernameByEmail("test");
@@ -692,11 +688,13 @@ public class GigyaServiceTests {
         GSResponse secondaryGsResponse = Mockito.mock(GSResponse.class);
         when(secondaryGsResponse.getErrorCode()).thenReturn(0);
         when(secondaryGsResponse.getData()).thenReturn(secondaryGsObject);
-        
+
         when(gigyaApi.search(any(), any(), any())).thenReturn(mainGsResponse, secondaryGsResponse);
 
         try (MockedStatic<CDCUtils> cdcUtilsMock = Mockito.mockStatic(CDCUtils.class)) {
-            cdcUtilsMock.when(() -> { CDCUtils.isSecondaryDCSupported(anyString()); }).thenReturn(true);
+            cdcUtilsMock.when(() -> {
+                CDCUtils.isSecondaryDCSupported(anyString());
+            }).thenReturn(true);
 
             // when
             boolean response = gigyaService.isAvailableLoginId("test");
@@ -714,7 +712,7 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.search(any(), any(), any())).thenReturn(mockGSResponse);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.isAvailableLoginId("test");
         });
     }
@@ -738,7 +736,7 @@ public class GigyaServiceTests {
         IdentityProviderResponse result = gigyaService.getIdPInformation(IDP_NAME);
 
         // then
-        assertTrue(expectedResponse.getName() .equals(result.getName())
+        assertTrue(expectedResponse.getName().equals(result.getName())
                 && expectedResponse.getEntityID().equals(result.getEntityID()));
     }
 
@@ -786,9 +784,9 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
 
         // when
-        Assertions.assertThrows(CustomGigyaErrorException.class,()->{
-        gigyaService.getJWTPublicKey();
-    });
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
+            gigyaService.getJWTPublicKey();
+        });
     }
 
     @Test
@@ -801,7 +799,7 @@ public class GigyaServiceTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.search(query, AccountType.FULL_LITE, mainApiDomain);
         });
     }
@@ -868,7 +866,7 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getResponseText()).thenReturn(AccountUtils.getLiteRegistrationErrorJsonString());
         when(gigyaApi.registerLiteAccount(any(LiteAccountDTO.class))).thenReturn(cdcMockResponse);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.registerLiteAccount(liteAccountDTO);
         });
     }
@@ -884,7 +882,7 @@ public class GigyaServiceTests {
         when(gigyaApi.registerLiteAccount(anyString())).thenReturn(cdcMockResponse);
 
         // when
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
             gigyaService.registerLiteAccount("");
         });
     }
@@ -902,7 +900,7 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getResponseText()).thenReturn(gsResponse);
         when(gigyaApi.changePassword(anyString(), anyString(), anyString())).thenReturn(cdcMockResponse);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.changePassword(uid, newPassword, oldPassword);
         });
@@ -939,7 +937,7 @@ public class GigyaServiceTests {
         when(mockGSResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.getRP(clientId)).thenReturn(mockGSResponse);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.getRP(clientId);
         });
@@ -954,7 +952,7 @@ public class GigyaServiceTests {
         when(cdcMockResponse.getErrorCode()).thenReturn(errorCode);
         when(gigyaApi.updateRequirePasswordCheck(anyString())).thenReturn(cdcMockResponse);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.updateRequirePasswordCheck(uid);
         });
@@ -998,7 +996,7 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.setAccountInfo(any(CDCAccount.class))).thenReturn(gsResponseMock);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.setAccountInfo(cdcAccount);
         });
@@ -1030,7 +1028,7 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.setAccountInfo(any(GSObject.class))).thenReturn(gsResponseMock);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.setAccountInfo(params);
         });
@@ -1046,7 +1044,7 @@ public class GigyaServiceTests {
                 "  \"results\": [\n" +
                 "  ]\n" +
                 "}";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponse);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1063,7 +1061,7 @@ public class GigyaServiceTests {
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String emailMock = "test@mail.com";
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [\"" + emailMock + "\", \"test-two@mail.com\"] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1080,7 +1078,7 @@ public class GigyaServiceTests {
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String emailMock = "test@mail.com";
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [\"" + emailMock + "\", \"test-two@mail.com\"] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1096,7 +1094,7 @@ public class GigyaServiceTests {
         // given
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1113,7 +1111,7 @@ public class GigyaServiceTests {
         String uidMock = "c1c691f4-556b-4ad1-ab75-841fc4e94dcd";
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"c1c691f4-556b-4ad1-ab75-841fc4e94dcd\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1130,7 +1128,7 @@ public class GigyaServiceTests {
         String uidMock = "";
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
         when(mockResponse.getErrorCode()).thenReturn(0);
 
@@ -1146,7 +1144,7 @@ public class GigyaServiceTests {
         // given
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(gigyaApi.getAccount(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(obj));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
@@ -1165,7 +1163,7 @@ public class GigyaServiceTests {
         ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", false);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 404, \"statusReason\": \"NOT_FOUND\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(gigyaApi.getAccount(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(obj));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
@@ -1184,7 +1182,7 @@ public class GigyaServiceTests {
         ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 401, \"statusReason\": \"NOT_FOUND\", \"results\": [{ \"UID\": \"\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(gigyaApi.getAccountV2(any())).thenReturn(mockResponse);
         when(mockResponse.getData()).thenReturn(new GSObject(objV2));
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
@@ -1203,7 +1201,7 @@ public class GigyaServiceTests {
         ReflectionTestUtils.setField(gigyaService, "isNewMarketingConsentEnabled", true);
         GSResponse mockResponse = Mockito.mock(GSResponse.class);
         String searchResponseJson = "{ \"totalCount\": 1, \"statusCode\": 200, \"statusReason\": \"OK\", \"results\": [{ \"UID\": \"10293847\", \"isRegistered\": true, \"profile\": { \"username\": \"armatest\", \"country\": \"MX\" }, \"emails\": { \"verified\": [], \"unverified\": [] } }] }";
-        when(gigyaApi.search(any(),any(), any())).thenReturn(mockResponse);
+        when(gigyaApi.search(any(), any(), any())).thenReturn(mockResponse);
         when(mockResponse.getResponseText()).thenReturn(searchResponseJson);
 
         when(gigyaApi.getAccountV2(any())).thenReturn(mockResponse);
@@ -1229,7 +1227,7 @@ public class GigyaServiceTests {
         Mockito.when(mockCdcResponse.getErrorCode()).thenReturn(10040);
         Mockito.when(mockCdcResponse.getErrorMessage()).thenReturn(message);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.searchInBothDC(username);
         });
@@ -1399,7 +1397,7 @@ public class GigyaServiceTests {
         when(gsResponseMock.getErrorCode()).thenReturn(400001);
         when(gigyaApi.finalizeRegistration(anyString())).thenReturn(gsResponseMock);
 
-        Assertions.assertThrows(CustomGigyaErrorException.class,()-> {
+        Assertions.assertThrows(CustomGigyaErrorException.class, () -> {
 
             gigyaService.finalizeRegistration(regToken);
         });

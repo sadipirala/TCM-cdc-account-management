@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.thermofisher.cdcam.enums.CookieType;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,7 +35,7 @@ public class CookieService {
         return String.format("cip_authdata=%s; Path=%s; Domain=%s", cipAuthDataBase64, path, cipAuthDataDomain);
     }
 
-    public CIPAuthDataDTO decodeCIPAuthDataCookie(String cookieString) throws JsonParseException{
+    public CIPAuthDataDTO decodeCIPAuthDataCookie(String cookieString) throws JsonParseException {
         byte[] cookieStringBytes = cookieString.getBytes();
         String decodedCookie = encodeService.decodeBase64(cookieStringBytes);
         Gson g = new Gson();
@@ -44,7 +43,7 @@ public class CookieService {
     }
 
     public String buildDefaultCipAuthDataCookie(CookieType type) {
-        switch (type){
+        switch (type) {
             case RESET_PASSWORD:
                 CIPAuthDataDTO cipAuthDataDTO = CIPAuthDataDTO.builder()
                         .clientId(identityResetPasswordClientId)

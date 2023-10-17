@@ -1,8 +1,8 @@
 package com.thermofisher.cdcam.model.cdc;
 
+
 import java.util.Locale;
 import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -10,11 +10,12 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.Utils;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 @Builder(builderClassName = "ProfileBuilder", toBuilder = true)
 @Getter
@@ -48,7 +49,7 @@ public class Profile {
             company = Utils.isNullOrEmpty(marketingConsentDTO.getCompany()) ? null : marketingConsentDTO.getCompany();
             work = Objects.isNull(company) ? null : Work.builder().company(company).build();
         }
-        
+
         return Profile.builder()
             .firstName(profileInfoDTO.getFirstName())
             .lastName(profileInfoDTO.getLastName())

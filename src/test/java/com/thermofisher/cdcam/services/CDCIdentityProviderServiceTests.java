@@ -3,7 +3,6 @@ package com.thermofisher.cdcam.services;
 import com.gigya.socialize.GSRequest;
 import com.gigya.socialize.GSResponse;
 import org.json.JSONException;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,9 +11,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,10 +25,12 @@ public class CDCIdentityProviderServiceTests {
 
     @Mock
     SecretsService secretsService;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     public void getIdPInformation_ShouldNotBeReturnedIfTheIdPDoesNotExist() {
         // given

@@ -1,7 +1,10 @@
 package com.thermofisher.cdcam.services;
 
+import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
+import com.thermofisher.cdcam.model.HttpServiceResponse;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
+import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 import jakarta.annotation.PostConstruct;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
@@ -10,10 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
-import com.thermofisher.cdcam.model.HttpServiceResponse;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaLowScoreException;
-import com.thermofisher.cdcam.model.reCaptcha.ReCaptchaUnsuccessfulResponseException;
 @Slf4j
 @Service
 public class ReCaptchaService {

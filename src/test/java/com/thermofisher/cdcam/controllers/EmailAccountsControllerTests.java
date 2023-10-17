@@ -1,6 +1,5 @@
 package com.thermofisher.cdcam.controllers;
 
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.controller.EmailAccountsController;
 import com.thermofisher.cdcam.model.EECUser;
 import com.thermofisher.cdcam.model.EECUserV2;
@@ -9,27 +8,15 @@ import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.model.dto.LiteAccountDTO;
 import com.thermofisher.cdcam.utils.cdc.LiteRegistrationService;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,9 +39,9 @@ public class EmailAccountsControllerTests {
     private void setProperties() {
         ReflectionTestUtils.setField(emailAccountsController, "requestLimit", 1000);
     }
-  //  @BeforeEach
-   // public void setup(){
-     //   mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+    //  @BeforeEach
+    // public void setup(){
+    //   mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
     //}
 
     @Test
@@ -301,7 +287,7 @@ public class EmailAccountsControllerTests {
         setProperties();
         List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(TEST_EMAIL).build());
         when(liteRegistrationService.registerLiteAccounts(request)).thenReturn(Collections.singletonList(EECUserV3.builder().email(TEST_EMAIL).build()));
-        
+
         // when 
         ResponseEntity<List<EECUserV3>> response = emailAccountsController.addLiteAccount(request);
 
@@ -316,7 +302,7 @@ public class EmailAccountsControllerTests {
         setProperties();
         List<LiteAccountDTO> request = Collections.singletonList(LiteAccountDTO.builder().email(TEST_EMAIL).build());
         when(liteRegistrationService.registerLiteAccounts(request)).thenThrow(RuntimeException.class);
-        
+
         // when 
         ResponseEntity<List<EECUserV3>> response = emailAccountsController.addLiteAccount(request);
 

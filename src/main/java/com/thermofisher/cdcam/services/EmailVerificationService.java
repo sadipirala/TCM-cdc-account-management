@@ -1,18 +1,17 @@
 package com.thermofisher.cdcam.services;
 
+import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
+import com.thermofisher.cdcam.model.cdc.CDCResponseData;
 import com.thermofisher.cdcam.properties.EmailVerificationProperties;
-
+import com.thermofisher.cdcam.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.thermofisher.cdcam.enums.cdc.GigyaCodes;
-import com.thermofisher.cdcam.model.cdc.CDCResponseData;
-import com.thermofisher.cdcam.utils.Utils;
-
 import static com.thermofisher.cdcam.properties.EmailVerificationProperties.*;
+
 @Slf4j
 @Service
 public class EmailVerificationService {
@@ -22,10 +21,11 @@ public class EmailVerificationService {
     /**
      * Retrieve value for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD} based on the configured properties
      * in {@link EmailVerificationProperties}.
-     * @param countryCode   The country code the new account selected during account creation.
-     * @return              The value used for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD}. Can be either
-     *                      {@link EmailVerificationProperties#DEFAULT_VERIFIED_DATE} or
-     *                      {@link EmailVerificationProperties#ENFORCE_EMAIL_VERIFICATION_DATE}
+     *
+     * @param countryCode The country code the new account selected during account creation.
+     * @return The value used for {@link EmailVerificationProperties#VERIFICATION_PENDING_FIELD}. Can be either
+     * {@link EmailVerificationProperties#DEFAULT_VERIFIED_DATE} or
+     * {@link EmailVerificationProperties#ENFORCE_EMAIL_VERIFICATION_DATE}
      */
     public static String getDefaultVerifiedDate(String countryCode) {
         // Return default value when email verification flag is disabled globally
@@ -56,10 +56,10 @@ public class EmailVerificationService {
         log.info("Email verification is not enforced for provided country code '{}' but feature is not global. Setting default value: {}", countryCode, DEFAULT_VERIFIED_DATE);
         return DEFAULT_VERIFIED_DATE;
     }
-    
+
     public static boolean isVerificationPending(CDCResponseData cdcResponseData) {
         return cdcResponseData.getErrorCode() == GigyaCodes.ACCOUNT_PENDING_REGISTRATION.getValue()
-            && cdcResponseData.getErrorDetails().contains(VERIFICATION_PENDING_FIELD);
+                && cdcResponseData.getErrorDetails().contains(VERIFICATION_PENDING_FIELD);
     }
 
     @Async

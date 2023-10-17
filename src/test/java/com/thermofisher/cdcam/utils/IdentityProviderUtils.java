@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 
 public class IdentityProviderUtils {
-    
+
     public static String getIdentityProviderJsonString() throws IOException {
         String path = "src/test/resources/CDCResponses/identity-provider.json";
         return TestUtils.getJSONFromFile(path).toString();

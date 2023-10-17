@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +11,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,10 +25,12 @@ public class InvitationServiceTest {
 
     @Mock
     HttpService httpService;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     public void updateInvitationCountry_givenCountryIsUpdatedCorrectly_returnStatus200() {
         // given

@@ -1,8 +1,8 @@
 package com.thermofisher.cdcam.builders;
 
+
 import java.util.Locale;
 import java.util.Objects;
-
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.gigya.socialize.GSObject;
 import com.google.gson.Gson;
@@ -11,16 +11,17 @@ import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.cdc.Korea;
 import com.thermofisher.cdcam.model.cdc.Preferences;
 import com.thermofisher.cdcam.model.cdc.Registration;
-import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
-
-import com.thermofisher.cdcam.model.dto.RegistrationDTO;
 import com.thermofisher.cdcam.model.cdc.Thermofisher;
+import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
+import com.thermofisher.cdcam.model.dto.RegistrationDTO;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
-
 import com.thermofisher.cdcam.utils.cdc.ThermofisherAttributesHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
+
 @Slf4j
 public class AccountBuilder {
 
@@ -65,7 +66,7 @@ public class AccountBuilder {
                     .country(profile.containsKey("country") ? profile.getString("country") : "")
                     .city(profile.containsKey("city") ? profile.getString("city") : "")
                     .marketingConsent(data.containsKey("subscribe") ? data.getBool("subscribe") : false)
-                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
+                    .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .socialProviders(socialProviders)
                     .hiraganaName(registrationAttributesHandler.getHiraganaName())
@@ -106,7 +107,7 @@ public class AccountBuilder {
             Registration registration = getRegistration(data);
             RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
             Thermofisher thermofisher = getThermofisher(data);
-            ThermofisherAttributesHandler thermofisherAttributesHandler=new ThermofisherAttributesHandler(thermofisher);
+            ThermofisherAttributesHandler thermofisherAttributesHandler = new ThermofisherAttributesHandler(thermofisher);
 
 
             if (password != null) {
@@ -162,9 +163,9 @@ public class AccountBuilder {
         }
     }
 
-    private static Registration getRegistration (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
+    private static Registration getRegistration(GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
-        if(data.containsKey("registration")) {
+        if (data.containsKey("registration")) {
             RegistrationDTO registrationDTO = gson.fromJson(data.getString("registration"), RegistrationDTO.class);
             return Registration.build(registrationDTO);
         }
@@ -172,11 +173,11 @@ public class AccountBuilder {
         return null;
     }
 
-    private static Thermofisher getThermofisher (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
+    private static Thermofisher getThermofisher(GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
 
         Gson gson = new Gson();
-        if(data.containsKey("thermofisher")) {
-            Thermofisher thermofisher= gson.fromJson(data.getString("thermofisher"), Thermofisher.class);
+        if (data.containsKey("thermofisher")) {
+            Thermofisher thermofisher = gson.fromJson(data.getString("thermofisher"), Thermofisher.class);
             return thermofisher;
         }
 
@@ -192,15 +193,15 @@ public class AccountBuilder {
         return Korea.buildFromPreferences(preferences);
     }
 
-    private Preferences getPreferences (GSObject obj) throws JsonSyntaxException, GSKeyNotFoundException {
+    private Preferences getPreferences(GSObject obj) throws JsonSyntaxException, GSKeyNotFoundException {
         Gson gson = new Gson();
         if (obj.containsKey("preferences")) {
             return gson.fromJson(obj.getString("preferences"), Preferences.class);
         }
 
         return null;
-    } 
-    
+    }
+
     private String getProviderClientId(Registration registration) {
         if (Objects.nonNull(registration) && Objects.nonNull(registration.getOpenIdProvider()) && StringUtils.isNotBlank(registration.getOpenIdProvider().getClientID())) {
             return registration.getOpenIdProvider().getClientID();
@@ -241,5 +242,6 @@ public class AccountBuilder {
             .isProhibitedFromAcceptingGifts(accountInfoDTO.getIsProhibitedFromAcceptingGifts())
             .acceptsAspireTermsAndConditions(accountInfoDTO.getAcceptsAspireTermsAndConditions())
             .build();
+
     }
 }

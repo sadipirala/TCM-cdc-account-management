@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Builder
 public class CollectionAndUsePersonalInfoMandatory {
-	private boolean isConsentGranted;
+    private boolean isConsentGranted;
 }
