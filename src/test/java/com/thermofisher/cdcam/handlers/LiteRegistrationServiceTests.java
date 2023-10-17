@@ -676,5 +676,6 @@ public class LiteRegistrationServiceTests {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             liteRegistrationService.registerLiteAccounts(request);
         });
+        
     }
 }
