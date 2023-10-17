@@ -88,7 +88,7 @@ testing {
     }
 }
 bootJar {
-    archiveBaseName = "cdc-account-management"
+    archiveBaseName = "cdcam"
 }
 jacoco {
     toolVersion = "0.8.9"
