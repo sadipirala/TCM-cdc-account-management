@@ -10,9 +10,7 @@ import java.io.IOException;
 public class TestUtils {
     public static JsonObject getJSONFromFile(String filePath) throws IOException, JsonSyntaxException {
 
-        //JSONObject jsonObject = new ObjectMapper().readValue(filePath, JSONObject.class);
         JsonObject jsonObject = JsonParser.parseReader(new FileReader(filePath)).getAsJsonObject();
-        System.out.println(jsonObject.toString());
         return jsonObject;
     }
 }
