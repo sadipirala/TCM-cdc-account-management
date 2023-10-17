@@ -10,7 +10,8 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew clean build -x test --stacktrace
 RUN ls -lrt
-RUN cd app;ls -lrt
+RUN cd build;ls -lrt
+RUN cd build/lib;ls -lrt
 
 
 FROM amazoncorretto:21-alpine-jdk
