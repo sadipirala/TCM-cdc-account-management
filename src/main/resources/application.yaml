@@ -21,6 +21,7 @@ spring:
     additional-location: ${SPRING_CONFIG_ADDITIONAL_LOCATION}
 
 
+server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
 
 cdcam.secrets: cdcam-secrets

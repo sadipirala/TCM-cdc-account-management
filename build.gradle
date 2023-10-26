@@ -63,6 +63,7 @@ dependencies {
     implementation "com.thermofisher.identity:identity-commons-cdc-lib:${identityCdcVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'au.com.dius:pact-jvm-provider-junit5_2.12:3.6.15'
+    implementation "com.thermofisher.platform:tfcom-observability:1.0.0"
     testImplementation 'org.projectlombok:lombok'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
