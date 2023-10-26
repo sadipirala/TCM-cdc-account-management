@@ -251,7 +251,7 @@ public class AccountsController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping()
+    @PostMapping("/")
     @Operation(description = "Inserts a new Account")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
