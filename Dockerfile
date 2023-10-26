@@ -5,10 +5,12 @@
 #COPY target/cdcam.jar cdcam.jar
 #ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseContainerSupport", "-XX:MaxRAMFraction=2", "-Dspring.profiles.active=${SPRING.PROFILES.ACTIVE}", "-jar", "cdcam.jar"]
 FROM amazoncorretto:21-alpine-jdk as build
+CMD apt-get install awscli.
+COPY credentials /root/.aws/credentials
 WORKDIR /app
 COPY . .
 RUN chmod +x gradlew
-RUN ./gradlew clean build -x test --stacktrace
+RUN ./gradlew clean build --stacktrace
 RUN ls -lrt
 RUN cd build;ls -lrt
 RUN cd build/libs;ls -lrt
