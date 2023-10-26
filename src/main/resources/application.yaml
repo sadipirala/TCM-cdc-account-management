@@ -3,11 +3,7 @@ spring:
     name: cdcam
   profiles:
     active: test
-  cache:
-    cache-names: federationDomain,federationCG,federationCGM
-    caffeine:
-      spec: expireAfterWrite=24h
-
+ 
 
   jpa:
     properties:
