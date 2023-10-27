@@ -19,7 +19,9 @@ spring:
 
 server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
-
+springdoc:
+  swagger-ui:
+    path=/swagger-ui-custom.html
 cdcam.secrets: cdcam-secrets
 
 recaptcha.siteverify.url: https://www.google.com/recaptcha/api/siteverify
