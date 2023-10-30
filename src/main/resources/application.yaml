@@ -25,7 +25,7 @@ springdoc:
     urls:
       - url: /api-gateway/cdcam/v3/api-docs
         name: API Gateway
-      - url: /cdcam/auth-api/federation/v3/api-docs
+      - url: /cdcam/v3/api-docs
         name: Default
     urls-primary-name: API Gateway
 swagger:
