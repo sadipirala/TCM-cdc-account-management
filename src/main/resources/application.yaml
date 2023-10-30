@@ -21,7 +21,20 @@ server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
 springdoc:
   swagger-ui:
-    path=/swagger-ui-custom.html
+    config-url: /api-gateway/cdcam/v3/api-docs/swagger-config
+    urls:
+      - url: /api-gateway/cdcam/v3/api-docs
+        name: API Gateway
+      - url: /cdcam/auth-api/federation/v3/api-docs
+        name: Default
+    urls-primary-name: API Gateway
+swagger:
+  api:
+    title: Identity Accounts API
+    description: API Services Documentation
+    version: 1.0
+    githubRepoLink: https://github.com/thermofisher/TCM-cdc-account-management
+
 cdcam.secrets: cdcam-secrets
 
 recaptcha.siteverify.url: https://www.google.com/recaptcha/api/siteverify
