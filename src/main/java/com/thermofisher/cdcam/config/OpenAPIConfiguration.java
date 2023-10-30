@@ -11,7 +11,7 @@ public class OpenAPIConfiguration {
     public GroupedOpenApi Api1() {
         return GroupedOpenApi.builder()
                 .group("CDCAM V1")
-                .pathsToMatch("^((?!v2).)*$")
+                .pathsToMatch("^((?!v3).)*$")
                 .build();
     }
 
@@ -19,7 +19,7 @@ public class OpenAPIConfiguration {
     public GroupedOpenApi Api2() {
         return GroupedOpenApi.builder()
                 .group("CDCAM V2")
-                .pathsToMatch("/v2/.*")
+                .pathsToMatch("/v3/.*")
                 .build();
     }
 
