@@ -16,7 +16,8 @@ spring:
   config:
     additional-location: ${SPRING_CONFIG_ADDITIONAL_LOCATION}
 
-
+server:
+  forward-headers-strategy:framework
 server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
 springdoc:
