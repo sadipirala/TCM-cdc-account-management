@@ -22,10 +22,11 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers("/**").permitAll())
+                        .requestMatchers("/**","/swagger-ui/**", "/v3/api-docs").permitAll())
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(withDefaults()).build();
 
     }
+
 }
