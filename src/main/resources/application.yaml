@@ -20,15 +20,16 @@ server:
   forward-headers-strategy:framework
 server.servlet.context-path: /cdcam
 server.max-http-header-size: 32KB
+#springdoc:
+ ### urls:
+    #  - url: /api-gateway/cdcam/v3/api-docs
+     #   name: API Gateway
+      #- url: /cdcam/v3/api-docs
+       # name: Default
+    #urls-primary-name: API Gateway
 springdoc:
-  swagger-ui:
-    config-url: /api-gateway/cdcam/v3/api-docs/swagger-config
-    urls:
-      - url: /api-gateway/cdcam/v3/api-docs
-        name: API Gateway
-      - url: /cdcam/v3/api-docs
-        name: Default
-    urls-primary-name: API Gateway
+  api-docs:
+    path: /api-docs
 swagger:
   api:
     title: Identity Accounts API
