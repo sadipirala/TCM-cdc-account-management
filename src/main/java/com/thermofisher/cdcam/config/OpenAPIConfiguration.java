@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenAPIConfiguration {
 
-    @Bean
+   /* @Bean
     public GroupedOpenApi Api1() {
         return GroupedOpenApi.builder()
                 .group("CDCAM V1")
@@ -22,5 +22,8 @@ public class OpenAPIConfiguration {
                 .pathsToMatch("/v3/.*")
                 .build();
     }
+
+    */
+
 
 }
