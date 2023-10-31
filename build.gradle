@@ -55,8 +55,6 @@ dependencies {
     implementation 'org.codehaus.groovy:groovy-all:3.0.19'
     testImplementation 'org.codehaus.groovy:groovy-all:3.0.19'
     implementation 'com.gigya:gigya-sdk:3.2.1'
-//    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
-    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.2.0'
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk', version: '1.12.558'
