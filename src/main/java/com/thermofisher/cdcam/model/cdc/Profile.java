@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.model.cdc;
 
+import java.util.Locale;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -52,7 +53,7 @@ public class Profile {
             .lastName(profileInfoDTO.getLastName())
             .city(city)
             .work(work)
-            .email(profileInfoDTO.getEmail())
+            .email(profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH))
             .country(profileInfoDTO.getCountry())
             .build();
     }

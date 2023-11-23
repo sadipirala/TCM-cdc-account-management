@@ -1,5 +1,6 @@
 package com.thermofisher.cdcam.builders;
 
+import java.util.Locale;
 import java.util.Objects;
 
 import com.gigya.socialize.GSKeyNotFoundException;
@@ -195,8 +196,8 @@ public class AccountBuilder {
         return AccountInfo.builder()
             .firstName(accountInfoDTO.getFirstName())
             .lastName(accountInfoDTO.getLastName())
-            .username(accountInfoDTO.getUsername())
-            .emailAddress(accountInfoDTO.getEmailAddress())
+            .username(accountInfoDTO.getUsername().toLowerCase(Locale.ENGLISH))
+            .emailAddress(accountInfoDTO.getEmailAddress().toLowerCase(Locale.ENGLISH))
             .password(accountInfoDTO.getPassword())
             .localeName(accountInfoDTO.getLocaleName())
             .company(accountInfoDTO.getCompany())
