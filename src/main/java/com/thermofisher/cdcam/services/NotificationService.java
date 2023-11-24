@@ -79,34 +79,26 @@ public class NotificationService {
 
     public void sendPrivateAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
         Objects.requireNonNull(accountUpdatedNotification);
-        logger.info("private inside account update1 : "+accountUpdatedNotification.getType());
         String notificationMessage = new GsonBuilder().create().toJson(accountUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
-        logger.info("private inside account update2 : "+accountUpdatedNotification.getType());
     }
 
     public void sendPublicAccountUpdatedNotification(@NotNull AccountUpdatedNotification accountUpdatedNotification) {
         Objects.requireNonNull(accountUpdatedNotification);
-        logger.info("inside account update1 : "+accountUpdatedNotification.getType());
         String notificationMessage = new GsonBuilder().create().toJson(accountUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, accountUpdatedSNSTopic);
-        logger.info("inside account update2 : "+accountUpdatedNotification.getType());
     }
 
     public void sendPublicEmailUpdatedNotification(@NotNull EmailUpdatedNotification emailUpdatedNotification) {
         Objects.requireNonNull(emailUpdatedNotification);
-        logger.info("inside email update1 : "+emailUpdatedNotification.getType());
         String notificationMessage = new GsonBuilder().create().toJson(emailUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, accountUpdatedSNSTopic);
-        logger.info("inside email update2 : "+emailUpdatedNotification.getType());
     }
 
     public void sendPrivateEmailUpdatedNotification(@NotNull EmailUpdatedNotification emailUpdatedNotification) {
         Objects.requireNonNull(emailUpdatedNotification);
-        logger.info("private inside email update1 : "+emailUpdatedNotification.getType());
         String notificationMessage = new GsonBuilder().create().toJson(emailUpdatedNotification);
         snsHandler.sendNotification(notificationMessage, registrationSNSTopic);
-        logger.info("private inside email update2 : "+emailUpdatedNotification.getType());
     }
 
     public void sendAspireRegistrationNotification(@NotNull AccountInfo accountInfo) throws JsonProcessingException {

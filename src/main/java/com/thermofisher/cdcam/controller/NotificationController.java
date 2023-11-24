@@ -53,7 +53,6 @@ public class NotificationController {
             if (null != previousEmail && !previousEmail.equalsIgnoreCase(accountInfo.getEmailAddress())) {
                 accountUpdatedNotification.setPreviousEmail(emailVerificationDTO.getPreviousEmail());
             }
-            logger.info("Type ~~~~"+accountUpdatedNotification.getType());
             logger.info("email ~~~~"+accountUpdatedNotification.getEmailAddress());
             logger.info("Sending accountUpdated notification.");
             notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);

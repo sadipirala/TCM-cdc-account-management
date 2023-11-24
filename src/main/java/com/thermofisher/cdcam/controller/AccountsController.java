@@ -72,8 +72,6 @@ import com.thermofisher.cdcam.services.hashing.HashingService;
 import com.thermofisher.cdcam.utils.PasswordUtils;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.UsersHandler;
-import com.thermofisher.cdcam.model.cdc.Thermofisher;
-import com.thermofisher.cdcam.builders.AccountBuilder;
 
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
