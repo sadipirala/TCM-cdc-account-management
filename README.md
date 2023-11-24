@@ -3,7 +3,7 @@
 
 # CDC Account Management API (CDCAM)
 
-CDCAM handles all direct communication with SAP CDC for Customer Identity & Account Management (CIAM)..
+CDCAM handles all direct communication with SAP CDC for Customer Identity & Account Management (CIAM).
 
 ## Installation
 
