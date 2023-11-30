@@ -13,9 +13,11 @@ import com.thermofisher.cdcam.model.cdc.Registration;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 
 import com.thermofisher.cdcam.model.dto.RegistrationDTO;
+import com.thermofisher.cdcam.model.cdc.Thermofisher;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.RegistrationAttributesHandler;
 
+import com.thermofisher.cdcam.utils.cdc.ThermofisherAttributesHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,7 +66,7 @@ public class AccountBuilder {
                     .country(profile.containsKey("country") ? profile.getString("country") : "")
                     .city(profile.containsKey("city") ? profile.getString("city") : "")
                     .marketingConsent(data.containsKey("subscribe") ? data.getBool("subscribe") : false)
-                    .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
+                     .localeName(profile.containsKey("locale") ? profile.getString("locale") : "")
                     .loginProvider(obj.containsKey("loginProvider") ? obj.getString("loginProvider") : "")
                     .socialProviders(socialProviders)
                     .hiraganaName(registrationAttributesHandler.getHiraganaName())
@@ -104,6 +106,9 @@ public class AccountBuilder {
             Preferences preferences = getPreferences(obj);
             Registration registration = getRegistration(data);
             RegistrationAttributesHandler registrationAttributesHandler = new RegistrationAttributesHandler(registration);
+            Thermofisher thermofisher = getThermofisher(data);
+            ThermofisherAttributesHandler thermofisherAttributesHandler=new ThermofisherAttributesHandler(thermofisher);
+
 
             if (password != null) {
                 String hash = password.containsKey("hash") ? password.getString("hash") : "";
@@ -149,6 +154,7 @@ public class AccountBuilder {
                     .overseasTransferPersonalInfoOptional(koreaConsents.getOverseasTransferPersonalInfoOptional())
                     .regAttempts(0)
                     .openIdProviderId(providerClientId)
+                    .legacyUserName(thermofisherAttributesHandler.getLegacyUsername())
                     .build();
 
         } catch (Exception e) {
@@ -163,8 +169,21 @@ public class AccountBuilder {
             RegistrationDTO registrationDTO = gson.fromJson(data.getString("registration"), RegistrationDTO.class);
             return Registration.build(registrationDTO);
         }
+
         return null;
     }
+
+    private static Thermofisher getThermofisher (GSObject data) throws JsonSyntaxException, GSKeyNotFoundException {
+
+        Gson gson = new Gson();
+        if(data.containsKey("thermofisher")) {
+            Thermofisher thermofisher= gson.fromJson(data.getString("thermofisher"), Thermofisher.class);
+            return thermofisher;
+        }
+
+        return null;
+    }
+
 
     private boolean getIsConsentGranted(Preferences preferences) {
         return Objects.nonNull(preferences) && Objects.nonNull(preferences.getMarketing()) && Objects.nonNull(preferences.getMarketing().getConsent()) && preferences.getMarketing().getConsent().isConsentGranted();

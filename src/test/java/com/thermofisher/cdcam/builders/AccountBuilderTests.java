@@ -301,6 +301,19 @@ public class AccountBuilderTests {
         // then
         assertEquals(res.getCollectionAndUsePersonalInfoMandatory(), collectionAndUsePersonalInfoMandatory);
     }
+    @Test
+    public void getAccountInfoV2_getThermofisher_legacyUserName() throws Exception {
+
+        // given
+        String legacyUsername = AccountUtils.getThermofisher().getLegacyUsername();
+        when(accountBuilder.getAccountInfoV2(any(GSObject.class))).thenCallRealMethod();
+
+        // when
+        AccountInfo res = accountBuilder.getAccountInfoV2(new GSObject(siteCdcResponse));
+
+        // then
+        assertEquals(res.getLegacyUserName(), legacyUsername);
+    }
 
     @Test
     public void getAccountInfoV2_ifGivenSiteUserWithCollectionAndUsePersonalInfoOptional_returnAccountInfoWithCollectionAndUsePersonalInfoOptional() throws Exception {
