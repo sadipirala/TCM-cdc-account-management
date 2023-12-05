@@ -14,6 +14,7 @@ import com.thermofisher.cdcam.utils.Utils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 @Builder(builderClassName = "ProfileBuilder", toBuilder = true)
 @Getter
@@ -53,7 +54,8 @@ public class Profile {
             .lastName(profileInfoDTO.getLastName())
             .city(city)
             .work(work)
-            .email(profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH))
+            .email(StringUtils.isNotBlank(profileInfoDTO.getEmail())?
+                    profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH): profileInfoDTO.getEmail())
             .country(profileInfoDTO.getCountry())
             .build();
     }
