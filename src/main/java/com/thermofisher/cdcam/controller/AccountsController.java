@@ -272,6 +272,7 @@ public class AccountsController {
         }
 
         String disableRecaptcha = secretsService.get(CdcamSecrets.RECAPTCHA_DISABLED_COUNTRIES.getKey());
+        logger.info("printing recaptcha disabled countries = "+disableRecaptcha);
 
         if(!disableRecaptcha.contains(accountInfoDTO.getCountry())){
             try {
