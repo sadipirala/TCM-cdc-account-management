@@ -8,7 +8,8 @@ public enum CdcamSecrets {
     SECONDARY_DC("cdc-secondary-secret-key"),
     RECAPTCHAV3("reCaptcha-v3-secret-key"),
     RECAPTCHAV2("reCaptcha-v2-secret-key"),
-    QUICKSIGHT_ROLE("aws-quicksight-role");
+    QUICKSIGHT_ROLE("aws-quicksight-role"),
+    RECAPTCHA_DISABLED_COUNTRIES("reCaptcha-disabled-countries");
 
     private String key;
 
