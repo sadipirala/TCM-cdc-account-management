@@ -188,7 +188,7 @@ public class AccountsControllerTests {
         uids.add("002");
         uids.add("003");
         when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
-        when(secretsService.get(any())).thenReturn("cn,us");
+        when(secretsService.get(any())).thenReturn("cn");
     }
 
     @Test
