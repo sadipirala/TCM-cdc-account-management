@@ -6,6 +6,7 @@ import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.Utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -62,7 +63,9 @@ public class UpdateAccountService {
             if(!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
                 jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
             }
-            if (isLegacyValidationEnabled && !profileInfoDTO.isALegacyProfile()) {
+            if (StringUtils.isBlank(profileInfoDTO.getActualUsername()) ||
+                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile() )||                     
+                    (!profileInfoDTO.getActualUsername().equalsIgnoreCase(profileInfoDTO.getEmail()))) {
                 jsonAccount.put("username", profileInfoDTO.getEmail());
             }
         }
