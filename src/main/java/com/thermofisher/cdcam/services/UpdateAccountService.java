@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class UpdateAccountService {
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -63,12 +65,13 @@ public class UpdateAccountService {
             if(!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
                 jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
             }
+
             if (StringUtils.isBlank(profileInfoDTO.getActualUsername()) ||
                     (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile() )||
                     (!profileInfoDTO.getActualUsername().equalsIgnoreCase(profileInfoDTO.getEmail()))) {
-                jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase());
-            }
-        }
+                 jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH));
+
+             }
 
         JSONObject cleanProfile = new JSONObject(new Gson().toJson(profile));
         jsonAccount.put("uid", uid);
