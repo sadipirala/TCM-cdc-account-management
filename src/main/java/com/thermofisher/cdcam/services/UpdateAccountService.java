@@ -62,16 +62,17 @@ public class UpdateAccountService {
         Profile profile = Profile.build(profileInfoDTO);
         JSONObject jsonAccount = new JSONObject();
         if (!Utils.isNullOrEmpty(profileInfoDTO.getEmail())) {
-            if(!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
+            if (!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
                 jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
             }
 
             if (StringUtils.isBlank(profileInfoDTO.getActualUsername()) ||
-                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile() )||
+                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile()) ||
                     (!profileInfoDTO.getActualUsername().equalsIgnoreCase(profileInfoDTO.getEmail()))) {
-                 jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH));
+                jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH));
 
-             }
+            }
+        }
 
         JSONObject cleanProfile = new JSONObject(new Gson().toJson(profile));
         jsonAccount.put("uid", uid);
