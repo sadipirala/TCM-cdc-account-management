@@ -64,9 +64,9 @@ public class UpdateAccountService {
                 jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
             }
             if (StringUtils.isBlank(profileInfoDTO.getActualUsername()) ||
-                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile() )||                     
+                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile() )||
                     (!profileInfoDTO.getActualUsername().equalsIgnoreCase(profileInfoDTO.getEmail()))) {
-                jsonAccount.put("username", profileInfoDTO.getEmail());
+                jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase());
             }
         }
 
