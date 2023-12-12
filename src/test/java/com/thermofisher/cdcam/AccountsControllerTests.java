@@ -181,14 +181,13 @@ public class AccountsControllerTests {
     JSONObject reCaptchaResponse;
 
     @Before
-    public void setup() throws JSONException {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
         reCaptchaResponse = new JSONObject();
         uids.add("001");
         uids.add("002");
         uids.add("003");
         when(cookieService.decodeCIPAuthDataCookie(anyString())).thenReturn(IdentityProviderUtils.buildCIPAuthDataDTO());
-        when(secretsService.get(any())).thenReturn("cn");
     }
 
     @Test

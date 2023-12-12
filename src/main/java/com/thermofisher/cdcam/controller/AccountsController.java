@@ -12,7 +12,6 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.validation.constraints.NotBlank;
 
-import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.model.*;
 import com.thermofisher.cdcam.model.dto.*;
 import org.apache.commons.lang3.StringUtils;
@@ -271,23 +270,19 @@ public class AccountsController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        String disableRecaptcha = secretsService.get(CdcamSecrets.RECAPTCHA_DISABLED_COUNTRIES.getKey());
-
-        if(!disableRecaptcha.contains(accountInfoDTO.getCountry())){
-            try {
-                JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), captchaValidationToken);
-                logger.info(String.format("reCaptcha response for %s: %s", accountInfoDTO.getUsername(), reCaptchaResponse.toString()));
-            } catch (ReCaptchaLowScoreException v3Exception) {
-                String jwtToken = jwtService.create();
-                logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfoDTO.getUsername(), v3Exception.getMessage()));
-                return ResponseEntity.accepted().header(ReCaptchaService.CAPTCHA_TOKEN_HEADER, jwtToken).build();
-            } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
-                logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfoDTO.getUsername(), v2Exception.getMessage()));
-                return ResponseEntity.badRequest().build();
-            } catch (JSONException jsonException) {
-                logger.error(String.format("JSONException while verifying reCaptcha token: %s.", jsonException.getMessage()));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
+        try {
+            JSONObject reCaptchaResponse = reCaptchaService.verifyToken(accountInfoDTO.getReCaptchaToken(), captchaValidationToken);
+            logger.info(String.format("reCaptcha response for %s: %s", accountInfoDTO.getUsername(), reCaptchaResponse.toString()));
+        } catch (ReCaptchaLowScoreException v3Exception) {
+            String jwtToken = jwtService.create();
+            logger.error(String.format("reCaptcha v3 error for: %s. message: %s", accountInfoDTO.getUsername(), v3Exception.getMessage()));
+            return ResponseEntity.accepted().header(ReCaptchaService.CAPTCHA_TOKEN_HEADER, jwtToken).build();
+        } catch (ReCaptchaUnsuccessfulResponseException v2Exception) {
+            logger.error(String.format("reCaptcha v2 error for: %s. message: %s", accountInfoDTO.getUsername(), v2Exception.getMessage()));
+            return ResponseEntity.badRequest().build();
+        } catch (JSONException jsonException) {
+            logger.error(String.format("JSONException while verifying reCaptcha token: %s.", jsonException.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
         String ciphertext = accountInfoDTO.getCiphertext();
