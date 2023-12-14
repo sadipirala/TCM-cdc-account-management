@@ -6,6 +6,7 @@ import com.thermofisher.cdcam.model.cdc.Profile;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
 import com.thermofisher.cdcam.utils.Utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 public class UpdateAccountService {
@@ -59,11 +62,15 @@ public class UpdateAccountService {
         Profile profile = Profile.build(profileInfoDTO);
         JSONObject jsonAccount = new JSONObject();
         if (!Utils.isNullOrEmpty(profileInfoDTO.getEmail())) {
-            if(!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
+            if (!profileInfoDTO.getActualEmail().equalsIgnoreCase(profileInfoDTO.getActualUsername())) {
                 jsonAccount.put("removeLoginEmails", profileInfoDTO.getActualEmail());
             }
-            if (isLegacyValidationEnabled && !profileInfoDTO.isALegacyProfile()) {
-                jsonAccount.put("username", profileInfoDTO.getEmail());
+
+            if (StringUtils.isBlank(profileInfoDTO.getActualUsername()) ||
+                    (isLegacyValidationEnabled && profileInfoDTO.isALegacyProfile()) ||
+                    (!profileInfoDTO.getActualUsername().equalsIgnoreCase(profileInfoDTO.getEmail()))) {
+                jsonAccount.put("username", profileInfoDTO.getEmail().toLowerCase(Locale.ENGLISH));
+
             }
         }
 

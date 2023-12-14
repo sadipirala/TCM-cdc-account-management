@@ -462,7 +462,7 @@ public class AccountsControllerTests {
         // then
         Assert.assertEquals(accountInfo.getFirstName(),accountDTO.getFirstName());
         Assert.assertEquals(accountInfo.getLastName(),accountDTO.getLastName());
-        Assert.assertEquals(accountInfo.getEmailAddress(),accountDTO.getEmailAddress());
+        Assert.assertEquals(accountInfo.getEmailAddress(),accountDTO.getEmailAddress().toLowerCase());
     }
 
     @Test
