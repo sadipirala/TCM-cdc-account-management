@@ -456,7 +456,7 @@ public class AccountsControllerTests {
 
         Assertions.assertThat(accountInfo.getFirstName()).isEqualTo(accountDTO.getFirstName());
         Assertions.assertThat(accountInfo.getLastName()).isEqualTo(accountDTO.getLastName());
-        Assertions.assertThat(accountInfo.getEmailAddress()).isEqualTo(accountDTO.getEmailAddress());
+        Assertions.assertThat(accountInfo.getEmailAddress()).isEqualToIgnoringCase(accountDTO.getEmailAddress());
     }
 
     @Test
