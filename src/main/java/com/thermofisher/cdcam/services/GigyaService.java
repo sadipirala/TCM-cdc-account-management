@@ -310,14 +310,17 @@ public class GigyaService {
 
     public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         boolean isAvailableLoginId = false;
-
+        logger.info("login id "+loginId+ "env "+env);
         isAvailableLoginId = isAvailableLoginId(loginId, mainApiDomain);
+        logger.info("Is Available in main domain "+isAvailableLoginId);
         if (!isAvailableLoginId) {
             return isAvailableLoginId;
         }
-
+        logger.info("is secondary available "+CDCUtils.isSecondaryDCSupported(env));
         if (CDCUtils.isSecondaryDCSupported(env)) {
+
             isAvailableLoginId = isAvailableLoginId(loginId, secondaryApiDomain);
+            logger.info("Is Available in secondary domain "+isAvailableLoginId);
         }
 
         return isAvailableLoginId;
