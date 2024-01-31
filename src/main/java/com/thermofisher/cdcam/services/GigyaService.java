@@ -219,6 +219,7 @@ public class GigyaService {
                 "loginIDs.username CONTAINS '%1$s' OR " +
                 "loginIDs.emails CONTAINS '%1$s' OR " +
                 "loginIDs.unverifiedEmails CONTAINS '%1$s'", userName);
+        logger.info("Domain userd in searchResultByUsername "+mainApiDomain);
         return gigyaApi.search(query, AccountType.FULL, mainApiDomain);
     }
 
@@ -311,6 +312,7 @@ public class GigyaService {
     public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         boolean isAvailableLoginId = false;
         logger.info("login id "+loginId+ "env "+env);
+        logger.info("main domain "+mainApiDomain);
         isAvailableLoginId = isAvailableLoginId(loginId, mainApiDomain);
         logger.info("Is Available in main domain "+isAvailableLoginId);
         if (!isAvailableLoginId) {
@@ -318,7 +320,7 @@ public class GigyaService {
         }
         logger.info("is secondary available "+CDCUtils.isSecondaryDCSupported(env));
         if (CDCUtils.isSecondaryDCSupported(env)) {
-
+            logger.info("secondary ApiDomain "+secondaryApiDomain);
             isAvailableLoginId = isAvailableLoginId(loginId, secondaryApiDomain);
             logger.info("Is Available in secondary domain "+isAvailableLoginId);
         }
@@ -328,6 +330,7 @@ public class GigyaService {
 
     private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         final String TOTAL_ACOUNT_PARAM = "totalCount";
+        logger.info("input apiDomain "+apiDomain);
         GSResponse gsResponse = getSearchResultByUsername(loginId);
 
         if (isErrorResponse(gsResponse)) {
