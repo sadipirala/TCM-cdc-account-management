@@ -5,4 +5,3 @@
 
 // calls the build using the configuration found in pipeline.yaml
 kubernetesPipeline()
-
