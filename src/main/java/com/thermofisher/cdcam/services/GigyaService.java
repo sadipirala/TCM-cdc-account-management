@@ -199,7 +199,7 @@ public class GigyaService {
 
     public String getEmailByUsername(String userName) throws IOException {
 
-        GSResponse gsResponse = getSearchResultByUsername(userName);
+        GSResponse gsResponse = getSearchResultByUsername(userName, mainApiDomain);
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(gsResponse.getResponseText(), CDCSearchResponse.class);
         for (CDCAccount result : cdcSearchResponse.getResults()) {
             if (result.getEmails().getVerified().size() > 0)
@@ -213,13 +213,13 @@ public class GigyaService {
         return NO_RESULTS_FOUND;
     }
 
-    private GSResponse getSearchResultByUsername(String userName) throws JsonProcessingException {
+    private GSResponse getSearchResultByUsername(String userName, String apiDomain) throws JsonProcessingException {
         String query = String.format("SELECT emails,loginIDs FROM accounts WHERE " +
                 "profile.username CONTAINS '%1$s' OR " +
                 "loginIDs.username CONTAINS '%1$s' OR " +
                 "loginIDs.emails CONTAINS '%1$s' OR " +
                 "loginIDs.unverifiedEmails CONTAINS '%1$s'", userName);
-        return gigyaApi.search(query, AccountType.FULL, mainApiDomain);
+        return gigyaApi.search(query, AccountType.FULL, apiDomain);
     }
 
     public String getUsernameByEmail(String email) {
@@ -259,7 +259,7 @@ public class GigyaService {
     public String resetPasswordRequest(String username) throws CustomGigyaErrorException, LoginIdDoesNotExistException, GSKeyNotFoundException, JsonProcessingException {
         logger.info(String.format("Reset password request triggered for username: %s.", username));
 
-        GSResponse searchResponse = getSearchResultByUsername(username);
+        GSResponse searchResponse = getSearchResultByUsername(username, mainApiDomain);
         String jSonSearch = searchResponse.getResponseText();
         CDCSearchResponse cdcSearchResponse = new ObjectMapper().readValue(jSonSearch, CDCSearchResponse.class);
 
@@ -310,12 +310,10 @@ public class GigyaService {
 
     public boolean isAvailableLoginId(String loginId) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         boolean isAvailableLoginId = false;
-
         isAvailableLoginId = isAvailableLoginId(loginId, mainApiDomain);
         if (!isAvailableLoginId) {
             return isAvailableLoginId;
         }
-
         if (CDCUtils.isSecondaryDCSupported(env)) {
             isAvailableLoginId = isAvailableLoginId(loginId, secondaryApiDomain);
         }
@@ -325,7 +323,7 @@ public class GigyaService {
 
     private boolean isAvailableLoginId(String loginId, String apiDomain) throws CustomGigyaErrorException, InvalidClassException, GSKeyNotFoundException, NullPointerException, JsonProcessingException {
         final String TOTAL_ACOUNT_PARAM = "totalCount";
-        GSResponse gsResponse = getSearchResultByUsername(loginId);
+        GSResponse gsResponse = getSearchResultByUsername(loginId, apiDomain);
 
         if (isErrorResponse(gsResponse)) {
             String errorMessage = String.format("[CDC ERROR] - Error on accounts.isAvailableLoginId. Domain: %s. Code: %d", apiDomain, gsResponse.getErrorCode());
