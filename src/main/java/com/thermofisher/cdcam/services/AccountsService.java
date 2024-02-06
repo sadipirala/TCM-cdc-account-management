@@ -1,13 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
-import javax.validation.constraints.NotBlank;
-
 import com.gigya.socialize.GSKeyNotFoundException;
 import com.thermofisher.cdcam.enums.aws.CdcamSecrets;
 import com.thermofisher.cdcam.enums.cdc.FederationProviders;
@@ -28,10 +20,9 @@ import com.thermofisher.cdcam.model.notifications.AccountUpdatedNotification;
 import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.utils.Utils;
 import com.thermofisher.cdcam.utils.cdc.CDCAccountsHandler;
-
+import jakarta.validation.constraints.NotBlank;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +31,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+@Slf4j
 @Service
 public class AccountsService {
-    private Logger logger = LogManager.getLogger(this.getClass());
     private final int FED_PASSWORD_LENGTH = 10;
 
     @Value("${general.cipdc}")
@@ -65,17 +62,17 @@ public class AccountsService {
 
     @Async
     public void onAccountRegistered(@NotBlank String uid) {
-        logger.info(String.format("onAccountRegistered called by webhook for UID: %s", uid));
+        log.info(String.format("onAccountRegistered called by webhook for UID: %s", uid));
         Objects.requireNonNull(uid);
 
         try {
             AccountInfo account = gigyaService.getAccountInfo(uid);
-            
+
             try {
-                logger.info("Saving post registration data.");
+                log.info("Saving post registration data.");
                 setPostRegistrationData(account);
             } catch (Exception e) {
-                logger.error(String.format("Error on saving post registration data. %s", e.getMessage()));
+                log.error(String.format("Error on saving post registration data. %s", e.getMessage()));
             }
 
             if (hasFederationProvider(account)) {
@@ -84,39 +81,39 @@ public class AccountsService {
                 }
 
                 if (isRegistrationNotificationEnabled) {
-                    logger.info(String.format("Sending account registration notification for federated account. UID: %s", account.getUid()));
+                    log.info(String.format("Sending account registration notification for federated account. UID: %s", account.getUid()));
                     notificationService.sendAccountRegisteredNotification(account, cipdc);
-                    logger.info(String.format("Account registration notification sent successfully for federated account. UID: %s", account.getUid()));
+                    log.info(String.format("Account registration notification sent successfully for federated account. UID: %s", account.getUid()));
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Error: %s. UID: %s.", e.getMessage(), uid));
+            log.error(String.format("Error: %s. UID: %s.", e.getMessage(), uid));
         }
     }
 
     private void setPostRegistrationData(AccountInfo account) throws JSONException, GSKeyNotFoundException, CustomGigyaErrorException {
         String awsQuickSightRole = secretsService.get(CdcamSecrets.QUICKSIGHT_ROLE.getKey());
-        
+
         Registration registration = Registration.builder().build();
         if (StringUtils.isNotBlank(account.getOpenIdProviderId())) {
             OpenIdRelyingParty openIdRelyingParty = gigyaService.getRP(account.getOpenIdProviderId());
             OpenIdProvider openIdProvider = OpenIdProvider.builder()
-                .providerName(openIdRelyingParty.getDescription())
-                .build();
+                    .providerName(openIdRelyingParty.getDescription())
+                    .build();
 
             registration.setOpenIdProvider(openIdProvider);
         }
 
         Data data = Data.builder()
-            .awsQuickSightRole(awsQuickSightRole)
-            .registration(registration)
-            .build();
-        
+                .awsQuickSightRole(awsQuickSightRole)
+                .registration(registration)
+                .build();
+
         CDCAccount cdcAccount = CDCAccount.builder()
-            .UID(account.getUid())
-            .data(data)
-            .build();
+                .UID(account.getUid())
+                .data(data)
+                .build();
 
         gigyaService.setAccountInfo(cdcAccount);
     }
@@ -136,7 +133,7 @@ public class AccountsService {
         if (!HttpStatus.valueOf(accountCreationResponse.getStatusCode()).is2xxSuccessful()) {
             if (Objects.nonNull(accountCreationResponse.getValidationErrors())) {
                 for (CDCValidationError validationError : accountCreationResponse.getValidationErrors()) {
-                    logger.error(String.format("Error %d on %s: %s.", validationError.getErrorCode(), validationError.getFieldName(), validationError.getMessage()));
+                    log.error(String.format("Error %d on %s: %s.", validationError.getErrorCode(), validationError.getFieldName(), validationError.getMessage()));
                 }
             }
 
@@ -155,43 +152,43 @@ public class AccountsService {
     public void onAccountMerged(@NotBlank String uid) {
         Objects.requireNonNull(uid);
 
-        logger.info(String.format("Account linking merge process started for UID: %s", uid));
+        log.info(String.format("Account linking merge process started for UID: %s", uid));
         try {
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             if (!accountInfo.isFederatedAccount()) {
-                logger.info(String.format("Merge update process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
+                log.info(String.format("Merge update process stopped. Account %s with UID %s is not federated. Merge update is only supported for federated accounts.", accountInfo.getUsername(), uid));
                 return;
             }
 
-            logger.info("Setting random password for merged account notification.");
+            log.info("Setting random password for merged account notification.");
             accountInfo.setPassword(Utils.getAlphaNumericString(FED_PASSWORD_LENGTH));
-            logger.info("Building MergedAccountNotification object.");
+            log.info("Building MergedAccountNotification object.");
             MergedAccountNotification mergedAccountNotification = MergedAccountNotification.build(accountInfo);
-            logger.info("Sending accountMerged notification.");
+            log.info("Sending accountMerged notification.");
             notificationService.sendAccountMergedNotification(mergedAccountNotification);
-            logger.info("accountMerged notification sent.");
+            log.info("accountMerged notification sent.");
         } catch (Exception e) {
-            logger.error(String.format("onAccountMerged - Something went wrong. %s.", e.getMessage()));
+            log.error(String.format("onAccountMerged - Something went wrong. %s.", e.getMessage()));
         }
     }
 
     @Async
     public void onAccountUpdated(@NotBlank String uid) {
-        logger.info(String.format("Account linking update process started for UID: %s", uid));
+        log.info(String.format("Account linking update process started for UID: %s", uid));
         try {
             AccountInfo accountInfo = gigyaService.getAccountInfo(uid);
             if (!accountInfo.isFederatedAccount()) {
-                logger.info(String.format("Update process stopped. Account %s with UID %s is not federated. Update is only supported for federated accounts.", accountInfo.getUsername(), uid));
+                log.info(String.format("Update process stopped. Account %s with UID %s is not federated. Update is only supported for federated accounts.", accountInfo.getUsername(), uid));
                 return;
             }
 
-            logger.info("Building AccountUpdatedNotification object.");
+            log.info("Building AccountUpdatedNotification object.");
             AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(accountInfo);
-            logger.info("Sending accountUpdated notification.");
+            log.info("Sending accountUpdated notification.");
             notificationService.sendPrivateAccountUpdatedNotification(accountUpdatedNotification);
-            logger.info("accountUpdated notification sent.");
+            log.info("accountUpdated notification sent.");
         } catch (Exception e) {
-            logger.error(String.format("onAccountUpdated - Something went wrong. %s.", e.getMessage()));
+            log.error(String.format("onAccountUpdated - Something went wrong. %s.", e.getMessage()));
         }
     }
 
@@ -204,12 +201,12 @@ public class AccountsService {
         params.put("data", dataJson.toString());
         params.put("finalizeRegistration", "true");
         gigyaService.setAccountInfo(params);
-        logger.info(String.format("Finalizing registration for UID: %s", account.getUid()));
+        log.info(String.format("Finalizing registration for UID: %s", account.getUid()));
         return gigyaService.finalizeRegistration(regToken);
     }
 
     public void updateConsent(ConsentDTO consentDTO) throws CustomGigyaErrorException, JSONException {
-        logger.info("Initiated consent update for user with UID: {}", consentDTO.getUid());
+        log.info("Initiated consent update for user with UID: {}", consentDTO.getUid());
 
         Map<String, String> params = new HashMap<>();
         params.put("UID", consentDTO.getUid());
@@ -226,7 +223,7 @@ public class AccountsService {
         params.put("preferences", preferences.toString());
 
         if (consentDTO.getMarketingConsent()) {
-            logger.info("Updating additional city and company fields.");
+            log.info("Updating additional city and company fields.");
             JSONObject work = new JSONObject();
             work.put("company", consentDTO.getCompany());
 
@@ -238,14 +235,14 @@ public class AccountsService {
         }
 
         gigyaService.setAccountInfo(params);
-        logger.info("Marketing consent update completed.");
+        log.info("Marketing consent update completed.");
     }
 
     public void notifyUpdatedConsent(String uid) throws CustomGigyaErrorException {
-        logger.info("Initiated updated consent notification for user with UID: {}", uid);
+        log.info("Initiated updated consent notification for user with UID: {}", uid);
         AccountInfo updatedAccountInfo = gigyaService.getAccountInfo(uid);
         AccountUpdatedNotification accountUpdatedNotification = AccountUpdatedNotification.build(updatedAccountInfo);
         notificationService.sendPublicAccountUpdatedNotification(accountUpdatedNotification);
-        logger.info("Completed updated consent notification.");
+        log.info("Completed updated consent notification.");
     }
 }

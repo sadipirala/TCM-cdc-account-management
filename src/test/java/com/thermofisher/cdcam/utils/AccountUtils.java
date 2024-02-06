@@ -1,20 +1,34 @@
 package com.thermofisher.cdcam.utils;
 
-import java.io.IOException;
-import java.util.Objects;
-
+import com.google.gson.JsonSyntaxException;
 import com.thermofisher.cdcam.enums.CountryCodes;
 import com.thermofisher.cdcam.model.AccountInfo;
 import com.thermofisher.cdcam.model.Ciphertext;
-import com.thermofisher.cdcam.model.cdc.*;
+import com.thermofisher.cdcam.model.cdc.CDCAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccount;
+import com.thermofisher.cdcam.model.cdc.CDCNewAccountV2;
+import com.thermofisher.cdcam.model.cdc.CDCResponse;
+import com.thermofisher.cdcam.model.cdc.China;
+import com.thermofisher.cdcam.model.cdc.Consent;
+import com.thermofisher.cdcam.model.cdc.Data;
+import com.thermofisher.cdcam.model.cdc.Japan;
+import com.thermofisher.cdcam.model.cdc.Korea;
+import com.thermofisher.cdcam.model.cdc.KoreaMarketingConsent;
+import com.thermofisher.cdcam.model.cdc.Marketing;
+import com.thermofisher.cdcam.model.cdc.OpenIdProvider;
+import com.thermofisher.cdcam.model.cdc.Preferences;
+import com.thermofisher.cdcam.model.cdc.Profile;
+import com.thermofisher.cdcam.model.cdc.Registration;
+import com.thermofisher.cdcam.model.cdc.Thermofisher;
+import com.thermofisher.cdcam.model.cdc.Work;
 import com.thermofisher.cdcam.model.dto.AccountInfoDTO;
 import com.thermofisher.cdcam.services.EmailVerificationService;
 import com.thermofisher.cdcam.services.LocaleNameService;
-
-import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.simple.parser.ParseException;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * AccountInfoUtils
@@ -47,8 +61,8 @@ public class AccountUtils {
     public static final String phoneNumber = "6648675309";
     public static final String cipdc = "us";
     public static final String openIdProviderId = "";
-    
-    
+
+
     // Korea
     public static final Boolean receiveMarketingInformation = true;
     public static final Boolean thirdPartyTransferPersonalInfoMandatory = true;
@@ -67,8 +81,8 @@ public class AccountUtils {
     public static final Boolean acceptsAspireTermsAndConditions = true;
 
     //China
-    public static  final String[] jobRoles = { "Development", "HR" };
-    public static  final String[] interests = { "Health", "Lab" };
+    public static final String[] jobRoles = {"Development", "HR"};
+    public static final String[] interests = {"Health", "Lab"};
 
     public static AccountInfo getFederatedAccount() {
         return AccountInfo.builder()
@@ -213,57 +227,57 @@ public class AccountUtils {
 
     public static AccountInfoDTO getAccountInfoDTO() {
         return AccountInfoDTO.builder()
-        .username(username)
-        .emailAddress(email)
-        .password(password)
-        .firstName(firstName)
-        .lastName(lastName)
-        .localeName(localeName)
-        .company(company)
-        .country(country)
-        .city(city)
-        .marketingConsent(marketingConsent)
-        .reCaptchaToken(reCaptchaToken)
-        .isReCaptchaV2(false)
-        .acceptsAspireEnrollmentConsent(acceptsAspireEnrollmentConsent)
-        .isHealthcareProfessional(isHealthcareProfessional)
-        .isGovernmentEmployee(isGovernmentEmployee)
-        .isProhibitedFromAcceptingGifts(isProhibitedFromAcceptingGifts)
-        .acceptsAspireTermsAndConditions(acceptsAspireTermsAndConditions)
-        .jobRoles(jobRoles)
-        .interests(interests)
-        .build();
+                .username(username)
+                .emailAddress(email)
+                .password(password)
+                .firstName(firstName)
+                .lastName(lastName)
+                .localeName(localeName)
+                .company(company)
+                .country(country)
+                .city(city)
+                .marketingConsent(marketingConsent)
+                .reCaptchaToken(reCaptchaToken)
+                .isReCaptchaV2(false)
+                .acceptsAspireEnrollmentConsent(acceptsAspireEnrollmentConsent)
+                .isHealthcareProfessional(isHealthcareProfessional)
+                .isGovernmentEmployee(isGovernmentEmployee)
+                .isProhibitedFromAcceptingGifts(isProhibitedFromAcceptingGifts)
+                .acceptsAspireTermsAndConditions(acceptsAspireTermsAndConditions)
+                .jobRoles(jobRoles)
+                .interests(interests)
+                .build();
     }
 
-    public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) throws JSONException {
+    public static CDCNewAccount getNewCDCAccount(AccountInfo accountInfo) {
         LocaleNameService localeNameService = new LocaleNameService();
         String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
 
         Thermofisher thermofisher = Thermofisher.builder()
-            .legacyUsername(accountInfo.getUsername())
-            .build();
+                .legacyUsername(accountInfo.getUsername())
+                .build();
 
         Data data = Data.builder()
-            .thermofisher(thermofisher)
-            .registration(buildRegistrationObject(accountInfo))
-            .subscribe(accountInfo.isMarketingConsent())
-            .requirePasswordCheck(false)
-            .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
-            .build();
+                .thermofisher(thermofisher)
+                .registration(buildRegistrationObject(accountInfo))
+                .subscribe(accountInfo.isMarketingConsent())
+                .requirePasswordCheck(false)
+                .verifiedEmailDate(EmailVerificationService.getDefaultVerifiedDate(accountInfo.getCountry()))
+                .build();
 
         Work work = buildWorkObject(accountInfo);
 
         Profile profile = buildProfileObject(accountInfo, work, locale);
 
         return CDCNewAccount.build(
-            accountInfo.getUsername(), 
-            accountInfo.getEmailAddress(), 
-            accountInfo.getPassword(),
-            data,
-            profile);
+                accountInfo.getUsername(),
+                accountInfo.getEmailAddress(),
+                accountInfo.getPassword(),
+                data,
+                profile);
     }
 
-    public static CDCNewAccountV2 getNewCDCAccountV2(AccountInfo accountInfo) throws JSONException {
+    public static CDCNewAccountV2 getNewCDCAccountV2(AccountInfo accountInfo) {
         LocaleNameService localeNameService = new LocaleNameService();
         String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
 
@@ -292,66 +306,66 @@ public class AccountUtils {
                 preferences);
     }
 
-    public static CDCAccount getCDCAccount(AccountInfo accountInfo) throws JSONException {
+    public static CDCAccount getCDCAccount(AccountInfo accountInfo) {
         LocaleNameService localeNameService = new LocaleNameService();
         String locale = accountInfo.getLocaleName() == null ? null : localeNameService.getLocale(accountInfo.getLocaleName(), accountInfo.getCountry());
 
         Thermofisher thermofisher = Thermofisher.builder()
-            .legacyUsername(accountInfo.getUsername())
-            .build();
+                .legacyUsername(accountInfo.getUsername())
+                .build();
 
         Data data = Data.builder()
-            .thermofisher(thermofisher)
-            .registration(buildRegistrationObject(accountInfo))
-            .subscribe(accountInfo.isMarketingConsent())
-            .requirePasswordCheck(false)
-            .build();
+                .thermofisher(thermofisher)
+                .registration(buildRegistrationObject(accountInfo))
+                .subscribe(accountInfo.isMarketingConsent())
+                .requirePasswordCheck(false)
+                .build();
 
         Work work = buildWorkObject(accountInfo);
 
         Profile profile = buildProfileObject(accountInfo, work, locale);
 
         CDCAccount account = CDCAccount.builder()
-            .UID(accountInfo.getUid())
-            .profile(profile)
-            .data(data)
-            .build();
+                .UID(accountInfo.getUid())
+                .profile(profile)
+                .data(data)
+                .build();
 
         return account;
     }
 
     public static Data getData() {
         return Data.builder()
-            .thermofisher(getThermofisher())
-            .subscribe(false)
-            .requirePasswordCheck(false)
-            .build();
+                .thermofisher(getThermofisher())
+                .subscribe(false)
+                .requirePasswordCheck(false)
+                .build();
     }
 
     public static Profile getProfile() {
         return Profile.builder()
-            .username(username)
-            .email(email)
-            .firstName(firstName)
-            .lastName(lastName)
-            .country(country)
-            .city(city)
-            .work(getWork())
-            .timezone(timezone)
-            .build();
+                .username(username)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .country(country)
+                .city(city)
+                .work(getWork())
+                .timezone(timezone)
+                .build();
     }
 
     public static Work getWork() {
         return Work.builder()
-            .company(company)
-            .build();
+                .company(company)
+                .build();
     }
 
     public static Thermofisher getThermofisher() {
         return Thermofisher.builder()
-            .legacyEmail(email)
-            .legacyUsername(username)
-            .build();
+                .legacyEmail(email)
+                .legacyUsername(username)
+                .build();
     }
 
     private static String getPhoneNumberForChina(AccountInfo accountInfo) {
@@ -402,29 +416,29 @@ public class AccountUtils {
 
         if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.JAPAN.getValue())) {
             japan = Japan.builder()
-                .hiraganaName(accountInfo.getHiraganaName())
-                .build();
+                    .hiraganaName(accountInfo.getHiraganaName())
+                    .build();
         }
 
         if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.CHINA.getValue())) {
             china = China.builder()
-                .interest(accountInfo.getInterest())
-                .jobRole(accountInfo.getJobRole())
-                .phoneNumber(getPhoneNumberForChina(accountInfo))
-                .build();   
+                    .interest(accountInfo.getInterest())
+                    .jobRole(accountInfo.getJobRole())
+                    .phoneNumber(getPhoneNumberForChina(accountInfo))
+                    .build();
         }
 
         if (accountInfo.getCountry().toLowerCase().equals(CountryCodes.KOREA.getValue())) {
             korea = Korea.builder()
-                .receiveMarketingInformation(accountInfo.getReceiveMarketingInformation())
-                .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
-                .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
-                .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())
-                .thirdPartyTransferPersonalInfoOptional(accountInfo.getThirdPartyTransferPersonalInfoOptional())
-                .collectionAndUsePersonalInfoOptional(accountInfo.getCollectionAndUsePersonalInfoOptional())
-                .collectionAndUsePersonalInfoMarketing(accountInfo.getCollectionAndUsePersonalInfoMarketing())
-                .overseasTransferPersonalInfoOptional(accountInfo.getOverseasTransferPersonalInfoOptional())
-                .build();
+                    .receiveMarketingInformation(accountInfo.getReceiveMarketingInformation())
+                    .collectionAndUsePersonalInfoMandatory(accountInfo.getCollectionAndUsePersonalInfoMandatory())
+                    .thirdPartyTransferPersonalInfoMandatory(accountInfo.getThirdPartyTransferPersonalInfoMandatory())
+                    .overseasTransferPersonalInfoMandatory(accountInfo.getOverseasTransferPersonalInfoMandatory())
+                    .thirdPartyTransferPersonalInfoOptional(accountInfo.getThirdPartyTransferPersonalInfoOptional())
+                    .collectionAndUsePersonalInfoOptional(accountInfo.getCollectionAndUsePersonalInfoOptional())
+                    .collectionAndUsePersonalInfoMarketing(accountInfo.getCollectionAndUsePersonalInfoMarketing())
+                    .overseasTransferPersonalInfoOptional(accountInfo.getOverseasTransferPersonalInfoOptional())
+                    .build();
         }
 
         OpenIdProvider openIdProvider = OpenIdProvider.builder().build();
@@ -433,11 +447,11 @@ public class AccountUtils {
         }
 
         return Registration.builder()
-            .japan(japan)
-            .china(china)
-            .korea(korea)
-            .openIdProvider(openIdProvider)
-            .build();
+                .japan(japan)
+                .china(china)
+                .korea(korea)
+                .openIdProvider(openIdProvider)
+                .build();
     }
 
     public static Ciphertext getCiphertext() {
@@ -451,76 +465,76 @@ public class AccountUtils {
 
     public static CDCResponse getCdcResponse() {
         return CDCResponse.builder()
-            .errorCode(0)
-            .build();
+                .errorCode(0)
+                .build();
     }
 
-    public static String getSiteAccountJsonString() throws IOException, ParseException {
+    public static String getSiteAccountJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountJsonStringV2() throws IOException, ParseException {
+    public static String getSiteAccountJsonStringV2() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-v2.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountWithoutPreferencesJsonString() throws IOException, ParseException {
+    public static String getSiteAccountWithoutPreferencesJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-without-preferences.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountWithMarketingConsentAsFalse() throws IOException, ParseException {
+    public static String getSiteAccountWithMarketingConsentAsFalse() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-marketing-consent-false.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountWithMarketingConsentAsFalseV2() throws IOException, ParseException {
+    public static String getSiteAccountWithMarketingConsentAsFalseV2() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-marketing-consent-false-v2.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountIncomplete() throws IOException, ParseException {
+    public static String getSiteAccountIncomplete() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-incomplete.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountJapanJsonString() throws IOException, ParseException {
+    public static String getSiteAccountJapanJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-japan.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountKoreaJsonString() throws IOException, ParseException {
+    public static String getSiteAccountKoreaJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-korea.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountKoreaJsonStringV2() throws IOException, ParseException {
+    public static String getSiteAccountKoreaJsonStringV2() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-korea-v2.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getSiteAccountChinaJsonString() throws IOException, ParseException {
+    public static String getSiteAccountChinaJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/site-account-china.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getFederatedAccountJsonString() throws IOException, ParseException {
+    public static String getFederatedAccountJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/federated-account.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getInvalidAccountJsonString() throws IOException, ParseException {
+    public static String getInvalidAccountJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/invalid-account.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getLiteRegistrationResponseJsonString() throws IOException, ParseException {
+    public static String getLiteRegistrationResponseJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/lite-registration.json";
         return TestUtils.getJSONFromFile(path).toString();
     }
 
-    public static String getLiteRegistrationErrorJsonString() throws IOException, ParseException {
+    public static String getLiteRegistrationErrorJsonString() throws IOException, JsonSyntaxException {
         String path = "src/test/resources/CDCResponses/lite-registration-error.json";
         return TestUtils.getJSONFromFile(path).toString();
     }

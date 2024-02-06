@@ -1,4 +1,5 @@
 package com.thermofisher.cdcam.enums.cdc;
+
 /**
  * {@code enum} that holds response and error codes from CDC.
  * <p>

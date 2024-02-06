@@ -14,7 +14,7 @@ public class EmailVerificationProperties {
     public final static String DEFAULT_VERIFIED_DATE = "0001-01-01";
 
     /**
-    * A boolean that indicates whether the Email Verification feature should be disabled globally.
+     * A boolean that indicates whether the Email Verification feature should be disabled globally.
      */
     @Getter
     private static boolean enabled;

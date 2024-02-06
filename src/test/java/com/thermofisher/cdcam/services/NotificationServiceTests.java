@@ -1,9 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thermofisher.cdcam.aws.SNSHandler;
 import com.thermofisher.cdcam.model.AccountInfo;
@@ -17,21 +13,26 @@ import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.AccountUtils;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = { NotificationService.class, SNSHandler.class })
+import java.io.IOException;
+
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class NotificationServiceTests {
 
     @InjectMocks
@@ -39,6 +40,11 @@ public class NotificationServiceTests {
 
     @Mock
     SNSHandler snsHandler;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void sendAccountRegisteredNotification_ShouldSendNotificationToRegistrationSNSTopicWithAccountData() throws JsonProcessingException {
@@ -54,10 +60,11 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendAccountRegisteredNotification_GivenAccountIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
-        // when
-        notificationService.sendAccountRegisteredNotification(null, null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendAccountRegisteredNotification(null, null);
+        });
     }
 
     @Test
@@ -74,16 +81,18 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString(), any());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendNotifyAccountInfoNotification_GivenAccountIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
-        // when
-        notificationService.sendNotifyAccountInfoNotification(null, null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendNotifyAccountInfoNotification(null, null);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendAccountMergedNotification_GivenParameterIsNull_ThenThrowNullPointerException() {
-        // when
-        notificationService.sendAccountMergedNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendAccountMergedNotification(null);
+        });
     }
 
     @Test
@@ -101,10 +110,11 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendPublicAccountUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
-        // when
-        notificationService.sendPublicAccountUpdatedNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendPublicAccountUpdatedNotification(null);
+        });
     }
 
     @Test
@@ -137,10 +147,11 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendPublicEmailUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
-        // when
-        notificationService.sendPublicEmailUpdatedNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendPublicEmailUpdatedNotification(null);
+        });
     }
 
     @Test
@@ -173,10 +184,11 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendPublicMarketingConsentUpdatedNotification_GivenParameterIsNull_ThenThrowNullPointerException() {
-        // when
-        notificationService.sendPublicMarketingConsentUpdatedNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendPublicMarketingConsentUpdatedNotification(null);
+        });
     }
 
     @Test
@@ -209,10 +221,11 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendAspireRegistrationNotification_GivenParameterIsNull_ThenThrowNullPointerException() throws JsonProcessingException {
-        // when
-        notificationService.sendAspireRegistrationNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendAspireRegistrationNotification(null);
+        });
     }
 
     @Test
@@ -226,17 +239,18 @@ public class NotificationServiceTests {
             accountInfoHandlerMock.when(() -> AccountInfoHandler.prepareForAspireNotification(any(AccountInfo.class))).thenCallRealMethod();
             // when
             notificationService.sendAspireRegistrationNotification(accountInfo);
-    
+
             // then
             accountInfoHandlerMock.verify(() -> AccountInfoHandler.prepareForAspireNotification(accountInfo));
             verify(snsHandler).sendNotification(anyString(), anyString());
         }
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendPasswordUpdateNotification_GivenParameterIsNull_ThenThrowNullPointerException() {
-        // when
-        notificationService.sendPasswordUpdateNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendPasswordUpdateNotification(null);
+        });
     }
 
     @Test
@@ -253,7 +267,7 @@ public class NotificationServiceTests {
         verify(snsHandler).sendNotification(anyString(), anyString());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendRecoveryUsernameEmail_GivenANullAccountAndAValidUsernameRecoveryDTO_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
         // given
         UsernameRecoveryDTO usernameRecoveryDTO = UsernameRecoveryDTO.builder()
@@ -264,53 +278,58 @@ public class NotificationServiceTests {
                         .build()
                 ).build();
 
-        // when
-        notificationService.sendRecoveryUsernameEmailNotification(usernameRecoveryDTO,null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendRecoveryUsernameEmailNotification(usernameRecoveryDTO, null);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendRecoveryUsernameEmail_GivenAValidAccountAndANullUsernameRecoveryDTO_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
         // given
         AccountInfo account = AccountUtils.getSiteAccount();
-        // when
-        notificationService.sendRecoveryUsernameEmailNotification(null,account);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendRecoveryUsernameEmailNotification(null, account);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendRequestResetPasswordEmailNotification_GivenAValidAccountAndANullRequestResetPasswordDTO_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
         // given
         AccountInfo account = AccountUtils.getSiteAccount();
-        // when
-        notificationService.sendRequestResetPasswordEmailNotification(account, null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendRequestResetPasswordEmailNotification(account, null);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void sendRequestResetPasswordEmailNotification_GivenANullAccountAndAValidRequestResetPasswordDTO_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
         // given
         RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()
                 .passwordToken("token")
                 .authData("authData")
                 .build();
-        // when
-        notificationService.sendRequestResetPasswordEmailNotification(null, requestResetPasswordDTO);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void sendResetPasswordConfirmationEmailNotification_GivenANullAccount_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
-        // when
-        notificationService.sendResetPasswordConfirmationEmailNotification(null);
-    }
-
-
-
-    @Test(expected = NullPointerException.class)
-    public void sendConfirmationEmailNotification_GivenANullAccount_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
-        // when
-        notificationService.sendConfirmationEmailNotification(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendRequestResetPasswordEmailNotification(null, requestResetPasswordDTO);
+        });
     }
 
     @Test
-    public void sendResetPasswordConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ResetPasswordConfirmationEmailNotification(){
+    public void sendResetPasswordConfirmationEmailNotification_GivenANullAccount_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendResetPasswordConfirmationEmailNotification(null);
+        });
+    }
+
+
+    @Test
+    public void sendConfirmationEmailNotification_GivenANullAccount_whenTheMethodIsCalled_ThenShouldThrowNullPointerException() {
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            notificationService.sendConfirmationEmailNotification(null);
+        });
+    }
+
+    @Test
+    public void sendResetPasswordConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ResetPasswordConfirmationEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "redirectUrl", "redirectUrl");
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
@@ -325,7 +344,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ConfirmationEmailNotification(){
+    public void sendConfirmationEmailNotification_GivenParameterAValidParameter_ThenShouldSend_ConfirmationEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         AccountInfo accountInfo = AccountUtils.getSiteAccount();
@@ -339,7 +358,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendRecoveryUsernameEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RecoveryUsernameEmailNotification(){
+    public void sendRecoveryUsernameEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RecoveryUsernameEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         UsernameRecoveryDTO usernameRecoveryDTO = UsernameRecoveryDTO.builder()
@@ -357,7 +376,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void sendRequestResetPasswordEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RequestResetPasswordEmailNotification(){
+    public void sendRequestResetPasswordEmailNotification_GivenParameterAValidParameters_ThenShouldSend_RequestResetPasswordEmailNotification() {
         // given
         ReflectionTestUtils.setField(notificationService, "emailServiceSNSTopic", "emailServiceSNSTopic");
         RequestResetPasswordDTO requestResetPasswordDTO = RequestResetPasswordDTO.builder()

@@ -2,6 +2,7 @@ package com.thermofisher.cdcam.services;
 
 import com.thermofisher.cdcam.model.HttpServiceResponse;
 import com.thermofisher.cdcam.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -12,8 +13,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -21,9 +20,9 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 
 @Service
+@Slf4j
 public class HttpService {
 
-    private Logger logger = LogManager.getLogger(this.getClass());
 
     public HttpServiceResponse post(String url) {
         JSONObject EMPTY_JSON = new JSONObject();
@@ -44,10 +43,10 @@ public class HttpService {
             response = execute(httpPost);
         } catch (IOException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while executing a POST Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while executing a POST Request. Url: %s. Error: %s", url, exception));
         } catch (JSONException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while parsing response from POST Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while parsing response from POST Request. Url: %s. Error: %s", url, exception));
         }
 
         return response;
@@ -67,10 +66,10 @@ public class HttpService {
             response = execute(httpPut);
         } catch (IOException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while executing a PUT Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while executing a PUT Request. Url: %s. Error: %s", url, exception));
         } catch (JSONException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while parsing response from PUT Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while parsing response from PUT Request. Url: %s. Error: %s", url, exception));
         }
 
         return response;
@@ -84,10 +83,10 @@ public class HttpService {
             response = execute(httpGet);
         } catch (IOException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while executing a GET Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while executing a GET Request. Url: %s. Error: %s", url, exception));
         } catch (JSONException e) {
             String exception = Utils.stackTraceToString(e);
-            logger.error(String.format("An error occurred while parsing response from GET Request. Url: %s. Error: %s", url, exception));
+            log.error(String.format("An error occurred while parsing response from GET Request. Url: %s. Error: %s", url, exception));
         }
 
         return response;

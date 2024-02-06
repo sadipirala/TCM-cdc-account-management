@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thermofisher.cdcam.utils.Utils;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +18,7 @@ public class URLService {
         Map<String, Object> map = objectMapper.convertValue(object, Map.class);
 
         StringBuilder stringQueries = new StringBuilder();
-        for (String key : map.keySet()){
+        for (String key : map.keySet()) {
             if (Utils.isNullOrEmpty(String.valueOf(map.get(key))) || String.valueOf(map.get(key)) == "null") {
                 continue;
             }

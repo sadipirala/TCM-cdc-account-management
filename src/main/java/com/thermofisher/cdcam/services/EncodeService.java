@@ -1,17 +1,17 @@
 package com.thermofisher.cdcam.services;
 
+import org.springframework.stereotype.Service;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import org.springframework.stereotype.Service;
-
 @Service
 public class EncodeService {
 
-    public byte[] encodeBase64(String text){
+    public byte[] encodeBase64(String text) {
         return Base64.getEncoder().encode(text.getBytes());
     }
 

@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ThirdPartyTransferPersonalInfoOptional {
-	private boolean isConsentGranted;
+    private boolean isConsentGranted;
 }

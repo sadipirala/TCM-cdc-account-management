@@ -1,29 +1,25 @@
 package com.thermofisher.cdcam.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import com.thermofisher.cdcam.model.Ciphertext;
+import com.thermofisher.cdcam.model.HttpServiceResponse;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.UnsupportedEncodingException;
 
-import com.thermofisher.CdcamApplication;
-import com.thermofisher.cdcam.model.Ciphertext;
-import com.thermofisher.cdcam.model.HttpServiceResponse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@ActiveProfiles("test")
-@SpringBootTest(classes = CdcamApplication.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class DataProtectionServiceTests {
     private final String CIPHERTEXT = "VTJGc2RHVmtYMThPaXlrKzMrVHh4V2E3c1loNGhNZUJXNHowT2R6T3k1QzFmZVQxQkxMcmlNUmgxbTcxWGJYWEVPUUQ5K0doNWhUbjdqVmZ2NGZXbFJnR3BWUWJFWTd0WjNCejcxZVhBQURVS21XUm03b0t5TWZDSDkxdnBJSjE=";
     JSONObject ciphertextBody = new JSONObject();
@@ -34,8 +30,9 @@ public class DataProtectionServiceTests {
     @Mock
     HttpService httpService;
 
-    @Before
+    @BeforeEach
     public void beforeEach() throws JSONException {
+        MockitoAnnotations.openMocks(this);
         ciphertextBody.put("firstName", "John");
         ciphertextBody.put("lastName", "Doe");
         ciphertextBody.put("email", "john.doe@thermofisher.com");

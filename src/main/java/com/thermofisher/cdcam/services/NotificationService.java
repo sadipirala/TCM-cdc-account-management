@@ -1,10 +1,5 @@
 package com.thermofisher.cdcam.services;
 
-import java.util.Map;
-import java.util.Objects;
-
-import javax.validation.constraints.NotNull;
-
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.GsonBuilder;
@@ -20,16 +15,18 @@ import com.thermofisher.cdcam.model.notifications.MergedAccountNotification;
 import com.thermofisher.cdcam.model.notifications.PasswordUpdateNotification;
 import com.thermofisher.cdcam.utils.AccountInfoHandler;
 import com.thermofisher.cdcam.utils.EmailLocaleUtils;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.Objects;
+
+@Slf4j
 @Service
 public class NotificationService {
-    private Logger logger = LogManager.getLogger(this.getClass());
 
     @Value("${tf.home}")
     private String redirectUrl;
@@ -51,7 +48,7 @@ public class NotificationService {
 
     @Value("${aws.sns.account.updated}")
     private String accountUpdatedSNSTopic;
-    
+
     @Value("${aws.sns.email.service}")
     private String emailServiceSNSTopic;
 
@@ -70,7 +67,7 @@ public class NotificationService {
         Map<String, MessageAttributeValue> messageAttributes = AccountInfoHandler.buildMessageAttributesForAccountInfoSNS(account);
         snsHandler.sendNotification(accountToNotify, accountInfoSNSTopic, messageAttributes);
     }
-    
+
     public void sendAccountMergedNotification(@NotNull MergedAccountNotification mergedAccountNotification) {
         Objects.requireNonNull(mergedAccountNotification);
         String notificationMessage = new GsonBuilder().create().toJson(mergedAccountNotification);
@@ -137,7 +134,7 @@ public class NotificationService {
 
     private void processAccountLocale(AccountInfo account) {
         String locale = EmailLocaleUtils.processLocaleForNotification(account.getLocaleName(), account.getCountry());
-        logger.info(String.format("Processed locale: %s", locale));
+        log.info(String.format("Processed locale: %s", locale));
         account.setLocaleName(locale);
     }
 

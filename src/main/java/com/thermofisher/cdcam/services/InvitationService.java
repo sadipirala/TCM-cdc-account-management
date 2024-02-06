@@ -1,17 +1,15 @@
 package com.thermofisher.cdcam.services;
 
+import com.thermofisher.cdcam.model.HttpServiceResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.thermofisher.cdcam.model.HttpServiceResponse;
-
+@Slf4j
 @Service
 public class InvitationService {
-    Logger logger = LoggerFactory.getLogger(InvitationService.class);
 
     @Value("${identity.invitation.update_country}")
     private String updateCountryUrl;

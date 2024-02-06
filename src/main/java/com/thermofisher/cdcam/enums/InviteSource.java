@@ -6,9 +6,13 @@ public enum InviteSource {
 
     private String value;
 
-    InviteSource(String value) { this.value = value; }
+    InviteSource(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 
     public static boolean contains(String source) {
         for (InviteSource inviteSource : InviteSource.values()) {

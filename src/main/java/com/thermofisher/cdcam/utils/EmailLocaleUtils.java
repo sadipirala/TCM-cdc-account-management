@@ -1,9 +1,9 @@
 package com.thermofisher.cdcam.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.StringUtils;
 
 public class EmailLocaleUtils {
     private final static String VALID_LOCALE_REGEX = "^[a-zA-Z]{2}_[a-zA-Z]{2}$";
@@ -16,28 +16,26 @@ public class EmailLocaleUtils {
 
     /**
      * Processes a locale value and returns the best locale match to be used by an email.
-     * 
-     * @param locale the locale to be processed.
+     *
+     * @param locale  the locale to be processed.
      * @param country the country to be concatenated to the language if a locale match is not found.
-     * 
      * @return the locale as needed by an email, a matching locale for certain
-     *         countries or a locale built by joining the passed locale and country.
+     * countries or a locale built by joining the passed locale and country.
      * <p> If it doesn't fit into any of ther previous explanations it will return the same passed locale. </p>
-     *      
      */
     public static String processLocaleForNotification(String locale, String country) {
         if (StringUtils.isBlank(locale) || StringUtils.isBlank(country)) {
             return US_ENGLISH_LOCALE;
         }
 
-        if (isSpecialCountryLocale(locale)) { 
+        if (isSpecialCountryLocale(locale)) {
             return getSpecialCountryLocaleForEmail(locale);
         }
 
         if (isLocaleFormatValid(locale)) {
             return parseLocaleForEmails(locale);
         }
-        
+
         if (locale.length() == 2 && country.length() == 2) {
             return joinLocaleAndCountry(locale, country);
         }
@@ -54,7 +52,7 @@ public class EmailLocaleUtils {
     /**
      * Process the locale as needed by an email.
      * <p>(e.g.) es_MX (lowercase_uppercase).</p>
-     * 
+     *
      * @param locale the locale. Format: es_MX.
      * @return the locale as needed by an email.
      */
@@ -67,11 +65,10 @@ public class EmailLocaleUtils {
 
     /**
      * Checks whether a locale needs a special handling for a specific country.
-     * 
+     *
      * <p>Countries: <b>China and Taiwan.</b></p>
-     * 
+     *
      * @param locale the locale.
-     * 
      * @return whether a locale needs a special handling for a specific country.
      */
     private static boolean isSpecialCountryLocale(String locale) {
@@ -80,11 +77,10 @@ public class EmailLocaleUtils {
 
     /**
      * Process a specific country locale to be returned as needed by an email.
-     * 
+     *
      * <p>Countries: <b>China and Taiwan.</b></p>
-     * 
+     *
      * @param locale the locale.
-     * 
      * @return the locale as needed by an email.
      */
     private static String getSpecialCountryLocaleForEmail(String locale) {
@@ -102,10 +98,9 @@ public class EmailLocaleUtils {
     /**
      * Joins the locale and country in the following format. </br>
      * (e.g.) es_MX.
-     * 
-     * @param locale the locale.
+     *
+     * @param locale  the locale.
      * @param country the country.
-     * 
      * @return a joined locale and country.
      */
     private static String joinLocaleAndCountry(String locale, String country) {
@@ -115,7 +110,7 @@ public class EmailLocaleUtils {
     /**
      * Checks whether a locale is from China as needed by CDC.
      * <p>Locale as needed by CDC (lowercase): zh-cn.</p>
-     * 
+     *
      * @param locale the locale.
      * @return whether a locale is from China.
      */
@@ -126,9 +121,9 @@ public class EmailLocaleUtils {
     /**
      * Checks whether a locale is from Taiwan.
      * <p>Locales (lowercase): zh-tw, zt_tw.</p>
-     * 
+     * <p>
      * tf.com's zt_TW locale is not a valid for CDC.
-     * 
+     *
      * @param locale the locale.
      * @return whether a locale is from Taiwan.
      */

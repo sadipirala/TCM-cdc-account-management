@@ -6,24 +6,18 @@ import com.thermofisher.cdcam.model.EmailList;
 import com.thermofisher.cdcam.utils.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = Utils.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+
+@ExtendWith(MockitoExtension.class)
 public class UtilsTests {
 
     @Test
@@ -35,7 +29,7 @@ public class UtilsTests {
         String value = Utils.getAlphaNumericString(stringSize);
 
         // then
-        Assert.assertEquals(value.length(), stringSize);
+        assertEquals(value.length(), stringSize);
     }
 
     @Test
@@ -47,21 +41,21 @@ public class UtilsTests {
         String enumGET = APIMethods.GET.getValue();
 
         // then
-        Assert.assertEquals(getAccount, enumGET);
+        assertEquals(getAccount, enumGET);
     }
 
     @Test
     public void getStringFromJSON_ifValidData_returnObject() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
-        Assert.assertEquals(Utils.getStringFromJSON(object, "message"), "test");
+        assertEquals(Utils.getStringFromJSON(object, "message"), "test");
     }
 
     @Test
     public void getStringFromJSON_ifInvalidData_returnEmptyString() throws JSONException {
         String testData = "{\"message\": \"test\"}";
         JSONObject object = new JSONObject(testData);
-        Assert.assertEquals(Utils.getStringFromJSON(object, "notValid"), "");
+        assertEquals(Utils.getStringFromJSON(object, "notValid"), "");
     }
 
     @Test
@@ -97,7 +91,7 @@ public class UtilsTests {
         String jsonString = Utils.convertJavaToJsonString(data);
 
         EmailList testUser = new ObjectMapper().readValue(jsonString, EmailList.class);
-        Assert.assertNotNull(testUser);
+        assertNotNull(testUser);
     }
 
     @Test

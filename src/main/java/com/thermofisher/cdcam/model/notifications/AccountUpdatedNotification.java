@@ -2,7 +2,6 @@ package com.thermofisher.cdcam.model.notifications;
 
 import com.thermofisher.cdcam.enums.NotificationType;
 import com.thermofisher.cdcam.model.AccountInfo;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

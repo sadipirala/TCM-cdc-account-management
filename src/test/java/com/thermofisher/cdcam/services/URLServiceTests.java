@@ -1,24 +1,29 @@
 package com.thermofisher.cdcam.services;
 
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.dto.CIPAuthDataDTO;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ActiveProfiles("test")
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class URLServiceTests {
 
     @InjectMocks
     URLService urlService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void queryParamMapper_givenAJsonString_whenMethodIsCalled_thenReturnStringOfParams() {
@@ -38,9 +43,9 @@ public class URLServiceTests {
     public void queryParamMapper_givenAnObjectWithEmptyValue_whenMethodIsCalled_thenShouldSkipTheObjectKey() {
         // given
         CIPAuthDataDTO cipAuthData = CIPAuthDataDTO.builder()
-            .clientId("")
-            .redirectUri("redirect")
-            .build();
+                .clientId("")
+                .redirectUri("redirect")
+                .build();
         ReflectionTestUtils.setField(urlService, "identityAuthorizeEndpoint", "https://www.thermofisher.com");
 
         // when

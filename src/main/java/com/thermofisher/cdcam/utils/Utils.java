@@ -1,18 +1,17 @@
 package com.thermofisher.cdcam.utils;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Collection;
-import java.util.Objects;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.monitorjbl.json.JsonViewModule;
-
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Collection;
+import java.util.Objects;
 
 public class Utils {
     private final static String VALID_EMAIL_REGEX = "^(?!.*[.]{2})([a-zA-Z0-9])+([a-zA-Z0-9_.\\-])+@(([a-zA-Z0-9\\-])+\\.)+([a-zA-Z0-9]{2,6})$";
@@ -34,7 +33,7 @@ public class Utils {
     }
 
     public static <T> String convertJavaToJsonString(T t) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JsonViewModule());
+        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         return mapper.writeValueAsString(t);
     }
 
@@ -94,7 +93,7 @@ public class Utils {
         return object;
     }
 
-    public static boolean isNullOrEmpty(Collection <?> collection) {
+    public static boolean isNullOrEmpty(Collection<?> collection) {
         return Objects.isNull(collection) || collection.size() == 0;
     }
 
@@ -106,7 +105,7 @@ public class Utils {
         return collection.stream().anyMatch(Utils::isNullOrEmpty);
     }
 
-    public static  boolean isAValidEmail(String email) {
+    public static boolean isAValidEmail(String email) {
         return email.matches(VALID_EMAIL_REGEX);
     }
 }

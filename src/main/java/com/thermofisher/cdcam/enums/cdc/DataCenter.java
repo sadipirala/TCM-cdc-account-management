@@ -9,7 +9,9 @@ public enum DataCenter {
 
     private String value;
 
-    DataCenter(String value) { this.value = value; }
+    DataCenter(String value) {
+        this.value = value;
+    }
 
     public static DataCenter getEqualsAs(String value) {
         String dataCenter = value.toLowerCase();

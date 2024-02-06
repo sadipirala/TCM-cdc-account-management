@@ -9,7 +9,11 @@ public enum NotificationType {
 
     private String value;
 
-    NotificationType(String value) { this.value = value; }
+    NotificationType(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 }
