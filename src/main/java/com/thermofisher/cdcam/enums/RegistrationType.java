@@ -5,7 +5,11 @@ public enum RegistrationType {
 
     private String value;
 
-    RegistrationType(String value) { this.value = value; }
+    RegistrationType(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 }

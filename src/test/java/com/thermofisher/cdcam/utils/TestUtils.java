@@ -1,15 +1,16 @@
 package com.thermofisher.cdcam.utils;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+
 import java.io.FileReader;
 import java.io.IOException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class TestUtils {
-    public static JSONObject getJSONFromFile (String filePath) throws IOException, ParseException{
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(new FileReader(filePath));
-        return (JSONObject) obj;
+    public static JsonObject getJSONFromFile(String filePath) throws IOException, JsonSyntaxException {
+
+        JsonObject jsonObject = JsonParser.parseReader(new FileReader(filePath)).getAsJsonObject();
+        return jsonObject;
     }
 }

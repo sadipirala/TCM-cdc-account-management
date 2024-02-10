@@ -17,9 +17,9 @@ public class EmailUpdatedNotification {
 
     public static EmailUpdatedNotification build(AccountInfo accountInfo) {
         return EmailUpdatedNotification.builder()
-            .uid(accountInfo.getUid())
-            .emailAddress(accountInfo.getEmailAddress())
-            .username(accountInfo.getUsername())
-            .build();
+                .uid(accountInfo.getUid())
+                .emailAddress(accountInfo.getEmailAddress())
+                .username(accountInfo.getUsername())
+                .build();
     }
 }

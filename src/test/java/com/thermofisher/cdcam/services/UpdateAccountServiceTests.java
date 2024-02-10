@@ -1,54 +1,51 @@
 package com.thermofisher.cdcam.services;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.thermofisher.CdcamApplication;
 import com.thermofisher.cdcam.model.dto.MarketingConsentDTO;
 import com.thermofisher.cdcam.model.dto.ProfileInfoDTO;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = CdcamApplication.class)
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class UpdateAccountServiceTests {
     private final String uid = "1234567890";
     private final String timezone = "America/Tijuana";
     private final ProfileInfoDTO profileInfoDTO = ProfileInfoDTO.builder()
-        .uid(uid)
-        .firstName("firstName")
-        .lastName("lastName")
-        .username("username")
-        .marketingConsentDTO(
-            MarketingConsentDTO.builder()
-                .city("city")
-                .company("company")
-                .country("country")
-                .consent(true)
-                .build()
-        ).build();
-    
+            .uid(uid)
+            .firstName("firstName")
+            .lastName("lastName")
+            .username("username")
+            .marketingConsentDTO(
+                    MarketingConsentDTO.builder()
+                            .city("city")
+                            .company("company")
+                            .country("country")
+                            .consent(true)
+                            .build()
+            ).build();
+
     @InjectMocks
     private UpdateAccountService updateAccountService;
 
     @Mock
     private GigyaService gigyaService;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
     }
@@ -65,7 +62,7 @@ public class UpdateAccountServiceTests {
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
 
         // then
-        Assert.assertEquals(updateResponse, HttpStatus.OK);
+        Assertions.assertEquals(updateResponse, HttpStatus.OK);
     }
 
     @Test
@@ -80,7 +77,7 @@ public class UpdateAccountServiceTests {
         HttpStatus updateResponse = updateAccountService.updateTimezoneInCDC(uid, timezone);
 
         // then
-        Assert.assertEquals(updateResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        Assertions.assertEquals(updateResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -95,7 +92,7 @@ public class UpdateAccountServiceTests {
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
 
         // then
-        Assert.assertEquals(updateResponse, HttpStatus.OK);
+        Assertions.assertEquals(updateResponse, HttpStatus.OK);
     }
 
     @Test
@@ -110,7 +107,7 @@ public class UpdateAccountServiceTests {
         HttpStatus updateResponse = updateAccountService.updateProfile(ProfileInfoDTO.builder().uid("").build());
 
         // then
-        Assert.assertEquals(updateResponse, HttpStatus.BAD_REQUEST);
+        Assertions.assertEquals(updateResponse, HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -129,7 +126,7 @@ public class UpdateAccountServiceTests {
         HttpStatus updateResponse = updateAccountService.updateProfile(profileInfoDTO);
 
         // then
-        Assert.assertEquals(updateResponse, HttpStatus.OK);
+        Assertions.assertEquals(updateResponse, HttpStatus.OK);
     }
 
 

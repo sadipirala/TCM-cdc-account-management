@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Builder
 public class OverseasTransferPersonalInfoMandatory {
-	private boolean isConsentGranted;
+    private boolean isConsentGranted;
 }

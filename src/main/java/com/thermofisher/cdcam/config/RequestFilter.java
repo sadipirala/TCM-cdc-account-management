@@ -1,26 +1,24 @@
 package com.thermofisher.cdcam.config;
 
-import java.io.IOException;
-import java.util.UUID;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @Slf4j
 public class RequestFilter extends OncePerRequestFilter {
     private final String REQUEST_ID_RESPONSE_HEADER = "X-Request-ID";
-    
+
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         UUID uniqueId = UUID.randomUUID();
         MDC.put(REQUEST_ID_RESPONSE_HEADER, uniqueId.toString());
@@ -31,7 +29,7 @@ public class RequestFilter extends OncePerRequestFilter {
         log.info("Request IP address is {}", request.getRemoteAddr());
         log.info("Request initiated for path: '{}'", request.getRequestURI());
         log.info("Request content type is {}", request.getContentType());
-        
+
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
         chain.doFilter(request, responseWrapper);
         responseWrapper.setHeader(REQUEST_ID_RESPONSE_HEADER, uniqueId.toString());

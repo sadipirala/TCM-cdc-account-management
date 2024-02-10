@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Builder
 public class Marketing {
-	private Consent consent;
+    private Consent consent;
 }

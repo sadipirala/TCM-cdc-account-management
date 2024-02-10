@@ -8,7 +8,11 @@ public enum EmailNotificationType {
 
     private String value;
 
-    EmailNotificationType(String value) { this.value = value; }
+    EmailNotificationType(String value) {
+        this.value = value;
+    }
 
-    public String getValue() { return this.value; }
+    public String getValue() {
+        return this.value;
+    }
 }

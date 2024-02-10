@@ -1,7 +1,6 @@
 package com.thermofisher.cdcam.model.cdc;
 
 import com.thermofisher.cdcam.enums.cdc.DataCenter;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

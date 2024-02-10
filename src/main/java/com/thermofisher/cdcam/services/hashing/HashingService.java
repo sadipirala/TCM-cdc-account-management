@@ -1,11 +1,10 @@
 package com.thermofisher.cdcam.services.hashing;
 
+import com.google.common.base.Preconditions;
+import jakarta.validation.constraints.NotNull;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import javax.validation.constraints.NotNull;
-
-import com.google.common.base.Preconditions;
 
 public class HashingService {
     private static String PASSWORD_ALGORITHM = "MD5";
