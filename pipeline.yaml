@@ -39,9 +39,22 @@ environments:
       to: qa
       mergeTo: release/v1
     cluster: tfcom-eks-na-identity-qa1.identityqa.thermofisher.net
+    env:
+      - name: spring.profiles.active
+        value: qa4
+      - name: SPRING.PROFILES.ACTIVE
+        value: qa4
+      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+        value: file:/etc/config/app-config-qa4.yml
     deployment:
       replicas: 1
-      name: identity-password-complexity-api-qa4
+      name: cdc-account-management-qa4
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 2
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 70
     ingressDomains:
       - tfcom-api-eks-identity-qa4.identityqa.thermofisher.net
   
