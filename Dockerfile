@@ -4,23 +4,23 @@
 #WORKDIR /app
 #COPY target/cdcam.jar cdcam.jar
 #ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseContainerSupport", "-XX:MaxRAMFraction=2", "-Dspring.profiles.active=${SPRING.PROFILES.ACTIVE}", "-jar", "cdcam.jar"]
-FROM amazoncorretto:21-alpine-jdk as build
-CMD apt-get install awscli.
-COPY credentials /root/.aws/credentials
-WORKDIR /app
-COPY . .
-RUN chmod +x gradlew
-RUN ./gradlew clean build --stacktrace
-RUN ls -lrt
-RUN cd build;ls -lrt
-RUN cd build/libs;ls -lrt
+#FROM amazoncorretto:21-alpine-jdk as build
+#CMD apt-get install awscli.
+#COPY credentials /root/.aws/credentials
+#WORKDIR /app
+#COPY . .
+#RUN chmod +x gradlew
+#RUN ./gradlew clean build --stacktrace
+#RUN ls -lrt
+#RUN cd build;ls -lrt
+#RUN cd build/libs;ls -lrt
 
 
 FROM amazoncorretto:21-alpine-jdk
 WORKDIR /app
 
-COPY --from=build /app/build/libs/cdcam.jar cdcam.jar
-COPY --from=build /app/script/upload_heapdump_gc_s3.sh /app/upload_heapdump_gc_s3.sh
+COPY build/libs/cdcam.jar cdcam.jar
+COPY script/upload_heapdump_gc_s3.sh /app/upload_heapdump_gc_s3.sh
 RUN chmod 777 /app/upload_heapdump_gc_s3.sh
 RUN apk update && apk add curl && apk add wget && apk add bash
 RUN apk add --no-cache aws-cli
