@@ -1,3 +1,17 @@
+# if the application does not need a build stage, the entire build: section can be omitted
+build:
+
+  # the image to use when building the code (should have any required build tools like the JDK)
+  image: amazoncorretto:21-alpine-jdk
+
+  # #if your tests require a throwaway database or other process it can be run as a "sidecar" container
+  # these sidecar containers are linked to the build container with the specified name,
+  # so for example you can access the redis container below at http://redis:6379 (default port)
+  # sidecars:
+  ## the list of steps to run inside the build container
+  # for a gradle project this will often just be one step as shown below
+  steps:
+    - ./gradlew clean build --refresh-dependencies --stacktrace
 containerBuild:
   imageName: cdcam/cdc-account-management
 
@@ -20,7 +34,10 @@ deployment:
 
 environments:
   qa4:
-    branch: integration/.*
+    branch: integration/v1
+    promotion:
+      to: qa
+      mergeTo: release/v1
     cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
     env:
       - name: spring.profiles.active
