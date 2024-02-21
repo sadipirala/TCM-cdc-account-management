@@ -13,12 +13,12 @@ build:
   steps:
     - ./gradlew clean build --refresh-dependencies --stacktrace
 containerBuild:
-  imageName: cdcam/cdc-account-management
+  imageName: tfidentity/cdc-account-management
 
 deployment:
   name: cdc-account-management
-  namespace: cdcam
-  cpu: 150m
+  namespace: tfidentity
+  cpu: 100m
   memory: 2Gi
   replicas: 1
   containerPort: 8080
@@ -26,6 +26,13 @@ deployment:
   healthCheckPort: 8080 #management port
   ingressPath: /cdcam
   iamRole: cdcam-execution-role
+  labels:
+    component: backend
+    stack: java
+    sub_application: cdc-account-management
+    part_of: Identity-login
+    stack_version: 21
+    namespace: tfidentity
   volumeMounts:
     - name: cdcam-config
       mountPath: /etc/config
@@ -34,10 +41,7 @@ deployment:
 
 environments:
   qa4:
-    branch: integration/v1
-    promotion:
-      to: qa
-      mergeTo: release/v1
+    branch: integration-corp/.*
     cluster: tfcom-eks-na-identity-qa1.identityqa.thermofisher.net
     env:
       - name: spring.profiles.active
@@ -57,143 +61,3 @@ environments:
       targetMemoryUtilizationPercentage: 70
     ingressDomains:
       - tfcom-api-eks-identity-qa4.identityqa.thermofisher.net
-  
-  qa4-cn:
-    branch: integration/.*
-    cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
-    env:
-      - name: spring.profiles.active
-        value: qa4-cn
-      - name: SPRING.PROFILES.ACTIVE
-        value: qa4-cn
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 2
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
-
-  qa1-cn:
-    branch: release/.*
-    cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
-    env:
-      - name: spring.profiles.active
-        value: qa1-cn
-      - name: SPRING.PROFILES.ACTIVE
-        value: qa1-cn
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config-qa1.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 2
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam.tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
-    promotion:
-      to: prod-cn
-      mergeTo: master
-
-  qa1:
-    branch: release/.*
-    cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
-    env:
-      - name: spring.profiles.active
-        value: qa1
-      - name: SPRING.PROFILES.ACTIVE
-        value: qa1
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config-qa1.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 2
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam-qa1.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
-    promotion:
-      to: prod
-      mergeTo: master
-
-  stage-cn:
-    branch: stage/.*
-    cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
-    env:
-      - name: spring.profiles.active
-        value: stage-cn
-      - name: SPRING.PROFILES.ACTIVE
-        value: stage-cn
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config-stage.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 2
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam-stage.tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
-
-  stage:
-    branch: stage/.*
-    cluster: tfcom-cluster-na-qa1.cloudqa.thermofisher.net
-    env:
-      - name: spring.profiles.active
-        value: stage
-      - name: SPRING.PROFILES.ACTIVE
-        value: stage
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config-stage.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 1
-      maxReplicas: 2
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam-stage.tfcom-cluster-na-qa1.cloudqa.thermofisher.net
-      - cdcam.stage.cloudqa.thermofisher.net
-
-  prod:
-    branch: master
-    cluster: tfcom-cluster-na-prodb.cloud.thermofisher.net
-    env:
-      - name: spring.profiles.active
-        value: prod
-      - name: SPRING.PROFILES.ACTIVE
-        value: prod
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 3
-      maxReplicas: 4
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam.tfcom-cluster-na-prodb.cloud.thermofisher.net
-
-  prod-cn:
-    branch: master
-    cluster: tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
-    env:
-      - name: spring.profiles.active
-        value: prod-cn
-      - name: SPRING.PROFILES.ACTIVE
-        value: prod-cn
-      - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-        value: file:/etc/config/app-config.yml
-    autoscaling:
-      enabled: true
-      minReplicas: 3
-      maxReplicas: 4
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 70
-    ingressDomains:
-      - cdcam.tfcom-cluster-cn-apac-prod.cloudprod.thermofisher.net.cn
