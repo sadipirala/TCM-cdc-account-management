@@ -41,10 +41,10 @@ deployment:
 
 environments:
   qa4:
-    branch: integration-corp/v1
+    branch: integration/v1
     promotion:
       to: qa
-      mergeTo: release-corp/v1
+      mergeTo: release/v1
     cluster: tfcom-eks-na-identity-qa1.identityqa.thermofisher.net
     env:
       - name: spring.profiles.active
@@ -65,10 +65,10 @@ environments:
     ingressDomains:
       - tfcom-api-eks-identity-qa4.identityqa.thermofisher.net
   qa4-cn:
-    branch: integration-corp/v1
+    branch: integration/v1
     promotion:
       to: qa1-cn
-      mergeTo: release-corp/v1
+      mergeTo: release/v1
     cluster: tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
     env:
       - name: spring.profiles.active
@@ -86,7 +86,7 @@ environments:
     ingressDomains:
       - cdcam.tfcom-cluster-cn-apac.clouddev.thermofisher.net.cn
   qa1:
-    branch: release-corp/v1
+    branch: release/v1
     promotion:
       to: prod
       mergeTo: master
@@ -110,7 +110,7 @@ environments:
     ingressDomains:
       - tfcom-api-eks-identity-qa1.identityqa.thermofisher.net
   qa1-cn:
-    branch: release-corp/v1
+    branch: release/v1
     cluster: tfcom-cluster-cn-apac-qa.cloudqa.thermofisher.net.cn
     env:
       - name: spring.profiles.active
