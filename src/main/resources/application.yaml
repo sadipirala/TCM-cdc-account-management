@@ -95,7 +95,7 @@ eec.request.limit: 1000
 tf.home: https://www.qa.thermofisher.com/
 
 tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
-data.protection.decryption.url: https://www.qa.thermofisher.com/api-gateway/data-protection/decrypt
+data.protection.decryption.url: https://5ysd0dqj30.execute-api.us-east-1.amazonaws.com/Stage/decrypt
 recaptcha.threshold.minimum: 0.0
 
 # default RP oidc data
@@ -130,7 +130,7 @@ is-registration-notification-enabled: false
 is-email-validation-enabled: false
 
 # Invite service
-identity.invitation.update_country: https://armadillo-qa1-api.tfcom-cluster-na-qa1.cloudqa.thermofisher.net/identity/account/api/invite/invitation/country
+identity.invitation.update_country: https://tfcom-api-eks-identity-qa1.identityqa.thermofisher.net/identity/account/api/invite/invitation/country
 ---
 spring.config.activate.on-profile: qa1_cn_shared
 env.name: qa1-cn
@@ -216,19 +216,19 @@ cdc.secondary.datacenter: cn1.sapcdm.cn
 cdc.secondary.datacenter.name: cn
 
 aws.sns.client.region: us-east-1
-aws.sns.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-registration-qa4
-aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:926796168120:cdcam-aspire-registration-qa4
-aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-info-qa4
-aws.sns.password.update: arn:aws:sns:us-east-1:926796168120:cdcam-password-reset-qa4
-aws.sns.account.updated: arn:aws:sns:us-east-1:926796168120:cdcam-notify-account-updated-qa4
-aws.sns.email.service: arn:aws:sns:us-east-1:926796168120:cdcam-email-service-qa4
+aws.sns.reg.topic: arn:aws:sns:us-east-1:285568381929:cdcam-notify-registration-qa4
+aws.sns.aspire.reg.topic: arn:aws:sns:us-east-1:285568381929:cdcam-aspire-registration-qa4
+aws.sns.accnt.info.topic: arn:aws:sns:us-east-1:285568381929:cdcam-notify-account-info-qa4
+aws.sns.password.update: arn:aws:sns:us-east-1:285568381929:cdcam-password-reset-qa4
+aws.sns.account.updated: arn:aws:sns:us-east-1:285568381929:cdcam-notify-account-updated-qa4
+aws.sns.email.service: arn:aws:sns:us-east-1:285568381929:cdcam-email-service-qa4
 
 eec.request.limit: 1000
 
 tf.home: https://www.qa4.thermofisher.com/
 
 tfrn.email-notification.url: https://9tw7883fs5-vpce-0309c6465e730e61f.execute-api.us-east-1.amazonaws.com/qa/email-notification
-data.protection.decryption.url: https://www.qa4.thermofisher.com/api-gateway/data-protection/decrypt
+data.protection.decryption.url: https://5ysd0dqj30.execute-api.us-east-1.amazonaws.com/Stage/decrypt
 recaptcha.threshold.minimum: 0.7
 
 # default RP oidc data
@@ -261,9 +261,9 @@ is-registration-notification-enabled: false
 
 # Email validation
 is-email-validation-enabled: false
-
+cdcam.secrets: /tfidentity/cdcam-secrets-qa4-useast1
 # Invite service
-identity.invitation.update_country: https://armadillo-qa4-api.tfcom-cluster-na-qa1.cloudqa.thermofisher.net/identity/account/api/invite/invitation/country
+identity.invitation.update_country: https://tfcom-api-eks-identity-qa4.identityqa.thermofisher.net/identity/account/api/invite/invitation/country
 ---
 spring.config.activate.on-profile: qa4_cn_shared
 env.name: qa4-cn
