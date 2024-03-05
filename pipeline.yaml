@@ -55,6 +55,7 @@ environments:
         value: file:/etc/config/app-config-qa4.yml
     deployment:
       replicas: 1
+      namespace: tfidentity
       name: cdc-account-management-qa4
     autoscaling:
       enabled: true
@@ -77,6 +78,10 @@ environments:
         value: qa4-cn
       - name: SPRING_CONFIG_ADDITIONAL_LOCATION
         value: file:/etc/config/app-config.yml
+    deployment:
+      replicas: 1
+      namespace: cdcam
+      name: cdc-account-management-qa4-cn
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -100,6 +105,7 @@ environments:
         value: file:/etc/config/app-config-qa1.yml
     deployment:
       replicas: 1
+      namespace: tfidentity
       name: cdc-account-management-qa1
     autoscaling:
       enabled: true
@@ -119,6 +125,10 @@ environments:
         value: qa1-cn
       - name: SPRING_CONFIG_ADDITIONAL_LOCATION
         value: file:/etc/config/app-config-qa1.yml
+    deployment:
+      replicas: 1
+      namespace: cdcam
+      name: cdc-account-management-qa1-cn
     autoscaling:
       enabled: true
       minReplicas: 1
