@@ -43,7 +43,7 @@ environments:
   qa4:
     branch: integration/v1
     promotion:
-      to: qa
+      to: qa1
       mergeTo: release/v1
     cluster: tfcom-eks-na-identity-qa1.identityqa.thermofisher.net
     env:
